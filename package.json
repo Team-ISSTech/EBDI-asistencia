@@ -1,0 +1,18 @@
+{
+  "name": "sirai",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "pnpm --filter @sirai/web dev",
+    "dev:api": "pnpm --filter @sirai/api dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test"
+  },
+  "devDependencies": {
+    "turbo": "2.11.2"
+  }
+}
