@@ -29,8 +29,8 @@ Este repositorio contiene el foundation técnico del proyecto. Todavía no imple
 ```text
 .
 ├── apps/
-│   ├── web/                 # React + Vite
-│   └── api/                 # NestJS
+│   ├── web/                 # Frontend: React + Vite
+│   └── api/                 # Backend: NestJS
 ├── packages/
 │   ├── ui/                  # Componentes visuales reutilizables
 │   ├── domain/              # Reglas de negocio puras
