@@ -50,13 +50,15 @@ Los archivos `.gitkeep` conservan en Git los paquetes todavía vacíos. Se elimi
 
 ## Requisitos
 
-- Node.js 22 LTS o posterior.
+- Node.js 22 LTS o posterior (`.nvmrc` fija la versión; `engines` la exige).
 - pnpm 10.24.0 o compatible.
-- La infraestructura local de datos se definirá después de seleccionar la base de datos.
+- Docker para levantar MySQL 8 en desarrollo (ver `docker-compose.yml`).
 
 ## Inicio rápido
 
 ```bash
+cp .env.example .env
+docker compose up -d
 pnpm install
 pnpm dev
 ```
@@ -79,6 +81,16 @@ pnpm lint
 pnpm typecheck
 pnpm test
 ```
+
+## Compuertas de calidad
+
+Cada pull request ejecuta en GitHub Actions (`.github/workflows/ci.yml`):
+`pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm build`
+y `pnpm test`, con un servicio MySQL 8 disponible para pruebas de integración.
+Las reglas compartidas viven en `packages/eslint-config` (complejidad
+ciclomática máxima 10, sin `console`, archivos de hasta 400 líneas,
+anidamiento máximo 4) y `packages/typescript-config` (modo estricto). Un PR
+con cualquiera de estas compuertas en rojo no se fusiona.
 
 ## Límites arquitectónicos
 

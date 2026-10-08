@@ -1,0 +1,25 @@
+# Infraestructura local de desarrollo. Uso: docker compose up -d
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: sirai-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sirai
+      MYSQL_USER: sirai
+      MYSQL_PASSWORD: sirai
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - sirai-mysql-data:/var/lib/mysql
+    healthcheck:
+      # Por TCP (127.0.0.1), no por socket: durante la inicialización del
+      # primer arranque el servidor temporal acepta el socket pero no la red.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-usirai", "-psirai"]
+      interval: 5s
+      timeout: 3s
+      start_period: 20s
+      retries: 30
+
+volumes:
+  sirai-mysql-data:

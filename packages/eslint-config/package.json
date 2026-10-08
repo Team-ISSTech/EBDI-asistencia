@@ -1,0 +1,28 @@
+{
+  "name": "@sirai/eslint-config",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Configuraciones planas de ESLint compartidas por apps y paquetes de SIRAI.",
+  "type": "module",
+  "exports": {
+    "./base": "./base.js",
+    "./nest": "./nest.js",
+    "./react": "./react.js",
+    "./library": "./library.js"
+  },
+  "dependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.12.0",
+    "typescript-eslint": "8.70.1"
+  },
+  "peerDependencies": {
+    "eslint": ">=10",
+    "typescript": ">=5.9 <6"
+  },
+  "devDependencies": {
+    "eslint": "10.11.0",
+    "typescript": "5.9.3"
+  }
+}

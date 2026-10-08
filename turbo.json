@@ -2,21 +2,58 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ],
+      "env": [
+        "NODE_ENV",
+        "VITE_API_URL"
+      ]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": [
+        "NODE_ENV",
+        "PORT",
+        "DATABASE_URL",
+        "SESSION_TTL_HOURS",
+        "LOGIN_MAX_ATTEMPTS",
+        "LOGIN_LOCK_MINUTES",
+        "COOKIE_SECURE",
+        "WEB_ORIGIN",
+        "SEED_PASSWORD",
+        "VITE_API_URL"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": [
+        "^typecheck"
+      ]
     },
     "test": {
-      "dependsOn": ["^test"]
+      "dependsOn": [
+        "^test"
+      ],
+      "env": [
+        "NODE_ENV",
+        "PORT",
+        "DATABASE_URL",
+        "SESSION_TTL_HOURS",
+        "LOGIN_MAX_ATTEMPTS",
+        "LOGIN_LOCK_MINUTES",
+        "COOKIE_SECURE",
+        "WEB_ORIGIN",
+        "SEED_PASSWORD"
+      ]
     }
   }
 }

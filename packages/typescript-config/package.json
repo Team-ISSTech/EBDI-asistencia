@@ -1,0 +1,7 @@
+{
+  "name": "@sirai/typescript-config",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Configuraciones base de TypeScript compartidas por apps y paquetes de SIRAI.",
+  "files": ["base.json", "nest.json", "react.json", "library.json"]
+}
