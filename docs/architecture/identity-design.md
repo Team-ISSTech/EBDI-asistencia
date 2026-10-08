@@ -1,4 +1,4 @@
-# Diseño: Autenticación, RBAC y pantallas base
+# Diseño del módulo de identidad: autenticación, RBAC y pantallas base
 
 - Fecha: 2026-10-07
 - Estado: aprobado por el equipo en sesión de diseño
@@ -15,11 +15,11 @@ solo rellenen contenido.
 Fuera de alcance: pase de lista real, offline, reportes, seguimientos. Sus
 pantallas quedan como estados vacíos con la estructura final.
 
-## Entregas (una rama, un PR cada una)
+## Entregas (un PR por rama)
 
 | Rama | Contenido | Tamaño estimado |
 | --- | --- | --- |
-| `docs/fase-1-requisitos` | ADR-003, ADR-004, SRS, RTM, modelo de datos, este diseño | solo documentación |
+| `docs/fase-1-requisitos` | ADR-003, ADR-004, SRS, RTM, modelo de datos y este diseño | solo documentación |
 | `chore/foundation-gates` | `packages/typescript-config`, `packages/eslint-config` (complejidad 10, `no-console`), GitHub Actions, `engines`, `.nvmrc`, `.env.example`, `docker-compose.yml` con MySQL 8 | ~250 líneas |
 | `feat/identity-rbac` | `packages/auth`, `packages/contracts`, `packages/db`, `packages/config`, módulo `identity` en la API, `/health`, semilla de desarrollo, pruebas | PR grande de funcionalidad |
 | `feat/web-shell-screens` | `packages/ui`, enrutado, login, selección de estancia, cáscara con navegación por permisos, pantallas base, pruebas | PR grande de funcionalidad |
