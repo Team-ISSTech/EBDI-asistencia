@@ -6,3 +6,13 @@ updates:
     schedule:
       interval: weekly
     labels: [ci]
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    labels: [ci]
+  - package-ecosystem: docker
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    labels: [ci]
