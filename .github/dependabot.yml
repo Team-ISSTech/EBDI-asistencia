@@ -1,18 +1,24 @@
-# Mantiene las acciones de GitHub al día (las versiones @vN son etiquetas móviles).
+# Actualizaciones de dependencias: una vez al mes y agrupadas en un solo PR por
+# ecosistema, para no llenar la lista de PR. Node se mantiene en la LTS 22
+# fijada en .nvmrc y engines, así que se ignoran sus versiones mayores.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     labels: [ci]
+    groups:
+      acciones:
+        patterns: ["*"]
   - package-ecosystem: docker
-    directory: /apps/api
+    directories: ["/apps/api", "/apps/web"]
     schedule:
-      interval: weekly
+      interval: monthly
     labels: [ci]
-  - package-ecosystem: docker
-    directory: /apps/web
-    schedule:
-      interval: weekly
-    labels: [ci]
+    groups:
+      imagenes:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
