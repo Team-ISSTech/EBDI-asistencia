@@ -1,6 +1,19 @@
-# Infraestructura local de desarrollo. Uso: docker compose up -d
-# MYSQL_PORT permite cambiar el puerto publicado si 3306 ya está ocupado
-# (revisa con: lsof -nP -iTCP:3306 -sTCP:LISTEN).
+# Pila completa de SIRAI con un solo comando: docker compose up -d
+#
+# - Las imágenes se descargan de GHCR por defecto (IMAGE_REGISTRY/IMAGE_TAG);
+#   con `docker compose up --build` se construyen localmente.
+# - La semilla de desarrollo solo corre con SEED_DEV_DATA=true (nunca en
+#   entornos compartidos). Las variables viven en .env (copia .env.example).
+# - Para desarrollo con pnpm basta `docker compose up -d mysql`.
+# - MYSQL_PORT permite cambiar el puerto publicado si 3306 ya está ocupado
+#   (revisa con: lsof -nP -iTCP:3306 -sTCP:LISTEN).
+
+name: sirai
+
+x-api-image: &api-image ${IMAGE_REGISTRY:-ghcr.io/team-isstech}/ebdi-asistencia-api:${IMAGE_TAG:-main}
+x-web-image: &web-image ${IMAGE_REGISTRY:-ghcr.io/team-isstech}/ebdi-asistencia-web:${IMAGE_TAG:-main}
+x-database-url: &database-url mysql://sirai:sirai@mysql:3306/sirai
+
 services:
   mysql:
     image: mysql:8.4
@@ -26,6 +39,80 @@ services:
       timeout: 3s
       start_period: 20s
       retries: 30
+
+  # Un solo disparo: aplica packages/db/sql/*.sql y, si se pide, la semilla.
+  migrate:
+    image: *api-image
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    pull_policy: missing
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    init: true
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: *database-url
+      # La semilla además se niega a correr con NODE_ENV=production.
+      SEED_DEV_DATA: ${SEED_DEV_DATA:-false}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        node node_modules/@sirai/db/dist/cli/migrate.js
+        if [ "$$SEED_DEV_DATA" = "true" ]; then node node_modules/@sirai/db/dist/cli/seed.js; fi
+
+  api:
+    image: *api-image
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    pull_policy: missing
+    container_name: sirai-api
+    init: true
+    depends_on:
+      mysql:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      # Pila local por http: development permite COOKIE_SECURE=false. Con
+      # NODE_ENV=production la API se niega a arrancar sin COOKIE_SECURE=true
+      # (y entonces hace falta HTTPS delante).
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: "3000"
+      DATABASE_URL: *database-url
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      SESSION_MAX_HOURS: ${SESSION_MAX_HOURS:-72}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES:-15}
+      LOGIN_RATE_LIMIT_PER_MINUTE: ${LOGIN_RATE_LIMIT_PER_MINUTE:-10}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # nginx reenvía con X-Forwarded-For; sin esto todas las IP serían la del proxy.
+      TRUST_PROXY: "true"
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?Define DATA_ENCRYPTION_KEY en .env (openssl rand -hex 32)}
+    # Sin puerto publicado: la única entrada es nginx (web), que fija
+    # X-Forwarded-For. Para depurar la API directamente usa un
+    # docker-compose.override.yml con `ports: ["127.0.0.1:3000:3000"]`.
+
+  web:
+    image: *web-image
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    pull_policy: missing
+    container_name: sirai-web
+    init: true
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
 
 volumes:
   sirai-mysql-data:

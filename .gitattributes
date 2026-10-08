@@ -1,0 +1,6 @@
+# Fin de línea LF en todo el repo: los scripts de shell y SQL que montan los
+# contenedores fallan con CRLF (Windows).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.zst binary

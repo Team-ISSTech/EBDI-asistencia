@@ -52,13 +52,43 @@ Los archivos `.gitkeep` conservan en Git los paquetes todavía vacíos. Se elimi
 
 - Node.js 22 LTS o posterior (`.nvmrc` fija la versión; `engines` la exige).
 - pnpm 10.24.0 o compatible.
-- Docker para levantar MySQL 8 en desarrollo (ver `docker-compose.yml`).
+- Docker: la pila completa o solo MySQL 8 para desarrollo (ver `docker-compose.yml`).
 
-## Inicio rápido
+## Ejecutar con Docker (sin Node ni pnpm)
 
 ```bash
-cp .env.example .env            # genera DATA_ENCRYPTION_KEY con: openssl rand -hex 32
-docker compose up -d            # MySQL 8; usa MYSQL_PORT=3307 si 3306 está ocupado
+cp .env.example .env            # revisa WEB_PORT, MYSQL_PORT y SEED_DEV_DATA
+docker compose up -d            # MySQL 8 → migraciones y semilla → API → web
+```
+
+Abre `http://localhost:8080` y entra con `admin_central@sirai.test` y la
+`SEED_PASSWORD` del `.env`. Las imágenes se descargan de GHCR
+(`IMAGE_REGISTRY`/`IMAGE_TAG`, publicadas por `.github/workflows/images.yml`
+al fusionar en `main`); para construirlas localmente usa
+`docker compose up --build -d`; como la etiqueta `main` se mueve, ejecuta
+`docker compose pull` para traer la versión más reciente. La web la sirve
+nginx, que reenvía `/api` a la API en el mismo origen, así la cookie de sesión
+no necesita CORS; la API no publica puerto propio. La semilla de desarrollo
+solo corre con `SEED_DEV_DATA=true` y nunca con `NODE_ENV=production`: déjalo
+en `false` en cualquier entorno compartido. `docker compose down -v` borra la
+base.
+
+La pila local corre con `NODE_ENV=development` y `COOKIE_SECURE=false`
+porque va por `http://localhost`. Un despliegue real debe fijar
+`NODE_ENV=production` (la imagen ya lo trae por defecto), `COOKIE_SECURE=true`
+y `SEED_DEV_DATA=false`, y poner HTTPS delante de nginx; con
+`NODE_ENV=production` la API se niega a arrancar sin cookies Secure o con la
+llave de cifrado de ejemplo, y la semilla se niega a ejecutarse. Si delante
+de nginx hay un balanceador, configura `set_real_ip_from` en
+`apps/web/nginx.conf` para que la API reciba la IP real del cliente. Las
+imágenes de GHCR deben marcarse como públicas en la organización; si no,
+hace falta `docker login ghcr.io` antes del primer `docker compose up`.
+
+## Inicio rápido (desarrollo con pnpm)
+
+```bash
+cp .env.example .env            # ajusta MYSQL_PORT si 3306 está ocupado
+docker compose up -d mysql      # solo la base de datos
 pnpm install
 pnpm --filter @sirai/db migrate # aplica packages/db/sql/*.sql
 pnpm --filter @sirai/db seed    # roles, permisos, 2 estancias y un usuario por rol (SEED_PASSWORD)
