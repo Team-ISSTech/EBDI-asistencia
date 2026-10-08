@@ -1,8 +1,8 @@
 # ADR-004: Persistencia y acceso a datos
 
-- Estado: propuesta
+- Estado: aceptada
 - Fecha: 2026-10-07
-- Depende de: ADR-003 (solo aplica si se mantiene TypeScript)
+- Depende de: ADR-003
 
 ## Contexto
 
@@ -41,7 +41,7 @@ decoradores sobre entidades y hace difícil mantener `packages/domain` libre de
 ORM. Drizzle genera SQL explícito, es solo TypeScript y produce migraciones SQL
 planas que sirven directamente como entregable de F4.
 
-## Recomendación
+## Decisión
 
 Opción B (MySQL 8 + Drizzle). El esquema que el equipo ya elaboró
 (`docs/architecture/data-model.md`) está escrito para MySQL (InnoDB, utf8mb4,
@@ -71,9 +71,7 @@ estancias no alcanzan p95 < 1.5 s, se revisará esta decisión con datos.
 
 ## Decisiones sobre el esquema del equipo (2026-10-07)
 
-Resolución de las preguntas P1..P11 de `docs/architecture/data-model.md`. Son
-decisiones del equipo de desarrollo; quedan sujetas, como todo este ADR, a la
-aceptación de ADR-003.
+Resolución de las preguntas P1..P11 de `docs/architecture/data-model.md`.
 
 | Pregunta | Decisión |
 | --- | --- |

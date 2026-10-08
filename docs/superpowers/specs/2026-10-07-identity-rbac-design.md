@@ -1,8 +1,7 @@
 # Diseño: Autenticación, RBAC y pantallas base
 
 - Fecha: 2026-10-07
-- Estado: borrador aprobado por el equipo en sesión de diseño; sujeto a la
-  aceptación escrita de ADR-003 (stack) por el cliente o el profesor
+- Estado: aprobado por el equipo en sesión de diseño
 - Depende de: ADR-003 (stack TypeScript), ADR-004 (MySQL 8 + Drizzle)
 
 ## Objetivo
