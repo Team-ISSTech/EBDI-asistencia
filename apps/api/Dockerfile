@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Contexto de build: la raíz del monorepo (ver docker-compose.yml).
 
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
     npm_config_store_dir=/pnpm/store
 RUN corepack enable && corepack prepare pnpm@10.24.0 --activate
@@ -30,7 +30,7 @@ RUN pnpm turbo build --filter="@sirai/api..." \
  && rm -rf /out/src /out/test /out/*.config.* /out/tsconfig*.json /out/nest-cli.json
 
 # --- Runtime: sin pnpm, sin devDependencies, usuario sin privilegios ---
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 # Producción por defecto; docker-compose.yml lo cambia a development para la pila local por http.
 ENV NODE_ENV=production
 WORKDIR /app
