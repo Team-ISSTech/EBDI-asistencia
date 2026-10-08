@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Contexto de build: la raíz del monorepo (ver docker-compose.yml).
 
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
     npm_config_store_dir=/pnpm/store
 RUN corepack enable && corepack prepare pnpm@10.24.0 --activate
