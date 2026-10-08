@@ -5,24 +5,42 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "lint": "eslint src --max-warnings 0",
+    "lint": "eslint src test --max-warnings 0",
     "typecheck": "tsc --noEmit --pretty false",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --coverage"
   },
   "dependencies": {
     "@nestjs/common": "12.0.4",
     "@nestjs/core": "12.0.4",
     "@nestjs/platform-express": "12.0.4",
+    "@nestjs/throttler": "6.7.1",
+    "@sirai/auth": "workspace:*",
+    "@sirai/config": "workspace:*",
+    "@sirai/contracts": "workspace:*",
+    "@sirai/db": "workspace:*",
+    "argon2": "0.45.1",
+    "cookie-parser": "1.4.7",
+    "dotenv": "17.3.1",
+    "drizzle-orm": "0.45.3",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@nestjs/cli": "12.0.3",
+    "@nestjs/testing": "12.1.2",
     "@sirai/eslint-config": "workspace:*",
     "@sirai/typescript-config": "workspace:*",
+    "@swc/core": "1.16.13",
+    "@types/cookie-parser": "1.4.10",
+    "@types/express": "5.0.6",
     "@types/node": "26.6.2",
+    "@types/supertest": "7.2.1",
+    "@vitest/coverage-v8": "5.0.3",
     "eslint": "10.11.0",
+    "supertest": "7.3.1",
     "typescript": "5.9.3",
+    "unplugin-swc": "2.0.0",
     "vitest": "5.0.1"
   }
 }

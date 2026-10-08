@@ -34,8 +34,12 @@ jobs:
           --health-retries 20
     env:
       DATABASE_URL: mysql://sirai:sirai@127.0.0.1:3306/sirai
+      # Base de pruebas aparte (dropAllObjects exige el sufijo _test); se crea abajo.
+      TEST_DATABASE_URL: mysql://sirai:sirai@127.0.0.1:3306/sirai_test
       SESSION_TTL_HOURS: "12"
       SEED_PASSWORD: ci-seed-password
+      # Llave de pruebas; no protege nada real.
+      DATA_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -43,6 +47,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - name: Crear base de pruebas
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS sirai_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON sirai_test.* TO 'sirai'@'%'; SET GLOBAL log_bin_trust_function_creators = 1; FLUSH PRIVILEGES;"
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck

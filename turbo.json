@@ -26,21 +26,27 @@
         "COOKIE_SECURE",
         "WEB_ORIGIN",
         "SEED_PASSWORD",
-        "VITE_API_URL"
+        "VITE_API_URL",
+        "DATA_ENCRYPTION_KEY",
+        "LOGIN_RATE_LIMIT_PER_MINUTE",
+        "TEST_DATABASE_URL",
+        "SESSION_MAX_HOURS",
+        "TRUST_PROXY"
       ]
     },
     "lint": {
       "dependsOn": [
-        "^lint"
+        "^build"
       ]
     },
     "typecheck": {
       "dependsOn": [
-        "^typecheck"
+        "^build"
       ]
     },
     "test": {
       "dependsOn": [
+        "^build",
         "^test"
       ],
       "env": [
@@ -52,7 +58,12 @@
         "LOGIN_LOCK_MINUTES",
         "COOKIE_SECURE",
         "WEB_ORIGIN",
-        "SEED_PASSWORD"
+        "SEED_PASSWORD",
+        "TEST_DATABASE_URL",
+        "DATA_ENCRYPTION_KEY",
+        "LOGIN_RATE_LIMIT_PER_MINUTE",
+        "SESSION_MAX_HOURS",
+        "TRUST_PROXY"
       ]
     }
   }

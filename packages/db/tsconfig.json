@@ -1,0 +1,10 @@
+{
+  "extends": "@sirai/typescript-config/library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

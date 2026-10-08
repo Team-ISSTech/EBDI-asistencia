@@ -1,0 +1,44 @@
+{
+  "name": "@sirai/db",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Esquema Drizzle, migraciones SQL, cliente MySQL y semilla de desarrollo. Único paquete que conoce el motor de base de datos.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist", "sql"],
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit --pretty false",
+    "test": "vitest run --coverage",
+    "migrate": "tsx src/cli/migrate.ts",
+    "seed": "tsx src/cli/seed.ts"
+  },
+  "dependencies": {
+    "@sirai/auth": "workspace:*",
+    "argon2": "0.45.1",
+    "drizzle-orm": "0.45.3",
+    "mysql2": "3.24.5"
+  },
+  "devDependencies": {
+    "@sirai/eslint-config": "workspace:*",
+    "@sirai/typescript-config": "workspace:*",
+    "@types/node": "26.6.2",
+    "@vitest/coverage-v8": "5.0.3",
+    "dotenv": "17.3.1",
+    "eslint": "10.11.0",
+    "tsup": "8.5.1",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

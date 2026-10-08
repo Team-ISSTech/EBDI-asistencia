@@ -2,7 +2,7 @@
 
 Sistema Institucional de Registro Rápido de Asistencia Infantil para las 212 Estancias de Bienestar y Desarrollo Infantil (EBDI).
 
-Este repositorio contiene el foundation técnico del proyecto. Todavía no implementa módulos de negocio: únicamente deja el monorepo, la aplicación web y la API listos para desarrollo.
+Este repositorio contiene el foundation técnico del proyecto y el primer módulo de negocio: autenticación, sesiones por estancia y control de acceso por roles (RBAC). Los módulos siguientes se construyen sobre esa base.
 
 ## Equipo
 
@@ -17,7 +17,7 @@ Este repositorio contiene el foundation técnico del proyecto. Todavía no imple
 
 - Frontend: React, TypeScript y Vite.
 - Backend: Node.js, TypeScript y NestJS.
-- Base de datos y herramienta de persistencia: pendientes de decisión del equipo.
+- Base de datos: MySQL 8 con Drizzle ORM (ADR-004); esquema del equipo en `packages/db/sql`.
 - Monorepo: pnpm workspaces y Turborepo.
 - Contratos compartidos: Zod.
 - UI objetivo: Tailwind CSS y shadcn/ui.
@@ -35,7 +35,7 @@ Este repositorio contiene el foundation técnico del proyecto. Todavía no imple
 │   ├── ui/                  # Componentes visuales reutilizables
 │   ├── domain/              # Reglas de negocio puras
 │   ├── contracts/           # Esquemas Zod y contratos HTTP
-│   ├── db/                  # Límite reservado para persistencia (tecnología pendiente)
+│   ├── db/                  # Esquema Drizzle, migraciones SQL, cliente y semilla (MySQL 8)
 │   ├── auth/                # Roles, permisos y políticas RBAC
 │   ├── config/              # Configuración compartida
 │   ├── eslint-config/       # Configuración compartida de ESLint
@@ -57,11 +57,18 @@ Los archivos `.gitkeep` conservan en Git los paquetes todavía vacíos. Se elimi
 ## Inicio rápido
 
 ```bash
-cp .env.example .env
-docker compose up -d
+cp .env.example .env            # genera DATA_ENCRYPTION_KEY con: openssl rand -hex 32
+docker compose up -d            # MySQL 8; usa MYSQL_PORT=3307 si 3306 está ocupado
 pnpm install
+pnpm --filter @sirai/db migrate # aplica packages/db/sql/*.sql
+pnpm --filter @sirai/db seed    # roles, permisos, 2 estancias y un usuario por rol (SEED_PASSWORD)
 pnpm dev
 ```
+
+Usuarios de desarrollo: `docente@sirai.test`, `directora@sirai.test`,
+`trabajo_social@sirai.test`, `enfermeria@sirai.test`, `medico@sirai.test`,
+`supervisor_central@sirai.test` y `admin_central@sirai.test`, todos con la
+contraseña `SEED_PASSWORD` del `.env`. No existen infantes ni tutores de prueba.
 
 La web queda disponible en `http://localhost:5173` y la API en `http://localhost:3000`.
 
@@ -86,7 +93,9 @@ pnpm test
 
 Cada pull request ejecuta en GitHub Actions (`.github/workflows/ci.yml`):
 `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm build`
-y `pnpm test`, con un servicio MySQL 8 disponible para pruebas de integración.
+y `pnpm test`, con un servicio MySQL 8 disponible para pruebas de integración
+(`TEST_DATABASE_URL`; sin esa variable las pruebas de integración se omiten con
+aviso, nunca pasan en silencio).
 Las reglas compartidas viven en `packages/eslint-config` (complejidad
 ciclomática máxima 10, sin `console`, archivos de hasta 400 líneas,
 anidamiento máximo 4) y `packages/typescript-config` (modo estricto). Un PR
@@ -104,8 +113,8 @@ Consulta [el mapa de arquitectura](docs/architecture/overview.md) y los ADR dent
 
 ## Orden de desarrollo
 
-1. Foundation del monorepo.
-2. Autenticación y RBAC.
+1. Foundation del monorepo. ✔
+2. Autenticación y RBAC: API (`feat/identity-rbac`) y pantallas base (`feat/web-shell-screens`).
 3. Catálogos de estancias, grupos, salas, usuarios e infantes.
 4. Pase de lista.
 5. Operación offline y sincronización.

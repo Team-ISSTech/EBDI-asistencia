@@ -1,0 +1,39 @@
+import type { ApiEnv } from '@sirai/config';
+import { describe, expect, it } from 'vitest';
+import { EncryptionService } from '../crypto/encryption.service';
+
+const env = { DATA_ENCRYPTION_KEY: 'a'.repeat(64) } as ApiEnv;
+const otherEnv = { DATA_ENCRYPTION_KEY: 'b'.repeat(64) } as ApiEnv;
+
+describe('EncryptionService', () => {
+  const service = new EncryptionService(env);
+
+  it('descifra lo que cifró', () => {
+    expect(service.decrypt(service.encrypt('teléfono 55-1234'))).toBe('teléfono 55-1234');
+  });
+
+  it('produce blobs distintos para el mismo texto (iv aleatorio)', () => {
+    expect(service.encrypt('x').equals(service.encrypt('x'))).toBe(false);
+  });
+
+  it('rechaza un blob alterado o cifrado con otra llave', () => {
+    const blob = service.encrypt('secreto');
+    const tampered = Buffer.from(blob);
+    const last = tampered.length - 1;
+    tampered.writeUInt8(tampered.readUInt8(last) ^ 0xff, last);
+    expect(() => service.decrypt(tampered)).toThrow();
+    expect(() => new EncryptionService(otherEnv).decrypt(blob)).toThrow();
+  });
+
+  it('rechaza versiones de llave desconocidas', () => {
+    const blob = service.encrypt('x');
+    blob[0] = 9;
+    expect(() => service.decrypt(blob)).toThrow(/Versión de llave/);
+  });
+
+  it('encryptJson conserva null y cifra objetos', () => {
+    expect(service.encryptJson(null)).toBeNull();
+    const blob = service.encryptJson({ a: 1 });
+    expect(blob && JSON.parse(service.decrypt(blob))).toEqual({ a: 1 });
+  });
+});
