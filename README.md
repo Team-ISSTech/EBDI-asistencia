@@ -65,6 +65,10 @@ pnpm --filter @sirai/db seed    # roles, permisos, 2 estancias y un usuario por 
 pnpm dev
 ```
 
+Pruebas de extremo a extremo (Playwright) con API y base arriba:
+`pnpm --filter @sirai/web exec playwright install chromium` una vez y después
+`pnpm --filter @sirai/web test:e2e`. Todavía no corren en CI.
+
 Usuarios de desarrollo: `docente@sirai.test`, `directora@sirai.test`,
 `trabajo_social@sirai.test`, `enfermeria@sirai.test`, `medico@sirai.test`,
 `supervisor_central@sirai.test` y `admin_central@sirai.test`, todos con la

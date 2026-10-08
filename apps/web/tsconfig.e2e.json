@@ -1,0 +1,5 @@
+{
+  "extends": "@sirai/typescript-config/base.json",
+  "compilerOptions": { "module": "ESNext", "moduleResolution": "Bundler", "noEmit": true, "types": ["node"] },
+  "include": ["e2e", "playwright.config.ts"]
+}
