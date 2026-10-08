@@ -1,6 +1,6 @@
 # ADR-003: Stack de implementación frente al SRS del cliente
 
-- Estado: propuesta, pendiente de aceptación escrita del cliente o del profesor
+- Estado: aceptada (2026-10-07: los profesores confirmaron que el stack del SRS no es obligatorio)
 - Fecha: 2026-10-07
 
 ## Contexto
@@ -16,8 +16,8 @@ nombra), los entregables de F3 y F4 (repositorio con 80 % de cobertura y script
 de migración) y el trabajo ya hecho por el equipo (foundation del monorepo,
 ADR-001, ADR-002, pipeline de lint/typecheck/test).
 
-Esta decisión no puede tomarla sola la arquitectura: necesita confirmación del
-equipo y, de preferencia, aceptación escrita del cliente o del profesor titular.
+Los profesores confirmaron el 2026-10-07 que el stack del SRS no es
+obligatorio; este ADR deja constancia de las opciones y de la decisión.
 
 ## Opciones
 
@@ -51,11 +51,10 @@ equipo y, de preferencia, aceptación escrita del cliente o del profesor titular
 Duplica herramientas, pipelines y conocimientos para un equipo de cuatro
 personas. No aporta ventaja sobre A ni sobre B.
 
-## Recomendación
+## Decisión
 
-Opción A, condicionada a una aceptación escrita del cliente o del profesor.
-Si esa aceptación no se obtiene antes del cierre de F1, el equipo debe
-reevaluar la Opción B inmediatamente, antes de invertir en módulos.
+Opción A: mantener TypeScript (React + NestJS). La tabla siguiente queda como
+referencia para los entregables ISO que nombran herramientas del SRS.
 
 ## Tabla de equivalencias de herramientas
 
@@ -75,9 +74,6 @@ reevaluar la Opción B inmediatamente, antes de invertir en módulos.
 
 ## Consecuencias
 
-- Si se aprueba A: ADR-001 y ADR-002 siguen vigentes; se añade ADR-004 para la
-  base de datos y se incluye esta tabla como anexo del SRS entregado.
-- Si se aprueba B: ADR-001, ADR-002 y este repositorio se archivan; se abre un
-  repositorio nuevo con la estructura de CodeIgniter 4.
-- En ambos casos la RTM (`docs/requirements/RTM.md`) debe seguir mapeando el
-  100 % de los requisitos funcionales.
+- ADR-001 y ADR-002 siguen vigentes; ADR-004 fija la base de datos.
+- La RTM (`docs/requirements/RTM.md`) mapea el 100 % de los requisitos
+  funcionales al stack elegido.
