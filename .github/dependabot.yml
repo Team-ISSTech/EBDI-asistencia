@@ -1,0 +1,8 @@
+# Mantiene las acciones de GitHub al día (las versiones @vN son etiquetas móviles).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [ci]

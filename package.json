@@ -14,5 +14,9 @@
   },
   "devDependencies": {
     "turbo": "2.11.2"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10.24.0"
   }
 }
