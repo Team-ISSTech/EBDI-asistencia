@@ -1,17 +1,23 @@
 # Infraestructura local de desarrollo. Uso: docker compose up -d
+# MYSQL_PORT permite cambiar el puerto publicado si 3306 ya está ocupado
+# (revisa con: lsof -nP -iTCP:3306 -sTCP:LISTEN).
 services:
   mysql:
     image: mysql:8.4
     container_name: sirai-mysql
+    # Las migraciones crean triggers (auditoría inmutable); con binlog activo
+    # MySQL exige SUPER o este flag para usuarios sin ese privilegio.
+    command: ["mysqld", "--log-bin-trust-function-creators=1"]
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: sirai
       MYSQL_USER: sirai
       MYSQL_PASSWORD: sirai
     ports:
-      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
     volumes:
       - sirai-mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       # Por TCP (127.0.0.1), no por socket: durante la inicialización del
       # primer arranque el servidor temporal acepta el socket pero no la red.
