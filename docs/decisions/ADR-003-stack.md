@@ -1,60 +1,44 @@
 # ADR-003: Stack de implementación frente al SRS del cliente
 
-- Estado: aceptada (2026-10-07: los profesores confirmaron que el stack del SRS no es obligatorio)
+- Estado: aceptada
+- Fecha de aceptación: 2026-10-07 (decisión del equipo; los profesores confirmaron que el stack del SRS no es obligatorio)
 - Fecha: 2026-10-07
 
 ## Contexto
 
-El SRS del cliente (agosto 2026) prescribe PHP 8.2, CodeIgniter 4, MySQL/MariaDB,
-PHPUnit, PHPStan, PSR-12 y GitFlow. El repositorio, acordado por el equipo en
-ADR-001 y ADR-002, implementa React 19 + Vite en `apps/web` y NestJS 12 en
-`apps/api`, todo en TypeScript, con base de datos pendiente.
-
-El conflicto afecta tres cosas: la calificación del proyecto (ISO/IEC 33000 y
-12207 piden entregables por fase, no una tecnología concreta, pero el SRS sí la
-nombra), los entregables de F3 y F4 (repositorio con 80 % de cobertura y script
-de migración) y el trabajo ya hecho por el equipo (foundation del monorepo,
-ADR-001, ADR-002, pipeline de lint/typecheck/test).
-
-Los profesores confirmaron el 2026-10-07 que el stack del SRS no es
-obligatorio; este ADR deja constancia de las opciones y de la decisión.
-
-## Opciones
-
-### Opción A: Mantener TypeScript (React + NestJS) y documentar la desviación
-
-- Conserva la base del monorepo ya construida y la curva de aprendizaje recorrida.
-- El SRS se cumple funcionalmente al 100 %; solo cambia la tecnología.
-- Cada requisito de herramientas del SRS tiene un equivalente directo (ver
-  tabla). Los entregables ISO se producen igual: SRS, RTM, diagrama ER,
-  prototipos, repositorio con cobertura, script de migración, manual y UAT.
-- Riesgo: un evaluador que lea el SRS literalmente puede penalizar la
-  desviación si no está aceptada por escrito. Mitigación: anexar este ADR y la
-  tabla de equivalencias al SRS entregado en F1, con firma del cliente.
-- Riesgo: el cliente podría exigir PHP para operación posterior por su equipo
-  interno. Mitigación: preguntar explícitamente quién operará el sistema.
-
-### Opción B: Migrar a PHP 8.2 + CodeIgniter 4 + MySQL/MariaDB
-
-- Cumple el SRS al pie de la letra; cero riesgo de calificación por stack.
-- Se descarta `apps/api`, `apps/web` se reescribe o se conserva como SPA
-  consumiendo la API PHP (lo que ya rompería la pureza del stack prescrito).
-- El equipo pierde la base del monorepo, dos ADR y su configuración; el
-  tiempo de F2 y F3 se consumiría en rehacer lo que ya existe.
-- La operación offline (RF-20 a RF-23: IndexedDB + Service Worker) sigue
-  requiriendo JavaScript en el cliente; CodeIgniter solo cubre el servidor.
-- Nadie en el equipo tiene experiencia reciente en CodeIgniter 4; el riesgo de
-  entrega tardía sube.
-
-### Opción C (descartada): Híbrido PHP para API y TypeScript para web
-
-Duplica herramientas, pipelines y conocimientos para un equipo de cuatro
-personas. No aporta ventaja sobre A ni sobre B.
+El SRS del cliente (agosto 2026) nombra PHP 8.2, CodeIgniter 4, MySQL/MariaDB,
+PHPUnit, PHPStan, PSR-12 y GitFlow. Los profesores confirmaron el 2026-10-07
+que ese stack no es obligatorio para el proyecto; la elección es del equipo.
 
 ## Decisión
 
-Opción A: mantener TypeScript (React + NestJS). La tabla siguiente queda como
-referencia para los entregables ISO que nombran herramientas del SRS.
+SIRAI se construye con:
+
+- Frontend: React 19 con Vite.
+- Backend: Node.js con NestJS.
+- Lenguaje: TypeScript en todo el repositorio, compilado a JavaScript para
+  ejecutarse en el navegador y en Node.js.
+- Base de datos: MySQL 8 (ADR-004).
+
+Motivo: decisión del equipo. Es el stack que los cuatro integrantes dominan,
+permite compartir contratos y tipos entre web y API en un solo lenguaje, y
+cubre con herramientas equivalentes cada requisito de calidad del SRS (tabla
+abajo). No se requiere aceptación adicional del cliente ni del profesor.
+
+El código de SIRAI es propio del equipo. Las bibliotecas de terceros (React,
+NestJS, Drizzle, Zod, Vitest, Playwright, Tailwind) se usan como dependencias
+instaladas desde npm, igual que en cualquier proyecto profesional; no se copia
+ni se adapta ningún producto de asistencia existente. Los módulos de negocio,
+las pantallas, los componentes visuales y las migraciones se escriben para
+este proyecto.
+
+### Opción rechazada: reescribir en PHP 8.2 + CodeIgniter 4
+
+Cumpliría el SRS al pie de la letra, pero obligaría a descartar la base del
+monorepo, ADR-001 y ADR-002, y a rehacer el trabajo de F1 y F2; la operación
+offline seguiría requiriendo JavaScript en el cliente; y nadie en el equipo
+tiene experiencia reciente en CodeIgniter 4. Al no ser obligatorio el stack
+del SRS, la opción queda rechazada.
 
 ## Tabla de equivalencias de herramientas
 
@@ -77,3 +61,5 @@ referencia para los entregables ISO que nombran herramientas del SRS.
 - ADR-001 y ADR-002 siguen vigentes; ADR-004 fija la base de datos.
 - La RTM (`docs/requirements/RTM.md`) mapea el 100 % de los requisitos
   funcionales al stack elegido.
+- Los entregables ISO que nombran herramientas del SRS se presentan con su
+  equivalente de la tabla anterior.
