@@ -1,4 +1,4 @@
--- Sesiones en servidor (ADR-004, pregunta P7 del modelo de datos).
+-- Sesiones en servidor (decisión P7 en docs/architecture/decisions.md).
 -- El token nunca se guarda en claro: solo su SHA-256.
 CREATE TABLE IF NOT EXISTS sesiones (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

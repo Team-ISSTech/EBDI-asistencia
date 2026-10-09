@@ -3,7 +3,7 @@
 Esquema propuesto por el equipo (`sirai_schema_propuesta.sql`, MySQL 8 /
 InnoDB, octubre 2026) transcrito a Mermaid. El SQL original se incorporará a
 `packages/db` como primera migración cuando se abra la rama de persistencia
-(ADR-004). Aquí se muestran las columnas relevantes para entender relaciones,
+(decisión 4 en `decisions.md`). Aquí se muestran las columnas relevantes para entender relaciones,
 cifrado, borrado lógico y auditoría; el SQL es la fuente completa.
 
 Convenciones del esquema: `BIGINT UNSIGNED` como llave primaria, `created_at` /
@@ -294,7 +294,7 @@ Vistas: `vw_asistencia_diaria` y `vw_seguimientos_abiertos`.
 
 ## Preguntas para el equipo
 
-Resueltas el 2026-10-07; la decisión de cada una queda registrada en ADR-004
+Resueltas el 2026-10-07; la decisión de cada una queda registrada en `decisions.md`
 y se implementa en las migraciones del módulo correspondiente.
 
 - **P1.** Para consultar la asistencia histórica de un infante a lo largo de

@@ -3,7 +3,7 @@
 Mapea cada requisito de `SRS.md` al paquete o módulo del monorepo que lo
 implementará, al tipo de verificación que lo comprobará y a su estado actual.
 Las rutas corresponden al plan de arquitectura (`docs/architecture/overview.md`,
-ADR-003 y ADR-004); la mayoría todavía no existe en el repositorio y se creará
+`docs/architecture/decisions.md`); la mayoría todavía no existe en el repositorio y se creará
 cuando inicie su fase. El estado "pendiente" significa que no hay rama abierta;
 "en curso" nombra la rama donde se trabaja. Esta matriz se actualiza en cada PR
 que cierre o abra un requisito. Los requisitos marcados "(Fase 2)" en el SRS

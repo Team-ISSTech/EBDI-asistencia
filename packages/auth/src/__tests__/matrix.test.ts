@@ -5,7 +5,7 @@ import { ROLE_PERMISSIONS } from '../matrix.js';
 
 /**
  * La matriz debe coincidir con la tabla de permisos del SRS (Fase 2) tal como
- * se fijó en docs/architecture/identity-design.md.
+ * se fijó en docs/architecture/overview.md.
  * Cada aserción compara conjuntos para que el orden no importe.
  */
 const sorted = (values: readonly string[]): string[] => [...values].sort();
