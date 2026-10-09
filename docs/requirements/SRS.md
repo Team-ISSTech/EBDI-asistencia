@@ -9,7 +9,7 @@ trazabilidad (`RTM.md`) pueda mapear cada uno a un paquete, una verificación y
 un estado. No modifica el alcance acordado: el SRS del cliente sigue siendo la
 fuente de verdad y, ante cualquier diferencia, prevalece. La desviación de
 stack (PHP + CodeIgniter en el SRS, TypeScript en este repositorio) se trata
-en `docs/decisions/ADR-003-stack.md`, no aquí.
+en `docs/architecture/decisions.md`, no aquí.
 
 Los requisitos marcados con "(Fase 2)" quedan fuera de la primera entrega
 funcional. Los demás pertenecen a Fase 1.
@@ -117,7 +117,7 @@ explícitos hasta obtener confirmación; varios coinciden con las preguntas de
 - S-08: "Ausencia" en RF-24 comprende Ausente justificado y Falta injustificada; Comisión médica y Filtro sanitario no generan ticket salvo indicación del cliente.
 - S-09: Los contactos de emergencia (RF-27) son tutores marcados como tales; no existe entidad separada (pregunta P6).
 - S-10: "Anonimizado" (RF-18) significa sin nombre, CURP, matrícula ni datos de contacto; solo conteos y porcentajes.
-- S-11: RNF-11 y RNF-12 no aparecen literalmente en el SRS del cliente; se derivan de los procesos de ISO/IEC 12207 y de la tabla de equivalencias de ADR-003.
+- S-11: RNF-11 y RNF-12 no aparecen literalmente en el SRS del cliente; se derivan de los procesos de ISO/IEC 12207 y de la tabla de equivalencias de `docs/architecture/decisions.md`.
 - S-12: La cobertura de RNF-09 se mide sobre `packages/domain`, `packages/auth` y los módulos de `apps/api`; no sobre componentes visuales.
 - S-13: El p95 de RNF-08 se mide en la latencia de la API, sin incluir la red del cliente.
 - S-14: Los valores de `turno`, `estado` y `clasificacion` se fijan en `packages/domain`, no como `ENUM` en MySQL (pregunta P11).

@@ -2,7 +2,7 @@
 
 Sistema Institucional de Registro Rápido de Asistencia Infantil para las 212 Estancias de Bienestar y Desarrollo Infantil (EBDI).
 
-Este repositorio contiene el foundation técnico del proyecto y el primer módulo de negocio: autenticación, sesiones por estancia y control de acceso por roles (RBAC). Los módulos siguientes se construyen sobre esa base.
+Monorepo con la aplicación web, la API y los paquetes compartidos. Hoy incluye la base del proyecto y el primer módulo: autenticación, sesiones por estancia y control de acceso por roles.
 
 ## Equipo
 
@@ -17,7 +17,7 @@ Este repositorio contiene el foundation técnico del proyecto y el primer módul
 
 - Frontend: React, TypeScript y Vite.
 - Backend: Node.js, TypeScript y NestJS.
-- Base de datos: MySQL 8 con Drizzle ORM (ADR-004); esquema del equipo en `packages/db/sql`.
+- Base de datos: MySQL 8 con Drizzle ORM; esquema del equipo en `packages/db/sql`.
 - Monorepo: pnpm workspaces y Turborepo.
 - Contratos compartidos: Zod.
 - UI objetivo: Tailwind CSS y shadcn/ui.
@@ -41,12 +41,10 @@ Este repositorio contiene el foundation técnico del proyecto y el primer módul
 │   ├── eslint-config/       # Configuración compartida de ESLint
 │   └── typescript-config/   # Configuración compartida de TypeScript
 ├── docs/
-│   ├── architecture/
-│   └── decisions/
+│   ├── architecture/        # overview, decisions, data-model
+│   └── requirements/        # SRS y RTM
 └── tooling/
 ```
-
-Los archivos `.gitkeep` conservan en Git los paquetes todavía vacíos. Se eliminarán cuando cada paquete tenga implementación real.
 
 ## Requisitos
 
@@ -62,27 +60,18 @@ docker compose up -d            # MySQL 8 → migraciones y semilla → API → 
 ```
 
 Abre `http://localhost:8080` y entra con `admin_central@sirai.test` y la
-`SEED_PASSWORD` del `.env`. Las imágenes se descargan de GHCR
-(`IMAGE_REGISTRY`/`IMAGE_TAG`, publicadas por `.github/workflows/images.yml`
-al fusionar en `main`); para construirlas localmente usa
-`docker compose up --build -d`; como la etiqueta `main` se mueve, ejecuta
-`docker compose pull` para traer la versión más reciente. La web la sirve
-nginx, que reenvía `/api` a la API en el mismo origen, así la cookie de sesión
-no necesita CORS; la API no publica puerto propio. La semilla de desarrollo
-solo corre con `SEED_DEV_DATA=true` y nunca con `NODE_ENV=production`: déjalo
-en `false` en cualquier entorno compartido. `docker compose down -v` borra la
-base.
+`SEED_PASSWORD` del `.env`.
 
-La pila local corre con `NODE_ENV=development` y `COOKIE_SECURE=false`
-porque va por `http://localhost`. Un despliegue real debe fijar
-`NODE_ENV=production` (la imagen ya lo trae por defecto), `COOKIE_SECURE=true`
-y `SEED_DEV_DATA=false`, y poner HTTPS delante de nginx; con
-`NODE_ENV=production` la API se niega a arrancar sin cookies Secure o con la
-llave de cifrado de ejemplo, y la semilla se niega a ejecutarse. Si delante
-de nginx hay un balanceador, configura `set_real_ip_from` en
-`apps/web/nginx.conf` para que la API reciba la IP real del cliente. Las
-imágenes de GHCR deben marcarse como públicas en la organización; si no,
-hace falta `docker login ghcr.io` antes del primer `docker compose up`.
+- Las imágenes vienen de GHCR (se publican al fusionar en `main`); con
+  `docker compose up --build -d` se construyen en local y con
+  `docker compose pull` se actualizan.
+- nginx sirve la web y reenvía `/api` a la API en el mismo origen; la API no
+  publica puerto propio.
+- La semilla de desarrollo solo corre con `SEED_DEV_DATA=true` y nunca con
+  `NODE_ENV=production`. `docker compose down -v` borra la base.
+- Un despliegue real necesita `NODE_ENV=production`, `COOKIE_SECURE=true`,
+  `SEED_DEV_DATA=false` y HTTPS delante de nginx (con un balanceador, ajusta
+  `set_real_ip_from` en `apps/web/nginx.conf`).
 
 ## Inicio rápido (desarrollo con pnpm)
 
@@ -143,12 +132,12 @@ con cualquiera de estas compuertas en rojo no se fusiona.
 - La autorización se aplica siempre en el backend.
 - Solo se comparte código mediante las APIs públicas de `packages/*`.
 
-Consulta [el mapa de arquitectura](docs/architecture/overview.md) y los ADR dentro de `docs/decisions`.
+Consulta [el mapa de arquitectura](docs/architecture/overview.md) y las [decisiones](docs/architecture/decisions.md).
 
 ## Orden de desarrollo
 
 1. Foundation del monorepo. ✔
-2. Autenticación y RBAC: API (`feat/identity-rbac`) y pantallas base (`feat/web-shell-screens`).
+2. Autenticación y RBAC. ✔
 3. Catálogos de estancias, grupos, salas, usuarios e infantes.
 4. Pase de lista.
 5. Operación offline y sincronización.
