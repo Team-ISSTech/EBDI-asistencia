@@ -98,7 +98,7 @@ Flujo en la API:
 | `GET /auth/me` | sesión | usuario, asignaciones, estancia activa y permisos resueltos |
 | `POST /auth/estancia` | sesión | cambia la estancia activa (solo a una asignada) |
 | `GET/POST /usuarios`, `PATCH /usuarios/:id/roles` | USUARIO_ADMINISTRAR | administración de usuarios; nadie puede quitarse su propio rol central |
-| `GET /health` | pública | estado de la API y la base |
+| `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
 
 Reglas de sesión: inactividad máxima `SESSION_TTL_HOURS` (12 h) con tope
 absoluto `SESSION_MAX_HOURS` (72 h); el bloqueo de cuenta solo se comunica a
