@@ -57,7 +57,7 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
   it('GET /health reporta la base arriba', async () => {
     const response = await request(app.getHttpServer()).get('/health');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'ok', db: 'up' });
+    expect(response.body).toEqual({ status: 'ok', db: 'up', uptimeSeconds: expect.any(Number) });
   });
 
   it('rechaza cuerpos inválidos con DATOS_INVALIDOS', async () => {

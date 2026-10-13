@@ -17,6 +17,6 @@ export class HealthController {
       .execute(sql`SELECT 1`)
       .then(() => 'up' as const)
       .catch(() => 'down' as const);
-    return { status: 'ok', db };
+    return { status: 'ok', db, uptimeSeconds: Math.floor(process.uptime()) };
   }
 }

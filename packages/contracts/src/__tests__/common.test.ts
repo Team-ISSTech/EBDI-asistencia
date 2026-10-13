@@ -11,7 +11,13 @@ describe('apiErrorSchema', () => {
 
 describe('healthResponseSchema', () => {
   it('solo admite los estados conocidos', () => {
-    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'up' }).success).toBe(true);
-    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'maybe' }).success).toBe(false);
+    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'up', uptimeSeconds: 0 }).success).toBe(true);
+    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'maybe', uptimeSeconds: 0 }).success).toBe(false);
+  });
+
+  it('exige un tiempo activo entero y no negativo', () => {
+    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'up' }).success).toBe(false);
+    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'up', uptimeSeconds: -1 }).success).toBe(false);
+    expect(healthResponseSchema.safeParse({ status: 'ok', db: 'up', uptimeSeconds: 1.5 }).success).toBe(false);
   });
 });
