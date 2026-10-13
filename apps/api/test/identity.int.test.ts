@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { healthResponseSchema } from '@sirai/contracts';
 import { applyMigrations, connect, dropAllObjects, schema, seedDevelopmentData, syncRolePermissions } from '@sirai/db';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -57,7 +58,7 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
   it('GET /health reporta la base arriba', async () => {
     const response = await request(app.getHttpServer()).get('/health');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ status: 'ok', db: 'up', uptimeSeconds: expect.any(Number) });
+    expect(healthResponseSchema.parse(response.body)).toMatchObject({ status: 'ok', db: 'up' });
   });
 
   it('rechaza cuerpos inválidos con DATOS_INVALIDOS', async () => {
