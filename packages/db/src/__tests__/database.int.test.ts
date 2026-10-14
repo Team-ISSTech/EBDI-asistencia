@@ -30,10 +30,10 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(3);
+    expect(second.skipped).toHaveLength(4);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
@@ -69,6 +69,32 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     await expect(connection.db.execute(sql`DELETE FROM auditoria`).catch((e: unknown) => Promise.reject(rootMessage(e)))).rejects.toMatch(/inmutable/);
     const [row] = await connection.db.select({ n: count() }).from(auditoria);
     expect(row?.n).toBe(1);
+  });
+
+  it('aplica los ajustes de catálogos: deleted_by, región, ciclos y discapacidad cifrada', async () => {
+    const columnsOf = async (table: string): Promise<string[]> => {
+      const [rows] = (await connection.db.execute(
+        sql`SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ${table}`,
+      )) as unknown as [{ name: string }[]];
+      return rows.map((row) => row.name);
+    };
+    expect(await columnsOf('estancias')).toContain('deleted_by');
+    expect(await columnsOf('contactos_seguimiento')).toContain('deleted_by');
+    expect(await columnsOf('usuario_rol')).toContain('region');
+    expect(await columnsOf('infantes')).toEqual(expect.arrayContaining(['grupo_discapacidad_cifrado']));
+    expect(await columnsOf('infantes')).not.toContain('grupo_discapacidad');
+    expect(await columnsOf('inscripciones')).toContain('ciclo_escolar_id');
+    expect(await columnsOf('jornadas_asistencia')).toContain('ciclo_escolar_id');
+  });
+
+  it('rechaza ciclos con estado inválido o fechas invertidas', async () => {
+    const insert = (code: string, start: string, end: string, status: string) =>
+      connection.db.execute(
+        sql`INSERT INTO ciclos_escolares (codigo, fecha_inicio, fecha_fin, estado) VALUES (${code}, ${start}, ${end}, ${status})`,
+      );
+    await expect(insert('2026-2027', '2026-08-24', '2027-07-16', 'ABIERTO')).rejects.toThrow();
+    await expect(insert('2026-2027', '2027-07-16', '2026-08-24', 'ACTIVO')).rejects.toThrow();
+    await expect(insert('2026-2027', '2026-08-24', '2027-07-16', 'ACTIVO')).resolves.toBeDefined();
   });
 
   it('siembra estancias y un usuario por rol, de forma repetible', async () => {

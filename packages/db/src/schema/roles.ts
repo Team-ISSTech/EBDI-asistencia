@@ -46,6 +46,7 @@ export const usuarioRol = mysqlTable(
     estanciaId: bigint('estancia_id', { mode: 'number', unsigned: true }).references(
       () => estancias.id,
     ),
+    region: varchar('region', { length: 100 }),
     validFrom: datetime('vigente_desde', { fsp: 6 }).notNull(),
     validUntil: datetime('vigente_hasta', { fsp: 6 }),
   },

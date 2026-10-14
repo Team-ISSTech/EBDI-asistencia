@@ -59,7 +59,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RNF-02 | Auditoría inmutable con diff | `apps/api/src/common` (audit interceptor), `packages/db` (tabla `auditoria`, solo INSERT) | integración Vitest + MySQL, revisión de código | pendiente |
 | RNF-03 | Auditoría de lecturas confidenciales | `apps/api/src/common` (audit interceptor), `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | pendiente |
 | RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | pendiente |
-| RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/db`, `apps/api/src/modules/administration` | integración Vitest + MySQL, revisión de código | pendiente |
+| RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/db`, `apps/api/src/modules/administration` | integración Vitest + MySQL, revisión de código | en curso (rama feat/catalogos-esquema: tabla `ciclos_escolares`) |
 | RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth` | integración Vitest + MySQL, revisión de código | pendiente |
 | RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | pendiente |
 | RNF-08 | p95 < 1.5 s con 212 estancias | `apps/api/src/modules/attendance`, `apps/api/src/modules/follow-ups`, `packages/db` (índices) | medición de carga | pendiente |
@@ -81,5 +81,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 53 |
 | Mapeados a paquete o módulo | 53 (100 %) |
-| En curso | 15 (RF-01 a RF-11, RNF-10, RNF-11, RNF-12, RNF-13) |
-| Pendientes | 38 |
+| En curso | 16 (RF-01 a RF-11, RNF-05, RNF-10, RNF-11, RNF-12, RNF-13) |
+| Pendientes | 37 |

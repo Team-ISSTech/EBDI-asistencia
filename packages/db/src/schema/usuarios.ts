@@ -26,6 +26,7 @@ export const usuarios = mysqlTable(
     createdAt: datetime('created_at', { fsp: 6 }).notNull(),
     updatedAt: datetime('updated_at', { fsp: 6 }).notNull(),
     deletedAt: datetime('deleted_at', { fsp: 6 }),
+    deletedBy: bigint('deleted_by', { mode: 'number', unsigned: true }),
   },
   (table) => [
     uniqueIndex('uq_usuarios_correo').on(table.email),
