@@ -18,7 +18,7 @@ export class JourneysController {
   }
 
   @Post()
-  @RequirePermission('ASISTENCIA_REGISTRAR')
+  @RequirePermission('JORNADA_CERRAR')
   open(@CurrentAuth() auth: AuthContext, @ZodBody(openAttendanceJourneyRequestSchema) body: OpenAttendanceJourneyRequest, @Req() request: RequestWithId): Promise<AttendanceJourney> {
     return this.journeys.open(auth, body, extractRequestContext(request));
   }

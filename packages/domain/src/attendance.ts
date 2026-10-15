@@ -12,9 +12,15 @@ export const SHIFTS = ['MATUTINO', 'VESPERTINO'] as const;
 
 export type Shift = (typeof SHIFTS)[number];
 
+export const isShift = (value: unknown): value is Shift =>
+  typeof value === 'string' && (SHIFTS as readonly string[]).includes(value);
+
 export const JOURNEY_STATUSES = ['ABIERTA', 'CERRADA'] as const;
 
 export type JourneyStatus = (typeof JOURNEY_STATUSES)[number];
+
+export const isJourneyStatus = (value: unknown): value is JourneyStatus =>
+  typeof value === 'string' && (JOURNEY_STATUSES as readonly string[]).includes(value);
 
 interface JourneyIdentity {
   estanciaId: number;

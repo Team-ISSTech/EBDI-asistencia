@@ -54,7 +54,7 @@ export class JourneysService {
   async find(auth: AuthContext, query: AttendanceJourneyQuery): Promise<AttendanceJourney> {
     const estanciaId = this.requireActiveEstancia(auth);
     const record = await this.journeys.findByKey(estanciaId, query.date, query.shift);
-    if (!record) throw new ApiError('NO_ENCONTRADO', 'Jornada no encontrada.');
+    if (!record || record.status !== 'ABIERTA') throw new ApiError('NO_ENCONTRADO', 'No hay una jornada abierta para esa fecha y turno.');
     return toView(record);
   }
 
