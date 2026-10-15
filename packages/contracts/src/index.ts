@@ -60,3 +60,5 @@ export {
   registerConsentRequestSchema,
 } from './catalogs/consent.js';
 export type { Consent, ConsentListResponse, RegisterConsentRequest } from './catalogs/consent.js';
+export { attendanceJourneyQuerySchema, attendanceJourneySchema, openAttendanceJourneyRequestSchema } from './attendance/journey.js';
+export type { AttendanceJourney, AttendanceJourneyQuery, OpenAttendanceJourneyRequest } from './attendance/journey.js';

@@ -5,9 +5,8 @@ import {
   ENROLLMENT_STATUSES,
   ESTANCIA_STATUSES,
   ROOM_STATUSES,
-  SHIFTS,
-  isShift,
 } from '../catalogs.js';
+import { SHIFTS, isShift } from '../attendance.js';
 
 describe('catálogos de valores válidos', () => {
   it('define los turnos de la estancia', () => {

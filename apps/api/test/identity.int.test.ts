@@ -154,6 +154,44 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
     expect(response.body.error.code).toBe('CONFLICTO');
   });
 
+  it('abre consulta y cierra una jornada dentro de la estancia activa', async () => {
+    const docente = cookieOf(await login('docente@sirai.test'));
+    const directora = cookieOf(await login('directora@sirai.test'));
+    const input = { date: '2026-10-15', shift: 'MATUTINO' };
+
+    const forbidden = await request(app.getHttpServer()).post('/asistencia/jornadas').set('Cookie', docente).send(input);
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.body.error.code).toBe('SIN_PERMISO');
+
+    const opened = await request(app.getHttpServer()).post('/asistencia/jornadas').set('Cookie', directora).send(input);
+    expect(opened.status).toBe(201);
+    expect(opened.body).toMatchObject({ estanciaId: 1, status: 'ABIERTA', ...input });
+
+    const duplicate = await request(app.getHttpServer()).post('/asistencia/jornadas').set('Cookie', directora).send(input);
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.error.code).toBe('CONFLICTO');
+
+    const found = await request(app.getHttpServer()).get('/asistencia/jornadas/activa').query(input).set('Cookie', directora);
+    expect(found.status).toBe(200);
+    expect(found.body.id).toBe(opened.body.id);
+
+    const closed = await request(app.getHttpServer()).post(`/asistencia/jornadas/${opened.body.id}/cierre`).set('Cookie', directora);
+    expect(closed.status).toBe(201);
+    expect(closed.body).toMatchObject({ id: opened.body.id, status: 'CERRADA' });
+
+    const noLongerActive = await request(app.getHttpServer()).get('/asistencia/jornadas/activa').query(input).set('Cookie', directora);
+    expect(noLongerActive.status).toBe(404);
+
+    const connection = connect(TEST_DATABASE_URL!);
+    const actions = await connection.db.select({ action: schema.auditoria.action }).from(schema.auditoria);
+    const [journey] = await connection.db.select({ schoolYearId: schema.jornadasAsistencia.schoolYearId }).from(schema.jornadasAsistencia);
+    const [activeYear] = await connection.db.select({ id: schema.ciclosEscolares.id }).from(schema.ciclosEscolares);
+    await connection.close();
+    expect(actions.map((row) => row.action)).toEqual(expect.arrayContaining(['JORNADA_ABIERTA', 'JORNADA_CERRADA']));
+    // La jornada queda ligada al ciclo escolar activo: de ahí depende la retención.
+    expect(journey?.schoolYearId).toBe(activeYear?.id);
+  });
+
   it('el límite de intentos por IP responde 429 DEMASIADAS_SOLICITUDES', async () => {
     process.env['LOGIN_RATE_LIMIT_PER_MINUTE'] = '2';
     const limited = (await Test.createTestingModule({ imports: [AppModule] }).compile()).createNestApplication();

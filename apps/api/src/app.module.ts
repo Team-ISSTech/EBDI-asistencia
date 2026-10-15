@@ -11,6 +11,7 @@ import { ApiExceptionFilter } from './common/errors/api-exception.filter';
 import { ChildrenModule } from './modules/children/children.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
 
 const THROTTLE_WINDOW_MS = 60_000;
 
@@ -30,6 +31,7 @@ const THROTTLE_WINDOW_MS = 60_000;
     HealthModule,
     IdentityModule,
     ChildrenModule,
+    AttendanceModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ApiExceptionFilter },

@@ -22,7 +22,9 @@ export type AuditAction =
   | 'TELEFONO_CONSULTADO'
   | 'CONSENTIMIENTO_REGISTRADO'
   | 'CONSENTIMIENTO_REVOCADO'
-  | 'CONSENTIMIENTOS_CONSULTADOS';
+  | 'CONSENTIMIENTOS_CONSULTADOS'
+  | 'JORNADA_ABIERTA'
+  | 'JORNADA_CERRADA';
 
 export interface AuditEntry {
   readonly userId: number | null;

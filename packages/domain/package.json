@@ -2,7 +2,7 @@
   "name": "@sirai/domain",
   "private": true,
   "version": "0.0.0",
-  "description": "Conceptos y reglas de negocio de SIRAI (catálogos, inscripciones). TypeScript puro, sin dependencias de framework.",
+  "description": "Conceptos y reglas de negocio de SIRAI (catálogos, inscripciones, consentimiento, asistencia). TypeScript puro, sin dependencias de framework.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
