@@ -1,15 +1,16 @@
 import type { Child } from '@sirai/contracts';
-import { Badge, Table, Td, Th } from '@sirai/ui';
+import { Badge, Button, Table, Td, Th } from '@sirai/ui';
 
 const fullName = (child: Child): string =>
   [child.name, child.paternalSurname, child.maternalSurname].filter((part): part is string => Boolean(part)).join(' ');
 
 export interface ChildrenTableProps {
   readonly children: readonly Child[];
+  readonly onSelect: (child: Child) => void;
 }
 
 /** Padrón de la estancia: nombre, matrícula y sala; sin datos de salud. */
-export function ChildrenTable({ children }: ChildrenTableProps) {
+export function ChildrenTable({ children, onSelect }: ChildrenTableProps) {
   return (
     <Table>
       <thead>
@@ -19,6 +20,9 @@ export function ChildrenTable({ children }: ChildrenTableProps) {
           <Th>Sala</Th>
           <Th>Nacimiento</Th>
           <Th>Estatus</Th>
+          <Th>
+            <span className="sr-only">Acciones</span>
+          </Th>
         </tr>
       </thead>
       <tbody>
@@ -30,6 +34,11 @@ export function ChildrenTable({ children }: ChildrenTableProps) {
             <Td className="whitespace-nowrap text-[var(--color-text-muted)]">{child.birthDate}</Td>
             <Td>
               <Badge tone={child.status === 'ACTIVO' ? 'success' : 'neutral'}>{child.status === 'ACTIVO' ? 'Activo' : 'Baja'}</Badge>
+            </Td>
+            <Td>
+              <Button variant="ghost" aria-label={`Tutores de ${child.name} ${child.paternalSurname}`} onClick={() => onSelect(child)}>
+                Tutores
+              </Button>
             </Td>
           </tr>
         ))}

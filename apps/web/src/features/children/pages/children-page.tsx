@@ -1,16 +1,19 @@
+import type { Child } from '@sirai/contracts';
 import { Button, Card, EmptyState, PageHeader } from '@sirai/ui';
 import { useState } from 'react';
 import { useSession } from '../../auth/use-session';
 import { ChildrenTable } from '../children-table';
 import { EnrollChildForm } from '../enroll-child-form';
+import { GuardiansCard } from '../guardians-card';
 import { useChildren, useEnrollChild, useRooms } from '../use-children';
 
 interface ChildrenContentProps {
   readonly query: ReturnType<typeof useChildren>;
+  readonly onSelect: (child: Child) => void;
 }
 
 /** Carga, error, vacío o tabla: un solo estado a la vez. */
-function ChildrenContent({ query }: ChildrenContentProps) {
+function ChildrenContent({ query, onSelect }: ChildrenContentProps) {
   if (query.isPending) return <p className="text-sm text-[var(--color-text-muted)]">Cargando infantes…</p>;
   if (query.isError) {
     return (
@@ -22,7 +25,7 @@ function ChildrenContent({ query }: ChildrenContentProps) {
   if (query.data.children.length === 0) {
     return <EmptyState title="Sin infantes registrados" description="Cuando se den de alta infantes en la estancia, aparecerán aquí con su sala." />;
   }
-  return <ChildrenTable children={query.data.children} />;
+  return <ChildrenTable children={query.data.children} onSelect={onSelect} />;
 }
 
 /** Padrón de infantes de la estancia activa, con alta para quien puede administrarlo. */
@@ -31,6 +34,7 @@ export function ChildrenPage() {
   const children = useChildren();
   const enroll = useEnrollChild();
   const [showForm, setShowForm] = useState(false);
+  const [selected, setSelected] = useState<Child | null>(null);
   const rooms = useRooms(showForm);
   const canEnroll = session?.permissions.includes('INFANTE_ADMINISTRAR') ?? false;
 
@@ -57,7 +61,8 @@ export function ChildrenPage() {
           />
         </Card>
       ) : null}
-      <ChildrenContent query={children} />
+      {selected ? <GuardiansCard key={selected.id} child={selected} onClose={() => setSelected(null)} /> : null}
+      <ChildrenContent query={children} onSelect={setSelected} />
     </>
   );
 }
