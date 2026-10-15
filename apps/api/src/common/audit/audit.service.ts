@@ -13,7 +13,9 @@ export type AuditAction =
   | 'LOGOUT'
   | 'CAMBIO_ESTANCIA'
   | 'USUARIO_CREADO'
-  | 'ROLES_REEMPLAZADOS';
+  | 'ROLES_REEMPLAZADOS'
+  | 'INFANTES_CONSULTADOS'
+  | 'INFANTE_REGISTRADO';
 
 export interface AuditEntry {
   readonly userId: number | null;

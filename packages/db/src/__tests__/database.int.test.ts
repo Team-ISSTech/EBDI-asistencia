@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connect, type DbConnection } from '../client.js';
 import { applyMigrations, dropAllObjects } from '../migrate/runner.js';
 import { expectedRolePermissionPairs, syncRolePermissions } from '../seed/catalog.js';
-import { DEV_ESTANCIAS, devUserEmail, seedDevelopmentData } from '../seed/dev.js';
-import { auditoria, children, guardians, permisos, rolPermiso, roles, usuarioRol, usuarios } from '../schema/index.js';
+import { DEV_ESTANCIAS, DEV_ROOMS, devUserEmail, seedDevelopmentData } from '../seed/dev.js';
+import { auditoria, children, ciclosEscolares, guardians, permisos, rooms, rolPermiso, roles, usuarioRol, usuarios } from '../schema/index.js';
 
 const TEST_DATABASE_URL = process.env['TEST_DATABASE_URL'];
 const SQL_DIR = resolve(import.meta.dirname, '../../sql');
@@ -148,5 +148,13 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     const central = assignments.filter((row) => row.estanciaId === null);
     expect(central).toHaveLength(2);
     expect(DEV_ESTANCIAS).toHaveLength(2);
+  });
+
+  it('siembra un ciclo escolar activo y salas ficticias, sin duplicar al repetir', async () => {
+    const cycles = await connection.db.select().from(ciclosEscolares);
+    expect(cycles.filter((cycle) => cycle.status === 'ACTIVO')).toHaveLength(1);
+    const seededRooms = await connection.db.select().from(rooms);
+    expect(seededRooms.length).toBeGreaterThanOrEqual(DEV_ROOMS.length);
+    expect(seededRooms.map((room) => room.name)).toEqual(expect.arrayContaining(DEV_ROOMS.map((room) => room.name)));
   });
 });

@@ -2,7 +2,7 @@ import { ROLE_CODES, CENTRAL_ROLE_CODES, type RoleCode } from '@sirai/auth';
 import argon2 from 'argon2';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../client.js';
-import { estancias, roles, usuarioRol, usuarios } from '../schema/index.js';
+import { ciclosEscolares, estancias, rooms, roles, usuarioRol, usuarios } from '../schema/index.js';
 
 /**
  * Datos ficticios de desarrollo. No hay infantes ni tutores: el SRS prohíbe
@@ -11,6 +11,13 @@ import { estancias, roles, usuarioRol, usuarios } from '../schema/index.js';
 export const DEV_ESTANCIAS = [
   { ebdiCode: 'EBDI-TEST-01', name: 'Estancia de prueba 01', region: 'Prueba' },
   { ebdiCode: 'EBDI-TEST-02', name: 'Estancia de prueba 02', region: 'Prueba' },
+] as const;
+
+export const DEV_SCHOOL_YEAR = { code: '2026-2027', startDate: '2026-08-24', endDate: '2027-07-16' } as const;
+
+export const DEV_ROOMS = [
+  { name: 'Lactantes (prueba)', shift: 'MATUTINO', minAgeMonths: 0, maxAgeMonths: 18, capacity: 12 },
+  { name: 'Maternal (prueba)', shift: 'MATUTINO', minAgeMonths: 19, maxAgeMonths: 48, capacity: 20 },
 ] as const;
 
 export const DEV_USER_EMAIL_DOMAIN = 'sirai.test';
@@ -85,6 +92,20 @@ const ensureAssignment = async (db: Db, userId: number, role: RoleCode, estancia
   await db.insert(usuarioRol).values({ userId, roleId: roleRow.id, estanciaId, validFrom: new Date() });
 };
 
+const seedSchoolYearAndRooms = async (db: Db, estanciaId: number): Promise<void> => {
+  const now = new Date();
+  await db
+    .insert(ciclosEscolares)
+    .values({ ...DEV_SCHOOL_YEAR, createdAt: now })
+    .onDuplicateKeyUpdate({ set: { startDate: DEV_SCHOOL_YEAR.startDate } });
+  for (const room of DEV_ROOMS) {
+    await db
+      .insert(rooms)
+      .values({ ...room, estanciaId, createdAt: now, updatedAt: now })
+      .onDuplicateKeyUpdate({ set: { capacity: room.capacity, updatedAt: now } });
+  }
+};
+
 /**
  * Crea 2 estancias y un usuario por rol con la contraseña indicada. Es
  * repetible: al volver a correr actualiza la contraseña de los usuarios
@@ -95,6 +116,7 @@ export async function seedDevelopmentData(db: Db, seedPassword: string, env = pr
   assertSeedAllowed(env, seedPassword);
   const [firstEstanciaId] = await upsertEstancias(db);
   if (firstEstanciaId === undefined) throw new Error('No se sembraron estancias.');
+  await seedSchoolYearAndRooms(db, firstEstanciaId);
   const passwordHash = await argon2.hash(seedPassword, { type: argon2.argon2id });
   const users: string[] = [];
   for (const role of ROLE_CODES) {

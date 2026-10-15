@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createChildRequestSchema, childSchema } from '../catalogs/child.js';
+import { childSchema, createChildRequestSchema, enrollChildRequestSchema } from '../catalogs/child.js';
 import { createGuardianRequestSchema, linkGuardianRequestSchema } from '../catalogs/guardian.js';
 import { createRoomRequestSchema } from '../catalogs/room.js';
 
@@ -70,5 +70,22 @@ describe('linkGuardianRequestSchema', () => {
 
   it('rechaza vigencia que termina antes de empezar', () => {
     expect(linkGuardianRequestSchema.safeParse({ ...base, validUntil: '2026-01-01' }).success).toBe(false);
+  });
+});
+
+describe('enrollChildRequestSchema', () => {
+  const base = { enrollmentNumber: 'M-0001', name: 'Niña', paternalSurname: 'Prueba', birthDate: '2024-03-10' };
+
+  it('exige la sala de la inscripción inicial', () => {
+    expect(enrollChildRequestSchema.safeParse(base).success).toBe(false);
+    expect(enrollChildRequestSchema.safeParse({ ...base, roomId: 3 }).success).toBe(true);
+  });
+
+  it('conserva las reglas del infante', () => {
+    expect(enrollChildRequestSchema.safeParse({ ...base, roomId: 3, disabilityGroup: 'Motriz' }).success).toBe(false);
+  });
+
+  it('la vista del infante incluye su sala', () => {
+    expect(Object.keys(childSchema.shape)).toEqual(expect.arrayContaining(['roomId', 'roomName']));
   });
 });

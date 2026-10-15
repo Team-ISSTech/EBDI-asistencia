@@ -46,7 +46,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-30 | Alta médica por Médico | `apps/api/src/modules/follow-ups`, `packages/auth` | integración Vitest + MySQL | pendiente |
 | RF-31 | Catálogo de estancias | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | pendiente |
 | RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | pendiente |
-| RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | pendiente |
+| RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | en curso (rama feat/children-module: alta y listado) |
 | RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | pendiente |
 | RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | pendiente |
 | RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | pendiente |
@@ -81,5 +81,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 53 |
 | Mapeados a paquete o módulo | 53 (100 %) |
-| En curso | 16 (RF-01 a RF-11, RNF-05, RNF-10, RNF-11, RNF-12, RNF-13) |
-| Pendientes | 37 |
+| En curso | 17 (RF-01 a RF-11, RF-33, RNF-05, RNF-10, RNF-11, RNF-12, RNF-13) |
+| Pendientes | 36 |
