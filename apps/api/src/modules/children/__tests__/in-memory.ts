@@ -3,14 +3,17 @@ import type { TransactionHook } from '../../identity/repositories/repositories';
 import type {
   ChildGuardianRecord,
   ChildRecord,
+  ConsentRecord,
   GuardianRecord,
   NewChild,
   NewChildGuardian,
+  NewConsent,
   NewEnrollment,
   NewGuardian,
   RoomRecord,
 } from '../children.types';
 import type { ChildrenRepository } from '../repositories/children.repository';
+import type { ConsentsRepository } from '../repositories/consents.repository';
 import type { GuardiansRepository } from '../repositories/guardians.repository';
 
 export const room = (overrides: Partial<RoomRecord> = {}): RoomRecord => ({
@@ -144,5 +147,31 @@ export class InMemoryGuardians implements GuardiansRepository {
 
   findPhoneEncrypted(guardianId: number): Promise<Buffer | null> {
     return Promise.resolve(this.rows.get(guardianId)?.phoneEncrypted ?? null);
+  }
+}
+
+export class InMemoryConsents implements ConsentsRepository {
+  readonly rows = new Map<number, ConsentRecord>();
+  private nextId = 1;
+
+  listForChild(childId: number): Promise<ConsentRecord[]> {
+    return Promise.resolve([...this.rows.values()].filter((row) => row.childId === childId));
+  }
+
+  findById(id: number): Promise<ConsentRecord | null> {
+    return Promise.resolve(this.rows.get(id) ?? null);
+  }
+
+  async create(consent: NewConsent, now: Date, userId: number, inSameTransaction?: TransactionHook<number>): Promise<number> {
+    const id = this.nextId++;
+    this.rows.set(id, { id, ...consent, acceptedAt: now, revokedAt: null, registeredBy: userId });
+    await inSameTransaction?.({} as Parameters<TransactionHook<number>>[0], id);
+    return id;
+  }
+
+  async revoke(id: number, at: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const row = this.rows.get(id);
+    if (row) this.rows.set(id, { ...row, revokedAt: at });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
   }
 }

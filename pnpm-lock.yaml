@@ -123,6 +123,9 @@ importers:
       '@sirai/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@sirai/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@sirai/ui':
         specifier: workspace:*
         version: link:../../packages/ui

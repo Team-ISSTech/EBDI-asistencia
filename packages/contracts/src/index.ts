@@ -53,3 +53,10 @@ export type {
 } from './catalogs/guardian.js';
 export { createRoomRequestSchema, roomListResponseSchema, roomSchema, shiftSchema } from './catalogs/room.js';
 export type { CreateRoomRequest, Room, RoomListResponse } from './catalogs/room.js';
+export {
+  consentListResponseSchema,
+  consentSchema,
+  consentTypeSchema,
+  registerConsentRequestSchema,
+} from './catalogs/consent.js';
+export type { Consent, ConsentListResponse, RegisterConsentRequest } from './catalogs/consent.js';

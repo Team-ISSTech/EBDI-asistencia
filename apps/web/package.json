@@ -16,6 +16,7 @@
     "@fontsource/sora": "5.3.0",
     "@sirai/auth": "workspace:*",
     "@sirai/contracts": "workspace:*",
+    "@sirai/domain": "workspace:*",
     "@sirai/ui": "workspace:*",
     "@tanstack/react-query": "5.104.1",
     "clsx": "2.1.1",

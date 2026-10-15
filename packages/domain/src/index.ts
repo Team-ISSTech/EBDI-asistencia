@@ -19,3 +19,5 @@ export type {
 } from './catalogs.js';
 export { ageInMonths, fitsRoomAge, nextEnrollmentStatus } from './enrollment.js';
 export type { EnrollmentTransition, RoomAgeRange } from './enrollment.js';
+export { CONSENT_STATUSES, CONSENT_TYPES, canRevoke, currentConsentStatus, isConsentType } from './consent.js';
+export type { ConsentFact, ConsentStatus, ConsentType } from './consent.js';

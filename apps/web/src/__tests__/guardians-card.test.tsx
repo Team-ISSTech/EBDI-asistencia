@@ -53,7 +53,10 @@ const routeFetch = (handlers: Record<string, () => Response>) =>
     return Promise.resolve(handler ? handler() : jsonResponse(404, { error: { code: 'NO_ENCONTRADO', message: 'x' } }));
   });
 
-const listHandler = (guardians: unknown[]) => ({ 'GET /infantes/5/tutores': () => jsonResponse(200, { guardians }) });
+const listHandler = (guardians: unknown[]) => ({
+  'GET /infantes/5/tutores': () => jsonResponse(200, { guardians }),
+  'GET /infantes/5/consentimientos': () => jsonResponse(200, { consents: [] }),
+});
 const bodiesOf = (fetchMock: ReturnType<typeof routeFetch>, method: string, path: string): unknown[] =>
   fetchMock.mock.calls
     .filter(([url, init]) => new URL(url).pathname === path && (init as RequestInit | undefined)?.method === method)
@@ -77,7 +80,10 @@ describe('GuardiansCard', () => {
     const { unmount } = renderWithSession(<GuardiansCard child={child} onClose={vi.fn()} />, docenteSession, '/app/infantes');
     expect(await screen.findByText('Sin tutores vinculados')).toBeInTheDocument();
     unmount();
-    vi.stubGlobal('fetch', routeFetch({ 'GET /infantes/5/tutores': () => jsonResponse(500, { error: { code: 'ERROR_INTERNO', message: 'x' } }) }));
+    vi.stubGlobal(
+      'fetch',
+      routeFetch({ ...listHandler([]), 'GET /infantes/5/tutores': () => jsonResponse(500, { error: { code: 'ERROR_INTERNO', message: 'x' } }) }),
+    );
     renderWithSession(<GuardiansCard child={child} onClose={vi.fn()} />, docenteSession, '/app/infantes');
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar los tutores.');
   });

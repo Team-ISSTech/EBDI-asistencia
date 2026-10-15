@@ -3,17 +3,22 @@ import {
   type ChildGuardian,
   type ChildGuardianListResponse,
   type ChildListResponse,
+  type Consent,
+  type ConsentListResponse,
   type CreateGuardianRequest,
   childGuardianListResponseSchema,
   childGuardianSchema,
   childListResponseSchema,
   childSchema,
+  consentListResponseSchema,
+  consentSchema,
   type EnrollChildRequest,
   type Guardian,
   type GuardianPhoneResponse,
   guardianPhoneResponseSchema,
   guardianSchema,
   type LinkGuardianRequest,
+  type RegisterConsentRequest,
   type RoomListResponse,
   roomListResponseSchema,
 } from '@sirai/contracts';
@@ -37,3 +42,12 @@ export const linkGuardian = (childId: number, body: LinkGuardianRequest): Promis
 
 export const fetchGuardianPhone = (guardianId: number): Promise<GuardianPhoneResponse> =>
   apiRequest(`/tutores/${guardianId}/telefono`, { schema: guardianPhoneResponseSchema });
+
+export const fetchConsents = (childId: number): Promise<ConsentListResponse> =>
+  apiRequest(`/infantes/${childId}/consentimientos`, { schema: consentListResponseSchema });
+
+export const registerConsent = (childId: number, body: RegisterConsentRequest): Promise<Consent> =>
+  apiRequest(`/infantes/${childId}/consentimientos`, { method: 'POST', body, schema: consentSchema });
+
+export const revokeConsent = (consentId: number): Promise<Consent> =>
+  apiRequest(`/consentimientos/${consentId}/revocar`, { method: 'POST', schema: consentSchema });

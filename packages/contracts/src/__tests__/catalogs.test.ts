@@ -6,6 +6,7 @@ import {
   guardianPhoneResponseSchema,
   linkGuardianRequestSchema,
 } from '../catalogs/guardian.js';
+import { consentListResponseSchema, registerConsentRequestSchema } from '../catalogs/consent.js';
 import { createRoomRequestSchema } from '../catalogs/room.js';
 
 describe('createRoomRequestSchema', () => {
@@ -121,5 +122,32 @@ describe('vistas de tutor de un infante', () => {
   it('el teléfono solo viaja en su propia respuesta', () => {
     expect(guardianPhoneResponseSchema.safeParse({ phone: '5512345678' }).success).toBe(true);
     expect(guardianPhoneResponseSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('contratos de consentimiento', () => {
+  const consent = {
+    id: 1,
+    childId: 5,
+    guardianId: 2,
+    type: 'CONTACTO_TELEFONICO',
+    noticeVersion: 'AP-2026-1',
+    accepted: true,
+    acceptedAt: '2026-10-14T12:00:00.000Z',
+    revokedAt: null,
+  };
+
+  it('registra una aceptación con versión del aviso', () => {
+    const result = registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'CONTACTO_TELEFONICO', noticeVersion: 'AP-2026-1' });
+    expect(result.success && result.data.accepted).toBe(true);
+  });
+
+  it('rechaza tipos desconocidos y avisos sin versión', () => {
+    expect(registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'OTRO', noticeVersion: 'v1' }).success).toBe(false);
+    expect(registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'CONTACTO_TELEFONICO', noticeVersion: ' ' }).success).toBe(false);
+  });
+
+  it('acepta el historial de consentimientos del infante', () => {
+    expect(consentListResponseSchema.safeParse({ consents: [consent] }).success).toBe(true);
   });
 });

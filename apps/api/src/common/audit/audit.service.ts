@@ -19,7 +19,10 @@ export type AuditAction =
   | 'TUTOR_REGISTRADO'
   | 'TUTOR_VINCULADO'
   | 'TUTORES_CONSULTADOS'
-  | 'TELEFONO_CONSULTADO';
+  | 'TELEFONO_CONSULTADO'
+  | 'CONSENTIMIENTO_REGISTRADO'
+  | 'CONSENTIMIENTO_REVOCADO'
+  | 'CONSENTIMIENTOS_CONSULTADOS';
 
 export interface AuditEntry {
   readonly userId: number | null;

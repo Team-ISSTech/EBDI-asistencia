@@ -1,4 +1,4 @@
-import type { ChildStatus, RoomStatus, Shift } from '@sirai/domain';
+import type { ChildStatus, ConsentType, RoomStatus, Shift } from '@sirai/domain';
 
 export interface RoomRecord {
   readonly id: number;
@@ -78,3 +78,18 @@ export interface NewChildGuardian {
 
 /** Tutor visto desde un infante: datos del tutor más su vínculo. */
 export interface ChildGuardianRecord extends GuardianRecord, Omit<NewChildGuardian, 'guardianId'> {}
+
+export interface NewConsent {
+  readonly childId: number;
+  readonly guardianId: number;
+  readonly type: ConsentType;
+  readonly noticeVersion: string;
+  readonly accepted: boolean;
+}
+
+export interface ConsentRecord extends NewConsent {
+  readonly id: number;
+  readonly acceptedAt: Date;
+  readonly revokedAt: Date | null;
+  readonly registeredBy: number;
+}

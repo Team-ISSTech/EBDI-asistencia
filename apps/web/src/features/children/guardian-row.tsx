@@ -1,5 +1,6 @@
-import type { ChildGuardian } from '@sirai/contracts';
+import type { ChildGuardian, Consent } from '@sirai/contracts';
 import { Badge, Button, Td } from '@sirai/ui';
+import { ConsentCell } from './consent-cell';
 import { useRevealPhone } from './use-guardians';
 
 const fullName = (guardian: ChildGuardian): string =>
@@ -40,11 +41,15 @@ function PhoneCell({ guardianId }: PhoneCellProps) {
 }
 
 export interface GuardianRowProps {
+  readonly childId: number;
   readonly guardian: ChildGuardian;
   readonly canSeePhone: boolean;
+  readonly canManageConsent: boolean;
+  /** Historial de consentimientos del infante; solo se muestran los de este tutor. */
+  readonly consents: readonly Consent[];
 }
 
-export function GuardianRow({ guardian, canSeePhone }: GuardianRowProps) {
+export function GuardianRow({ childId, guardian, canSeePhone, canManageConsent, consents }: GuardianRowProps) {
   return (
     <tr>
       <Td className="font-medium text-[var(--color-ink)]">{fullName(guardian)}</Td>
@@ -57,6 +62,14 @@ export function GuardianRow({ guardian, canSeePhone }: GuardianRowProps) {
         </div>
       </Td>
       <Td>{canSeePhone && guardian.hasPhone ? <PhoneCell guardianId={guardian.id} /> : null}</Td>
+      <Td>
+        <ConsentCell
+          childId={childId}
+          guardianId={guardian.id}
+          consents={consents.filter((consent) => consent.guardianId === guardian.id)}
+          canManage={canManageConsent}
+        />
+      </Td>
     </tr>
   );
 }
