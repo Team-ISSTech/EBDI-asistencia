@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { ApiEnv } from '@sirai/config';
 import { API_ENV } from '../config/config.module';
@@ -43,6 +43,15 @@ export class EncryptionService {
     decipher.setAAD(Buffer.from([version]));
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+  }
+
+  /**
+   * Hash con llave (HMAC-SHA256) para buscar por un dato cifrado, como el
+   * teléfono, sin descifrar. Un SHA-256 simple de un teléfono de 10 dígitos se
+   * revierte por fuerza bruta en segundos; con la llave del servidor, no.
+   */
+  blindHash(value: string): Buffer {
+    return createHmac('sha256', this.key).update(`blind-hash:${value}`).digest();
   }
 
   /** Serializa y cifra un objeto; `null` se conserva como `null`. */

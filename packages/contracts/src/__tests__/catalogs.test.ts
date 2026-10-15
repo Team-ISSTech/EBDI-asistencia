@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { childSchema, createChildRequestSchema, enrollChildRequestSchema } from '../catalogs/child.js';
-import { createGuardianRequestSchema, linkGuardianRequestSchema } from '../catalogs/guardian.js';
+import {
+  childGuardianListResponseSchema,
+  createGuardianRequestSchema,
+  guardianPhoneResponseSchema,
+  linkGuardianRequestSchema,
+} from '../catalogs/guardian.js';
 import { createRoomRequestSchema } from '../catalogs/room.js';
 
 describe('createRoomRequestSchema', () => {
@@ -87,5 +92,34 @@ describe('enrollChildRequestSchema', () => {
 
   it('la vista del infante incluye su sala', () => {
     expect(Object.keys(childSchema.shape)).toEqual(expect.arrayContaining(['roomId', 'roomName']));
+  });
+});
+
+describe('vistas de tutor de un infante', () => {
+  const view = {
+    id: 1,
+    name: 'Tutor',
+    paternalSurname: 'Prueba',
+    maternalSurname: null,
+    hasPhone: true,
+    relationship: 'Madre',
+    isPrimary: true,
+    canPickUp: true,
+    isEmergencyContact: false,
+    validFrom: '2026-08-24',
+    validUntil: null,
+  };
+
+  it('acepta la lista de tutores con su vínculo', () => {
+    expect(childGuardianListResponseSchema.safeParse({ guardians: [view] }).success).toBe(true);
+  });
+
+  it('la vista del vínculo no trae el teléfono', () => {
+    expect(Object.keys(childGuardianListResponseSchema.shape.guardians.element.shape)).not.toContain('phone');
+  });
+
+  it('el teléfono solo viaja en su propia respuesta', () => {
+    expect(guardianPhoneResponseSchema.safeParse({ phone: '5512345678' }).success).toBe(true);
+    expect(guardianPhoneResponseSchema.safeParse({}).success).toBe(false);
   });
 });

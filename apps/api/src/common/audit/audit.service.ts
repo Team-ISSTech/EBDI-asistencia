@@ -15,7 +15,11 @@ export type AuditAction =
   | 'USUARIO_CREADO'
   | 'ROLES_REEMPLAZADOS'
   | 'INFANTES_CONSULTADOS'
-  | 'INFANTE_REGISTRADO';
+  | 'INFANTE_REGISTRADO'
+  | 'TUTOR_REGISTRADO'
+  | 'TUTOR_VINCULADO'
+  | 'TUTORES_CONSULTADOS'
+  | 'TELEFONO_CONSULTADO';
 
 export interface AuditEntry {
   readonly userId: number | null;

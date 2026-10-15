@@ -19,6 +19,21 @@ export const guardianSchema = z.object({
   hasPhone: z.boolean(),
 });
 
+/** Tutor tal como se ve dentro de un infante: con su parentesco y permisos. */
+export const childGuardianSchema = guardianSchema.extend({
+  relationship: z.string(),
+  isPrimary: z.boolean(),
+  canPickUp: z.boolean(),
+  isEmergencyContact: z.boolean(),
+  validFrom: isoDateSchema,
+  validUntil: isoDateSchema.nullable(),
+});
+
+export const childGuardianListResponseSchema = z.object({ guardians: z.array(childGuardianSchema) });
+
+/** Respuesta de la consulta explícita (y auditada) del teléfono. */
+export const guardianPhoneResponseSchema = z.object({ phone: z.string().length(PHONE_DIGITS) });
+
 export const createGuardianRequestSchema = z.object({
   name: nameSchema,
   paternalSurname: nameSchema,
@@ -46,5 +61,8 @@ export const linkGuardianRequestSchema = z
   });
 
 export type Guardian = z.infer<typeof guardianSchema>;
+export type ChildGuardian = z.infer<typeof childGuardianSchema>;
+export type ChildGuardianListResponse = z.infer<typeof childGuardianListResponseSchema>;
+export type GuardianPhoneResponse = z.infer<typeof guardianPhoneResponseSchema>;
 export type CreateGuardianRequest = z.infer<typeof createGuardianRequestSchema>;
 export type LinkGuardianRequest = z.infer<typeof linkGuardianRequestSchema>;

@@ -35,7 +35,21 @@ export type { HealthResponse } from './common/health.js';
 export { positiveIdSchema, isoDateSchema } from './catalogs/common.js';
 export { childListResponseSchema, childSchema, createChildRequestSchema, enrollChildRequestSchema } from './catalogs/child.js';
 export type { Child, ChildListResponse, CreateChildRequest, EnrollChildRequest } from './catalogs/child.js';
-export { createGuardianRequestSchema, guardianSchema, linkGuardianRequestSchema } from './catalogs/guardian.js';
-export type { CreateGuardianRequest, Guardian, LinkGuardianRequest } from './catalogs/guardian.js';
+export {
+  childGuardianListResponseSchema,
+  childGuardianSchema,
+  createGuardianRequestSchema,
+  guardianPhoneResponseSchema,
+  guardianSchema,
+  linkGuardianRequestSchema,
+} from './catalogs/guardian.js';
+export type {
+  ChildGuardian,
+  ChildGuardianListResponse,
+  CreateGuardianRequest,
+  Guardian,
+  GuardianPhoneResponse,
+  LinkGuardianRequest,
+} from './catalogs/guardian.js';
 export { createRoomRequestSchema, roomListResponseSchema, roomSchema, shiftSchema } from './catalogs/room.js';
 export type { CreateRoomRequest, Room, RoomListResponse } from './catalogs/room.js';

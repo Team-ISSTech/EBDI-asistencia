@@ -44,3 +44,37 @@ export interface NewEnrollment {
   readonly schoolYearId: number;
   readonly startDate: string;
 }
+
+export interface NewGuardian {
+  readonly name: string;
+  readonly paternalSurname: string;
+  readonly maternalSurname: string | null;
+  readonly idType: string | null;
+  readonly idFolio: string | null;
+  /** Ya cifrado por el servicio. */
+  readonly phoneEncrypted: Buffer;
+  /** HMAC del teléfono, para buscar sin descifrar. */
+  readonly phoneHash: Buffer;
+  readonly email: string | null;
+}
+
+export interface GuardianRecord {
+  readonly id: number;
+  readonly name: string;
+  readonly paternalSurname: string;
+  readonly maternalSurname: string | null;
+  readonly hasPhone: boolean;
+}
+
+export interface NewChildGuardian {
+  readonly guardianId: number;
+  readonly relationship: string;
+  readonly isPrimary: boolean;
+  readonly canPickUp: boolean;
+  readonly isEmergencyContact: boolean;
+  readonly validFrom: string;
+  readonly validUntil: string | null;
+}
+
+/** Tutor visto desde un infante: datos del tutor más su vínculo. */
+export interface ChildGuardianRecord extends GuardianRecord, Omit<NewChildGuardian, 'guardianId'> {}

@@ -1,7 +1,17 @@
 import { ApiError } from '../../../common/errors/api-error';
 import type { TransactionHook } from '../../identity/repositories/repositories';
-import type { ChildRecord, NewChild, NewEnrollment, RoomRecord } from '../children.types';
+import type {
+  ChildGuardianRecord,
+  ChildRecord,
+  GuardianRecord,
+  NewChild,
+  NewChildGuardian,
+  NewEnrollment,
+  NewGuardian,
+  RoomRecord,
+} from '../children.types';
 import type { ChildrenRepository } from '../repositories/children.repository';
+import type { GuardiansRepository } from '../repositories/guardians.repository';
 
 export const room = (overrides: Partial<RoomRecord> = {}): RoomRecord => ({
   id: 1,
@@ -74,5 +84,65 @@ export class InMemoryChildren implements ChildrenRepository {
     this.enrollments.push(enrollment);
     await inSameTransaction?.({} as Parameters<TransactionHook<number>>[0], id);
     return id;
+  }
+}
+
+
+type StoredGuardian = GuardianRecord & { phoneEncrypted: Buffer | null; phoneHash: Buffer | null };
+
+export class InMemoryGuardians implements GuardiansRepository {
+  readonly rows = new Map<number, StoredGuardian>();
+  readonly links: { childId: number; link: NewChildGuardian }[] = [];
+  private nextId = 1;
+
+  constructor(private readonly children: InMemoryChildren) {}
+
+  async create(guardian: NewGuardian, _now: Date, inSameTransaction?: TransactionHook<number>): Promise<number> {
+    const id = this.nextId++;
+    this.rows.set(id, {
+      id,
+      name: guardian.name,
+      paternalSurname: guardian.paternalSurname,
+      maternalSurname: guardian.maternalSurname,
+      hasPhone: true,
+      phoneEncrypted: guardian.phoneEncrypted,
+      phoneHash: guardian.phoneHash,
+    });
+    await inSameTransaction?.({} as Parameters<TransactionHook<number>>[0], id);
+    return id;
+  }
+
+  findById(id: number): Promise<GuardianRecord | null> {
+    return Promise.resolve(this.rows.get(id) ?? null);
+  }
+
+  listForChild(childId: number): Promise<ChildGuardianRecord[]> {
+    return Promise.resolve(
+      this.links
+        .filter((entry) => entry.childId === childId)
+        .map(({ link }) => {
+          const guardian = this.rows.get(link.guardianId) as StoredGuardian;
+          const { phoneEncrypted: _phone, phoneHash: _hash, ...view } = guardian;
+          return { ...view, ...link };
+        }),
+    );
+  }
+
+  async link(childId: number, link: NewChildGuardian, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    if (this.links.some((entry) => entry.childId === childId && entry.link.guardianId === link.guardianId)) {
+      throw new ApiError('CONFLICTO', 'El tutor ya está vinculado a este infante.');
+    }
+    this.links.push({ childId, link });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
+  isLinkedInEstancia(guardianId: number, estanciaId: number): Promise<boolean> {
+    return Promise.resolve(
+      this.links.some((entry) => entry.link.guardianId === guardianId && this.children.children.get(entry.childId)?.estanciaId === estanciaId),
+    );
+  }
+
+  findPhoneEncrypted(guardianId: number): Promise<Buffer | null> {
+    return Promise.resolve(this.rows.get(guardianId)?.phoneEncrypted ?? null);
   }
 }
