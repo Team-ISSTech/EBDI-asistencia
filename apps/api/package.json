@@ -18,6 +18,7 @@
     "@sirai/config": "workspace:*",
     "@sirai/contracts": "workspace:*",
     "@sirai/db": "workspace:*",
+    "@sirai/domain": "workspace:*",
     "argon2": "0.45.1",
     "cookie-parser": "1.4.7",
     "dotenv": "17.3.1",

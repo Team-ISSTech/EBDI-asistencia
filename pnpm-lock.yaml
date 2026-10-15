@@ -38,6 +38,9 @@ importers:
       '@sirai/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@sirai/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       argon2:
         specifier: 0.45.1
         version: 0.45.1
@@ -257,6 +260,9 @@ importers:
       '@sirai/auth':
         specifier: workspace:*
         version: link:../auth
+      '@sirai/domain':
+        specifier: workspace:*
+        version: link:../domain
       zod:
         specifier: 4.6.5
         version: 4.6.5
