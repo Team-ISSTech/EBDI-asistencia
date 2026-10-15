@@ -80,7 +80,7 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
 
     const me = await request(app.getHttpServer()).get('/auth/me').set('Cookie', cookie);
     expect(me.status).toBe(200);
-    expect(me.body.permissions.sort()).toEqual(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR']);
+    expect(me.body.permissions.sort()).toEqual(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR', 'INFANTE_CONSULTAR']);
   });
 
   it('sin cookie responde 401 NO_AUTENTICADO', async () => {

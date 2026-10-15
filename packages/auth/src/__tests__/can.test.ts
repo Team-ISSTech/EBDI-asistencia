@@ -61,6 +61,7 @@ describe('permissionsFor', () => {
       [
         'ASISTENCIA_CONSULTAR',
         'ASISTENCIA_REGISTRAR',
+        'INFANTE_CONSULTAR',
         'SEGUIMIENTO_CONSULTAR',
         'SEGUIMIENTO_REGISTRAR',
         'NOTA_SENSIBLE_CONSULTAR',

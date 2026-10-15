@@ -9,9 +9,14 @@ import type { RoleCode } from './roles.js';
  * Derivada de la tabla de permisos del SRS (RF-06..RF-11). Los permisos de
  * Trabajo Social se reutilizan en Enfermería, Médico y Directora porque el SRS
  * los define como "igual que Trabajo Social, más…".
+ *
+ * Padrón de infantes: lo consulta todo el personal de estancia; solo la
+ * Directora lo administra y registra consentimientos. Los roles centrales no
+ * ven datos de infantes (RF-10, RF-18).
  */
 const SOCIAL_WORK_PERMISSIONS: readonly PermissionCode[] = [
   'ASISTENCIA_CONSULTAR',
+  'INFANTE_CONSULTAR',
   'SEGUIMIENTO_CONSULTAR',
   'SEGUIMIENTO_REGISTRAR',
   'NOTA_SENSIBLE_CONSULTAR',
@@ -20,6 +25,7 @@ const SOCIAL_WORK_PERMISSIONS: readonly PermissionCode[] = [
 const TEACHER_PERMISSIONS: readonly PermissionCode[] = [
   'ASISTENCIA_CONSULTAR',
   'ASISTENCIA_REGISTRAR',
+  'INFANTE_CONSULTAR',
 ];
 
 const unique = (codes: readonly PermissionCode[]): readonly PermissionCode[] => [
@@ -35,6 +41,8 @@ export const ROLE_PERMISSIONS: Readonly<Record<RoleCode, readonly PermissionCode
     ...TEACHER_PERMISSIONS,
     ...SOCIAL_WORK_PERMISSIONS,
     'JORNADA_CERRAR',
+    'INFANTE_ADMINISTRAR',
+    'CONSENTIMIENTO_REGISTRAR',
     'REPORTE_AGREGADO_CONSULTAR',
   ]),
   SUPERVISOR_CENTRAL: ['REPORTE_AGREGADO_CONSULTAR'],
