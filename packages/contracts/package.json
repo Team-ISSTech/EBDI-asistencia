@@ -14,7 +14,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "lint": "eslint src --max-warnings 0",
@@ -23,6 +25,7 @@
   },
   "dependencies": {
     "@sirai/auth": "workspace:*",
+    "@sirai/domain": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {
