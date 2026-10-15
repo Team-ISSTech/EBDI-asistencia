@@ -13,6 +13,24 @@ Monorepo con la aplicación web, la API y los paquetes compartidos. Hoy incluye 
 | Isabela Valls Chavez | A01173825 |
 | Fco Javier Becerra | A01027383 |
 
+## Planeación y seguimiento
+
+El trabajo se coordina en el [GitHub Project de SIRAI](https://github.com/orgs/Team-ISSTech/projects/1).
+El tablero contiene una issue por cada una de las 32 actividades del plan, con
+responsable principal, dependencias, área WBS, hito y criterio de terminación.
+
+La fuente base es **SIRAI Project Plan EN**. GitHub registra el avance y la
+evidencia de ejecución; no modifica por sí solo el alcance aprobado. Cualquier
+cambio de responsable, actividad, dependencia o criterio requiere aprobación
+del equipo antes de actualizar la issue correspondiente.
+
+Issues de resumen por responsable:
+
+- [SAV — Santiago Arista Viramontes](https://github.com/Team-ISSTech/EBDI-asistencia/issues/27)
+- [JCLG — Juan Carlos Luz Gallardo](https://github.com/Team-ISSTech/EBDI-asistencia/issues/28)
+- [IVC — Isabela Valls Chavez](https://github.com/Team-ISSTech/EBDI-asistencia/issues/29)
+- [FJB — Fco Javier Becerra](https://github.com/Team-ISSTech/EBDI-asistencia/issues/30)
+
 ## Stack acordado
 
 - Frontend: React, TypeScript y Vite.
