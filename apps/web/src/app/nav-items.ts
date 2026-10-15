@@ -11,7 +11,7 @@ export interface NavItem {
 /** Orden del menú = orden del día en una estancia: pase de lista primero. */
 export const NAV_ITEMS: readonly NavItem[] = [
   { path: '/app/pase-de-lista', label: 'Pase de lista', permission: 'ASISTENCIA_CONSULTAR', group: 'Operación' },
-  { path: '/app/infantes', label: 'Infantes', permission: 'ASISTENCIA_CONSULTAR', group: 'Operación' },
+  { path: '/app/infantes', label: 'Infantes', permission: 'INFANTE_CONSULTAR', group: 'Operación' },
   { path: '/app/seguimientos', label: 'Seguimientos', permission: 'SEGUIMIENTO_CONSULTAR', group: 'Seguimiento' },
   { path: '/app/reportes', label: 'Reportes', permission: 'REPORTE_AGREGADO_CONSULTAR', group: 'Dirección' },
   { path: '/app/administracion/usuarios', label: 'Usuarios', permission: 'USUARIO_ADMINISTRAR', group: 'Administración' },

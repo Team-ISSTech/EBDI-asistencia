@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'pase-de-lista', element: guarded('ASISTENCIA_CONSULTAR', <RollCallPage />) },
-      { path: 'infantes', element: guarded('ASISTENCIA_CONSULTAR', <ChildrenPage />) },
+      { path: 'infantes', element: guarded('INFANTE_CONSULTAR', <ChildrenPage />) },
       { path: 'seguimientos', element: guarded('SEGUIMIENTO_CONSULTAR', <FollowUpsPage />) },
       { path: 'reportes', element: guarded('REPORTE_AGREGADO_CONSULTAR', <ReportsPage />) },
       { path: 'administracion/usuarios', element: guarded('USUARIO_ADMINISTRAR', <UsersPage />) },

@@ -6,6 +6,7 @@ import { EmptyState } from '../components/empty-state';
 import { EstanciaStamp } from '../components/estancia-stamp';
 import { Field } from '../components/field';
 import { PageHeader } from '../components/page-header';
+import { Select } from '../components/select';
 import { Table, Td, Th } from '../components/table';
 
 describe('Button', () => {
@@ -80,5 +81,20 @@ describe('EstanciaStamp, Badge y Table', () => {
     );
     expect(screen.getByRole('columnheader', { name: 'Nombre' })).toBeInTheDocument();
     expect(screen.getByText('Activo')).toBeInTheDocument();
+  });
+});
+
+describe('Select', () => {
+  it('asocia etiqueta, opciones y error', () => {
+    render(
+      <Select label="Sala" error="Elige una sala">
+        <option value="">Selecciona</option>
+        <option value="1">Lactantes</option>
+      </Select>,
+    );
+    const select = screen.getByLabelText('Sala');
+    expect(select).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('alert')).toHaveTextContent('Elige una sala');
+    expect(screen.getByRole('option', { name: 'Lactantes' })).toBeInTheDocument();
   });
 });
