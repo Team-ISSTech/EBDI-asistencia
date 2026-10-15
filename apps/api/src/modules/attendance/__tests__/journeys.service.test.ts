@@ -77,4 +77,11 @@ describe('JourneysService', () => {
     await expect(service.close(auth, opened.id, request)).resolves.toMatchObject({ status: 'CERRADA' });
     await expect(service.close(auth, opened.id, request)).rejects.toMatchObject({ code: 'CONFLICTO' });
   });
+
+  it('consulta la jornada únicamente en la estancia activa', async () => {
+    const { service } = setup();
+    await service.open(auth, { date: '2026-10-15', shift: 'MATUTINO' }, request);
+    await expect(service.find(auth, { date: '2026-10-15', shift: 'MATUTINO' })).resolves.toMatchObject({ estanciaId: 7 });
+    await expect(service.find({ ...auth, activeEstanciaId: 8 }, { date: '2026-10-15', shift: 'MATUTINO' })).rejects.toMatchObject({ code: 'NO_ENCONTRADO' });
+  });
 });

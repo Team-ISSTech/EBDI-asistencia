@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { attendanceJourneySchema, openAttendanceJourneyRequestSchema } from '../attendance/journey.js';
+import { attendanceJourneyQuerySchema, attendanceJourneySchema, openAttendanceJourneyRequestSchema } from '../attendance/journey.js';
 
 describe('contratos de jornadas de asistencia', () => {
   it('acepta fecha y turno válidos', () => {
@@ -9,6 +9,10 @@ describe('contratos de jornadas de asistencia', () => {
   it('rechaza fechas y turnos fuera del dominio', () => {
     expect(openAttendanceJourneyRequestSchema.safeParse({ date: '15/10/2026', shift: 'MATUTINO' }).success).toBe(false);
     expect(openAttendanceJourneyRequestSchema.safeParse({ date: '2026-10-15', shift: 'NOCTURNO' }).success).toBe(false);
+  });
+
+  it('valida la consulta de jornada con el mismo dominio', () => {
+    expect(attendanceJourneyQuerySchema.parse({ date: '2026-10-15', shift: 'VESPERTINO' })).toEqual({ date: '2026-10-15', shift: 'VESPERTINO' });
   });
 
   it('exige fecha de cierre en jornadas cerradas', () => {

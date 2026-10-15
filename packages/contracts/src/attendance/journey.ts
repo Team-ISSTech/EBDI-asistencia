@@ -12,6 +12,7 @@ const journeyBaseSchema = z.object({
 });
 
 export const openAttendanceJourneyRequestSchema = z.object({ date: z.iso.date(), shift: shiftSchema });
+export const attendanceJourneyQuerySchema = openAttendanceJourneyRequestSchema;
 
 export const attendanceJourneySchema = z.discriminatedUnion('status', [
   journeyBaseSchema.extend({ status: z.literal(JOURNEY_STATUSES[0]), closedAt: z.null() }),
@@ -19,4 +20,5 @@ export const attendanceJourneySchema = z.discriminatedUnion('status', [
 ]);
 
 export type OpenAttendanceJourneyRequest = z.infer<typeof openAttendanceJourneyRequestSchema>;
+export type AttendanceJourneyQuery = z.infer<typeof attendanceJourneyQuerySchema>;
 export type AttendanceJourney = z.infer<typeof attendanceJourneySchema>;

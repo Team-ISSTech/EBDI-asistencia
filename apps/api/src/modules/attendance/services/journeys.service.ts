@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { AttendanceJourney, OpenAttendanceJourneyRequest } from '@sirai/contracts';
+import type { AttendanceJourney, AttendanceJourneyQuery, OpenAttendanceJourneyRequest } from '@sirai/contracts';
 import { AuditService } from '../../../common/audit/audit.service.js';
 import type { AuthContext } from '../../../common/auth/auth-context.js';
 import { ApiError } from '../../../common/errors/api-error.js';
@@ -48,6 +48,13 @@ export class JourneysService {
       this.audit.record({ ...this.actor(auth), action: 'JORNADA_CERRADA', tableName: JOURNEYS_TABLE, recordId: String(id), before: { status: current.status }, after: { status: 'CERRADA' }, request }, tx),
     );
     if (!record) throw new ApiError('CONFLICTO', 'La jornada cambió de estado; actualiza la pantalla e intenta de nuevo.');
+    return toView(record);
+  }
+
+  async find(auth: AuthContext, query: AttendanceJourneyQuery): Promise<AttendanceJourney> {
+    const estanciaId = this.requireActiveEstancia(auth);
+    const record = await this.journeys.findByKey(estanciaId, query.date, query.shift);
+    if (!record) throw new ApiError('NO_ENCONTRADO', 'Jornada no encontrada.');
     return toView(record);
   }
 
