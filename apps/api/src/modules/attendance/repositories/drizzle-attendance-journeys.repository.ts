@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { JOURNEY_STATUSES, type JourneyStatus, type Shift } from '@sirai/domain';
+import { isJourneyStatus, isShift, type JourneyStatus, type Shift } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
 import { and, eq } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module.js';
@@ -10,8 +10,15 @@ import type { AttendanceJourneysRepository, JourneyTransactionHook } from './rep
 const { jornadasAsistencia } = schema;
 type Row = typeof jornadasAsistencia.$inferSelect;
 
-const toStatus = (status: string): JourneyStatus => status === JOURNEY_STATUSES[1] ? JOURNEY_STATUSES[1] : JOURNEY_STATUSES[0];
-const toRecord = (row: Row): AttendanceJourneyRecord => ({ ...row, shift: row.shift as Shift, status: toStatus(row.status) });
+const requireStatus = (status: string): JourneyStatus => {
+  if (!isJourneyStatus(status)) throw new Error(`Estado de jornada no reconocido: ${status}`);
+  return status;
+};
+const requireShift = (shift: string): Shift => {
+  if (!isShift(shift)) throw new Error(`Turno de jornada no reconocido: ${shift}`);
+  return shift;
+};
+const toRecord = (row: Row): AttendanceJourneyRecord => ({ ...row, shift: requireShift(row.shift), status: requireStatus(row.status) });
 const driverCode = (error: unknown): string | null => {
   if (typeof error !== 'object' || error === null) return null;
   const { code, cause } = error as { code?: unknown; cause?: unknown };

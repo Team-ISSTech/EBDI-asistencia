@@ -155,8 +155,13 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
   });
 
   it('abre consulta y cierra una jornada dentro de la estancia activa', async () => {
+    const docente = cookieOf(await login('docente@sirai.test'));
     const directora = cookieOf(await login('directora@sirai.test'));
     const input = { date: '2026-10-15', shift: 'MATUTINO' };
+
+    const forbidden = await request(app.getHttpServer()).post('/asistencia/jornadas').set('Cookie', docente).send(input);
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.body.error.code).toBe('SIN_PERMISO');
 
     const opened = await request(app.getHttpServer()).post('/asistencia/jornadas').set('Cookie', directora).send(input);
     expect(opened.status).toBe(201);
@@ -173,6 +178,9 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
     const closed = await request(app.getHttpServer()).post(`/asistencia/jornadas/${opened.body.id}/cierre`).set('Cookie', directora);
     expect(closed.status).toBe(201);
     expect(closed.body).toMatchObject({ id: opened.body.id, status: 'CERRADA' });
+
+    const noLongerActive = await request(app.getHttpServer()).get('/asistencia/jornadas/activa').query(input).set('Cookie', directora);
+    expect(noLongerActive.status).toBe(404);
 
     const connection = connect(TEST_DATABASE_URL!);
     const actions = await connection.db.select({ action: schema.auditoria.action }).from(schema.auditoria);

@@ -4,6 +4,8 @@ import {
   JOURNEY_STATUSES,
   SHIFTS,
   closeJourney,
+  isJourneyStatus,
+  isShift,
   type AttendanceJourney,
 } from '../attendance.js';
 
@@ -21,6 +23,13 @@ describe('reglas de asistencia', () => {
   it('fija los turnos y estados de jornada fuera de MySQL', () => {
     expect(SHIFTS).toEqual(['MATUTINO', 'VESPERTINO']);
     expect(JOURNEY_STATUSES).toEqual(['ABIERTA', 'CERRADA']);
+  });
+
+  it('rechaza valores de persistencia fuera del dominio', () => {
+    expect(isShift('MATUTINO')).toBe(true);
+    expect(isShift('NOCTURNO')).toBe(false);
+    expect(isJourneyStatus('ABIERTA')).toBe(true);
+    expect(isJourneyStatus('DESCONOCIDA')).toBe(false);
   });
 
   it('cierra una jornada abierta conservando su identidad', () => {

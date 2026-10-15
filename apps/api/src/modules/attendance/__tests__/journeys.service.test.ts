@@ -83,5 +83,7 @@ describe('JourneysService', () => {
     await service.open(auth, { date: '2026-10-15', shift: 'MATUTINO' }, request);
     await expect(service.find(auth, { date: '2026-10-15', shift: 'MATUTINO' })).resolves.toMatchObject({ estanciaId: 7 });
     await expect(service.find({ ...auth, activeEstanciaId: 8 }, { date: '2026-10-15', shift: 'MATUTINO' })).rejects.toMatchObject({ code: 'NO_ENCONTRADO' });
+    await service.close(auth, 1, request);
+    await expect(service.find(auth, { date: '2026-10-15', shift: 'MATUTINO' })).rejects.toMatchObject({ code: 'NO_ENCONTRADO' });
   });
 });
