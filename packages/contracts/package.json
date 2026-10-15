@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@sirai/auth": "workspace:*",
+    "@sirai/domain": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {

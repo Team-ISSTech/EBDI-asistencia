@@ -3,3 +3,4 @@ export { usuarios } from './usuarios.js';
 export { permisos, rolPermiso, roles, usuarioRol } from './roles.js';
 export { sesiones } from './sesiones.js';
 export { auditoria } from './auditoria.js';
+export { jornadasAsistencia } from './asistencia.js';

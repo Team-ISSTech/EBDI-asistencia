@@ -32,3 +32,5 @@ export { apiErrorSchema } from './common/error.js';
 export type { ApiError } from './common/error.js';
 export { healthResponseSchema } from './common/health.js';
 export type { HealthResponse } from './common/health.js';
+export { attendanceJourneySchema, openAttendanceJourneyRequestSchema } from './attendance/journey.js';
+export type { AttendanceJourney, OpenAttendanceJourneyRequest } from './attendance/journey.js';
