@@ -3,6 +3,7 @@ export {
   ENROLLMENT_MOVEMENTS,
   ENROLLMENT_STATUSES,
   ESTANCIA_STATUSES,
+  GUARDIAN_STATUSES,
   ROOM_STATUSES,
   SHIFTS,
   isShift,
@@ -12,6 +13,7 @@ export type {
   EnrollmentMovement,
   EnrollmentStatus,
   EstanciaStatus,
+  GuardianStatus,
   RoomStatus,
   Shift,
 } from './catalogs.js';

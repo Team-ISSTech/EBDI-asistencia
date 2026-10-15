@@ -12,6 +12,9 @@ export type EstanciaStatus = (typeof ESTANCIA_STATUSES)[number];
 export const ROOM_STATUSES = ['ACTIVO', 'INACTIVO'] as const;
 export type RoomStatus = (typeof ROOM_STATUSES)[number];
 
+export const GUARDIAN_STATUSES = ['ACTIVO', 'INACTIVO'] as const;
+export type GuardianStatus = (typeof GUARDIAN_STATUSES)[number];
+
 export const CHILD_STATUSES = ['ACTIVO', 'BAJA'] as const;
 export type ChildStatus = (typeof CHILD_STATUSES)[number];
 

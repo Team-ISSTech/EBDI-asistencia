@@ -30,10 +30,10 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(4);
+    expect(second.skipped).toHaveLength(5);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
@@ -95,6 +95,17 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     await expect(insert('2026-2027', '2026-08-24', '2027-07-16', 'ABIERTO')).rejects.toThrow();
     await expect(insert('2026-2027', '2027-07-16', '2026-08-24', 'ACTIVO')).rejects.toThrow();
     await expect(insert('2026-2027', '2026-08-24', '2027-07-16', 'ACTIVO')).resolves.toBeDefined();
+  });
+
+  it('rechaza en el motor turnos y estatus fuera del catálogo', async () => {
+    await connection.db.execute(sql`INSERT INTO estancias (clave_ebdi, nombre) VALUES ('CHK-01', 'Estancia CHECK')`);
+    const [estancia] = (await connection.db.execute(sql`SELECT id FROM estancias WHERE clave_ebdi = 'CHK-01'`)) as unknown as [{ id: number }[]];
+    const estanciaId = estancia[0]?.id;
+    const room = (shift: string, status: string) =>
+      connection.db.execute(sql`INSERT INTO salas_grupos (estancia_id, nombre, turno, estatus) VALUES (${estanciaId}, ${`S-${shift}-${status}`}, ${shift}, ${status})`);
+    await expect(room('NOCTURNO', 'ACTIVO')).rejects.toThrow();
+    await expect(room('MATUTINO', 'CERRADO')).rejects.toThrow();
+    await expect(room('MATUTINO', 'ACTIVO')).resolves.toBeDefined();
   });
 
   it('siembra estancias y un usuario por rol, de forma repetible', async () => {
