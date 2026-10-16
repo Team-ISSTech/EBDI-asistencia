@@ -30,10 +30,10 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(11);
+    expect(second.skipped).toHaveLength(12);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
@@ -175,5 +175,21 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     await connection.db.execute(sql`UPDATE expedientes_emitidos SET sello = UNHEX(SHA2('sello', 256)) WHERE sello IS NULL`);
     await expect(connection.db.execute(sql`UPDATE expedientes_emitidos SET sello = UNHEX(SHA2('otro', 256))`).catch((e: unknown) => Promise.reject(rootMessage(e)))).rejects.toMatch(/inmutable/);
     await expect(connection.db.execute(sql`DELETE FROM expedientes_emitidos`).catch((e: unknown) => Promise.reject(rootMessage(e)))).rejects.toMatch(/inmutable/);
+  });
+
+  it('la sincronización guarda el acuse de cada operación una sola vez y rechaza valores fuera del catálogo', async () => {
+    await connection.db.execute(sql`INSERT INTO estancias (clave_ebdi, nombre) VALUES ('SYN-01', 'Estancia de sincronización')`);
+    await connection.db.execute(sql`INSERT INTO usuarios (nombre, correo, password_hash) VALUES ('Sync', 'sync@sirai.test', 'x')`);
+    const insert = (uuid: string, entity: string, state: string) =>
+      connection.db.execute(
+        sql`INSERT INTO sincronizaciones (usuario_id, estancia_id, uuid_operacion, entidad, operacion, fecha_captura_local, estado, respuesta_json)
+            SELECT u.id, e.id, ${uuid}, ${entity}, 'REGISTRAR', NOW(6), ${state}, JSON_OBJECT('saved', 1)
+            FROM usuarios u, estancias e WHERE u.correo = 'sync@sirai.test' AND e.clave_ebdi = 'SYN-01'`,
+      );
+    const op = '11111111-1111-4111-8111-111111111111';
+    await expect(insert(op, 'ASISTENCIA', 'APLICADA')).resolves.toBeDefined();
+    await expect(insert(op, 'ASISTENCIA', 'APLICADA')).rejects.toThrow();
+    await expect(insert('22222222-2222-4222-8222-222222222222', 'ASISTENCIA', 'QUIZA')).rejects.toThrow();
+    await expect(insert('33333333-3333-4333-8333-333333333333', 'OTRA', 'APLICADA')).rejects.toThrow();
   });
 });

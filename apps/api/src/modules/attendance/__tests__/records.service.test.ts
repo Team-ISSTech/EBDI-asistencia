@@ -43,6 +43,7 @@ class FakeRecords implements AttendanceRecordsRepository {
   marks = new Map<number, { id: number; status: ExistingMark['status']; clientId: string }>();
   locked = new Set<number>();
   appliedBatches: MarkChange[][] = [];
+  appliedAt: Date[] = [];
   private nextId = 1;
 
   listRoster(estanciaId: number, _journeyId: number, shift: 'MATUTINO' | 'VESPERTINO'): Promise<RosterRow[]> {
@@ -70,8 +71,9 @@ class FakeRecords implements AttendanceRecordsRepository {
     return Promise.resolve(new Set(clientIds.filter((id) => applied.has(id))));
   }
 
-  async applyChanges(_journeyId: number, _userId: number, _now: Date, changes: readonly MarkChange[], hook: MarkChangeHook): Promise<void> {
+  async applyChanges(_journeyId: number, _userId: number, now: Date, changes: readonly MarkChange[], hook: MarkChangeHook): Promise<void> {
     this.appliedBatches.push([...changes]);
+    this.appliedAt.push(now);
     for (const change of changes) {
       const current = this.marks.get(change.enrollmentId);
       const id = current?.id ?? this.nextId++;
@@ -202,5 +204,65 @@ describe('AttendanceRecordsService', () => {
     records.locked.add(3);
     const entries = await service.roster(auth, 1, request);
     expect(entries.map((e) => [e.enrollmentId, e.medicalLock])).toEqual([[1, false], [2, false], [3, true]]);
+  });
+
+  describe('markPartial (captura sin conexión)', () => {
+    const CAPTURED = new Date('2026-10-15T13:30:00Z');
+    const partial = (input: ReturnType<typeof batch>, capturedAt = CAPTURED) => service.markPartial(auth, 1, input, capturedAt, request);
+
+    it('aplica lo válido y reporta cada rechazo con su infante y su motivo, sin tumbar el resto', async () => {
+      records.enrollments.set(4, { enrollmentId: 4, roomShift: 'VESPERTINO', estanciaId: 7, childName: 'Tarde' });
+      records.enrollments.set(9, { enrollmentId: 9, roomShift: 'MATUTINO', estanciaId: 99, childName: 'Ajeno' });
+      records.locked.add(3);
+      const result = await partial(batch([1, 'PRESENTE'], [2, 'FALTA_INJUSTIFICADA'], [3, 'PRESENTE'], [4, 'PRESENTE'], [9, 'PRESENTE'], [88, 'PRESENTE']));
+      expect(result.saved).toBe(2);
+      expect([...result.rejections].sort((a, b) => (a.ref ?? 0) - (b.ref ?? 0)).map((r) => [r.ref, r.code])).toEqual([[3, 'CANDADO_MEDICO'], [4, 'TURNO_DISTINTO'], [9, 'INSCRIPCION_INVALIDA'], [88, 'INSCRIPCION_INVALIDA']]);
+      expect(records.marks.has(1)).toBe(true);
+      expect(records.marks.has(3)).toBe(false);
+      expect(audit.entries.filter((e) => e.action === 'ASISTENCIA_REGISTRADA')).toHaveLength(2);
+    });
+
+    it('si todo se rechaza no escribe ni audita nada', async () => {
+      records.locked.add(1);
+      const result = await partial(batch([1, 'PRESENTE']));
+      expect(result).toMatchObject({ saved: 0, unchanged: 0, rejections: [{ ref: 1, code: 'CANDADO_MEDICO' }] });
+      expect(records.appliedBatches).toHaveLength(0);
+      expect(audit.entries).toHaveLength(0);
+    });
+
+    it('registra con la hora en que se capturó, no con la de la sincronización', async () => {
+      await partial(batch([1, 'PRESENTE']));
+      expect(records.appliedAt).toEqual([CAPTURED]);
+      expect(audit.entries[0]?.after).toMatchObject({ capturedAt: CAPTURED.toISOString() });
+    });
+
+    it('una hora de captura en el futuro se ajusta a la hora del servidor', async () => {
+      await partial(batch([1, 'PRESENTE']), new Date('2026-10-15T23:00:00Z'));
+      expect(records.appliedAt).toEqual([new Date('2026-10-15T14:00:00Z')]);
+    });
+
+    it('un reintento con las mismas operaciones no duplica ni audita', async () => {
+      await partial(batch([1, 'PRESENTE']));
+      audit.entries.length = 0;
+      expect(await partial(batch([1, 'PRESENTE']))).toMatchObject({ saved: 0, unchanged: 1, rejections: [] });
+      expect(audit.entries).toHaveLength(0);
+    });
+
+    it('acepta captura tardía en una jornada que se cerró después de capturar (sin pérdida de datos)', async () => {
+      journeys.rows.set(1, journey({ status: 'CERRADA', closedAt: new Date('2026-10-15T13:45:00Z'), closedBy: 5 }));
+      await expect(partial(batch([1, 'PRESENTE']), CAPTURED)).resolves.toMatchObject({ saved: 1 });
+    });
+
+    it('rechaza toda la captura si se hizo después de que la jornada se cerró', async () => {
+      journeys.rows.set(1, journey({ status: 'CERRADA', closedAt: new Date('2026-10-15T13:00:00Z'), closedBy: 5 }));
+      await expect(partial(batch([1, 'PRESENTE']), CAPTURED)).rejects.toMatchObject({ code: 'CONFLICTO' });
+      expect(records.appliedBatches).toHaveLength(0);
+    });
+
+    it('una jornada de otra estancia no existe y se exige estancia activa', async () => {
+      journeys.rows.set(1, journey({ estanciaId: 99 }));
+      await expect(partial(batch([1, 'PRESENTE']))).rejects.toMatchObject({ code: 'NO_ENCONTRADO' });
+      await expect(service.markPartial({ ...auth, activeEstanciaId: null }, 1, batch([1, 'PRESENTE']), CAPTURED, request)).rejects.toMatchObject({ code: 'FUERA_DE_ALCANCE' });
+    });
   });
 });

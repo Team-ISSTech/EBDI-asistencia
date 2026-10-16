@@ -11,6 +11,7 @@ import { ApiExceptionFilter } from './common/errors/api-exception.filter';
 import { ChildrenModule } from './modules/children/children.module';
 import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
 import { DossiersModule } from './modules/dossiers/dossiers.module';
+import { SyncModule } from './modules/sync/sync.module';
 import { HealthModule } from './modules/health/health.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IdentityModule } from './modules/identity/identity.module';
@@ -38,6 +39,7 @@ const THROTTLE_WINDOW_MS = 60_000;
     FollowUpsModule,
     ReportsModule,
     DossiersModule,
+    SyncModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ApiExceptionFilter },

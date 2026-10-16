@@ -17,5 +17,6 @@ import { ATTENDANCE_CLOCK, AttendanceRecordsService } from './services/records.s
     JourneysService,
     AttendanceRecordsService,
   ],
+  exports: [AttendanceRecordsService],
 })
 export class AttendanceModule {}

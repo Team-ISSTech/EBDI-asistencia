@@ -9,7 +9,10 @@ import { ApiError } from '../../../common/errors/api-error.js';
 import type { RequestContext } from '../../../common/http/request-context.js';
 import type { DossierDocument, DossierRaw } from '../dossiers.types.js';
 import { DOSSIERS_REPOSITORY, type DossiersRepository } from '../repositories/dossiers.repository.js';
+import { canonicalJson } from '../../../common/util/canonical-json.js';
 import { buildDossierPdf, type DossierPdfOptions } from './dossier-pdf.js';
+
+export { canonicalJson };
 
 export const DOSSIERS_CLOCK = Symbol('DOSSIERS_CLOCK');
 export const DOSSIER_PDF_OPTIONS = Symbol('DOSSIER_PDF_OPTIONS');
@@ -19,16 +22,6 @@ const DOSSIERS_TABLE = 'expedientes_emitidos';
 export interface DossierFile {
   readonly filename: string;
   readonly buffer: Buffer;
-}
-
-/** JSON con llaves ordenadas: la misma información da siempre el mismo texto (y la misma huella). */
-export function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value !== null && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
 }
 
 /** Lo que firma el sello: folio, infante, instante de emisión y huella del contenido. */
