@@ -60,3 +60,12 @@ describe('esquema Drizzle de los registros de asistencia', () => {
     );
   });
 });
+
+describe('esquema Drizzle de los seguimientos', () => {
+  it('mapea followUps a la tabla seguimientos con su borrado lógico atribuible', () => {
+    expect(getTableName(schema.followUps)).toBe('seguimientos');
+    expect(Object.keys(getTableColumns(schema.followUps))).toEqual(
+      expect.arrayContaining(['attendanceRecordId', 'cause', 'status', 'expectedReturnDate', 'requiresMedicalRelease', 'assigneeId', 'openedAt', 'deletedAt', 'deletedBy']),
+    );
+  });
+});

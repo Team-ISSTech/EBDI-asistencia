@@ -8,6 +8,7 @@ const DEFAULT_LOGIN_LOCK_MINUTES = 15;
 const DEFAULT_WEB_ORIGIN = 'http://localhost:5173';
 const DEFAULT_LOGIN_RATE_LIMIT_PER_MINUTE = 10;
 const MAX_NOTICE_VERSION_LENGTH = 30;
+const DEFAULT_FOLLOW_UP_JOB_SECONDS = 60;
 /** Llave pública de .env.example y CI; válida solo fuera de producción. */
 export const EXAMPLE_DATA_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
@@ -41,6 +42,8 @@ export const apiEnvSchema = z.object({
   DATA_ENCRYPTION_KEY: z
     .string()
     .regex(/^[0-9a-f]{64}$/i, { message: 'Debe ser 32 bytes en hexadecimal (64 caracteres)' }),
+  /** Cada cuántos segundos la API genera los tickets de ausencia vencidos; 0 apaga el proceso. */
+  FOLLOW_UP_JOB_SECONDS: z.coerce.number().int().nonnegative().default(DEFAULT_FOLLOW_UP_JOB_SECONDS),
   /**
    * Versión del aviso de privacidad vigente. El servidor la guarda como
    * evidencia en cada consentimiento; el cliente nunca la elige. La confirma

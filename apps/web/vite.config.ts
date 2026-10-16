@@ -20,7 +20,7 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/app/router.tsx',
         'src/app/providers.tsx',
-        'src/features/{follow-ups,reports,audit}/pages/**',
+        'src/features/{reports,audit}/pages/**',
       ],
       thresholds: { lines: 80, functions: 80, branches: 70, statements: 80 },
     },

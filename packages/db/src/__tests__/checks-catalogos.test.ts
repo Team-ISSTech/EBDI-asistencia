@@ -5,6 +5,8 @@ import {
   ATTENDANCE_STATUSES,
   CHILD_STATUSES,
   CONSENT_TYPES,
+  FOLLOW_UP_CAUSES,
+  FOLLOW_UP_STATUSES,
   ENROLLMENT_MOVEMENTS,
   ENROLLMENT_STATUSES,
   ESTANCIA_STATUSES,
@@ -17,6 +19,7 @@ import { describe, expect, it } from 'vitest';
 
 const MIGRATION = resolve(import.meta.dirname, '../../sql/0004_checks_catalogos.sql');
 const ATTENDANCE_MIGRATION = resolve(import.meta.dirname, '../../sql/0007_checks_asistencia.sql');
+const FOLLOW_UP_MIGRATION = resolve(import.meta.dirname, '../../sql/0008_checks_seguimientos.sql');
 const CONSENT_MIGRATION = resolve(import.meta.dirname, '../../sql/0006_checks_consentimientos.sql');
 
 /** Lista `IN (...)` del CHECK con el nombre dado. */
@@ -64,5 +67,20 @@ describe('CHECK de asistencia (migración 0007)', () => {
     ['ck_asistencias_metodo', ATTENDANCE_METHODS],
   ])('%s replica exactamente los valores de packages/domain', (constraint, values) => {
     expect(checkValues(sqlText, constraint)).toEqual([...values]);
+  });
+});
+
+describe('CHECK de seguimientos (migración 0008)', () => {
+  const sqlText = readFileSync(FOLLOW_UP_MIGRATION, 'utf8');
+
+  it.each([
+    ['ck_seguimientos_estado', FOLLOW_UP_STATUSES],
+    ['ck_seguimientos_clasificacion', FOLLOW_UP_CAUSES],
+  ])('%s replica exactamente los valores de packages/domain', (constraint, values) => {
+    expect(checkValues(sqlText, constraint)).toEqual([...values]);
+  });
+
+  it('solo un ticket cerrado tiene fecha de cierre', () => {
+    expect(sqlText).toMatch(/ck_seguimientos_cierre CHECK \(\(estado = 'CERRADO'\) = \(cerrado_at IS NOT NULL\)\)/);
   });
 });

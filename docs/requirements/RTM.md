@@ -38,7 +38,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-21 | Sincronización automática al reconectar | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
 | RF-22 | Eventos idempotentes | endpoint de sync en `apps/api`, `packages/db` (`uuid_cliente`, `uuid_operacion`) | integración Vitest + MySQL | pendiente |
 | RF-23 | Sin pérdida de datos offline | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
-| RF-24 | Ticket automático por ausencia al cierre 09:00 | `apps/api/src/modules/follow-ups`, `packages/domain` | unitaria Vitest, integración Vitest + MySQL | pendiente |
+| RF-24 | Ticket automático por ausencia al cierre 09:00 | `apps/api/src/modules/follow-ups`, `packages/domain` | unitaria Vitest, integración Vitest + MySQL | en curso (rama feat/follow-ups: ticket automático a las 09:00 de cada estancia y bandeja) |
 | RF-25 | Contacto telefónico obligatorio | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | pendiente |
 | RF-26 | Clasificación de causa | `packages/domain`, `apps/api/src/modules/follow-ups` | unitaria Vitest | pendiente |
 | RF-27 | NO_LOC: segundo intento y alerta | `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | pendiente |
@@ -84,5 +84,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Mapeados a paquete o módulo | 53 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
-| En curso | 14 (RF-12, RF-14, RF-15, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
-| Pendientes | 24 |
+| En curso | 15 (RF-12, RF-14, RF-15, RF-24, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
+| Pendientes | 23 |

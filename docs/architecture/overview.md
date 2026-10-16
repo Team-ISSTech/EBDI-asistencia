@@ -108,6 +108,8 @@ Flujo en la API:
 | `POST /consentimientos/:id/revocar` | CONSENTIMIENTO_REGISTRAR | marca `revocado_at`; nunca borra la evidencia |
 | `GET /asistencia/jornadas/:id/lista` | ASISTENCIA_CONSULTAR | infantes con inscripción activa en salas del turno de la jornada y su estado; sin datos de salud ni contacto; se audita |
 | `POST /asistencia/jornadas/:id/registros` | ASISTENCIA_REGISTRAR | marca asistencia por lote, todo o nada y solo en jornada abierta; cada marca lleva un `clientId` (UUID) y un reintento no duplica ni audita; un cambio de estado se audita con el antes y el después |
+| `GET /seguimientos` | SEGUIMIENTO_CONSULTAR | bandeja de tickets abiertos de la estancia, sin teléfonos ni notas; se audita |
+| proceso `FOLLOW_UP_JOB_SECONDS` | interno | cada minuto abre un ticket por cada ausencia (ausente justificado o falta injustificada) de jornadas matutinas cuyo cierre de las 09:00 ya pasó en la zona horaria de la estancia; es repetible y se audita como `SISTEMA` |
 | `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
 
 Todo el padrón se acota a la estancia activa de la sesión: una sala, infante,

@@ -21,3 +21,15 @@ export type { ConsentFact, ConsentStatus, ConsentType } from './consent.js';
 export * from './attendance.js';
 export { ATTENDANCE_METHODS, planMark } from './marking.js';
 export type { AttendanceMethod, MarkPlan } from './marking.js';
+export {
+  ABSENCE_CUTOFF_HOUR,
+  ABSENCE_STATUSES,
+  FOLLOW_UP_CAUSES,
+  FOLLOW_UP_STATUSES,
+  SECOND_ATTEMPT_DELAY_HOURS,
+  cutoffReached,
+  generatesFollowUp,
+  requiresMedicalRelease,
+  secondAttemptDueAt,
+} from './follow-up.js';
+export type { FollowUpCause, FollowUpStatus } from './follow-up.js';

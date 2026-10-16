@@ -27,7 +27,9 @@ export type AuditAction =
   | 'JORNADA_CERRADA'
   | 'ASISTENCIA_REGISTRADA'
   | 'ASISTENCIA_MODIFICADA'
-  | 'LISTA_ASISTENCIA_CONSULTADA';
+  | 'LISTA_ASISTENCIA_CONSULTADA'
+  | 'SEGUIMIENTO_ABIERTO'
+  | 'SEGUIMIENTOS_CONSULTADOS';
 
 export interface AuditEntry {
   readonly userId: number | null;
