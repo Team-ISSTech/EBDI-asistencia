@@ -39,11 +39,11 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-22 | Eventos idempotentes | endpoint de sync en `apps/api`, `packages/db` (`uuid_cliente`, `uuid_operacion`) | integración Vitest + MySQL | pendiente |
 | RF-23 | Sin pérdida de datos offline | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
 | RF-24 | Ticket automático por ausencia al cierre 09:00 | `apps/api/src/modules/follow-ups`, `packages/domain` | unitaria Vitest, integración Vitest + MySQL | en curso (rama feat/follow-ups: ticket automático a las 09:00 de cada estancia y bandeja) |
-| RF-25 | Contacto telefónico obligatorio | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | pendiente |
-| RF-26 | Clasificación de causa | `packages/domain`, `apps/api/src/modules/follow-ups` | unitaria Vitest | pendiente |
-| RF-27 | NO_LOC: segundo intento y alerta | `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | pendiente |
-| RF-28 | Fecha estimada de retorno | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | pendiente |
-| RF-29 | Candado médico | `packages/domain`, `apps/api/src/modules/follow-ups`, `apps/api/src/modules/attendance` | unitaria Vitest, integración Vitest + MySQL | pendiente |
+| RF-25 | Contacto telefónico obligatorio | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | en curso (rama feat/follow-up-contacts: llamada registrada con notas cifradas; falta exigirla para cerrar el ticket) |
+| RF-26 | Clasificación de causa | `packages/domain`, `apps/api/src/modules/follow-ups` | unitaria Vitest | en curso (rama feat/follow-up-contacts: causa asignada al hablar con el tutor) |
+| RF-27 | NO_LOC: segundo intento y alerta | `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | en curso (rama feat/follow-up-contacts: segundo intento a las 4 h y alerta a contactos de emergencia; falta el aviso saliente) |
+| RF-28 | Fecha estimada de retorno | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | en curso (rama feat/follow-up-contacts: fecha estimada de retorno al contactar al tutor) |
+| RF-29 | Candado médico | `packages/domain`, `apps/api/src/modules/follow-ups`, `apps/api/src/modules/attendance` | unitaria Vitest, integración Vitest + MySQL | en curso (rama feat/follow-up-contacts: el ticket marca "requiere alta"; falta que impida marcar Presente) |
 | RF-30 | Alta médica por Médico | `apps/api/src/modules/follow-ups`, `packages/auth` | integración Vitest + MySQL | pendiente |
 | RF-31 | Catálogo de estancias | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | pendiente |
 | RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: solo listado de salas; falta el CRUD) |
@@ -84,5 +84,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Mapeados a paquete o módulo | 53 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
-| En curso | 15 (RF-12, RF-14, RF-15, RF-24, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
-| Pendientes | 23 |
+| En curso | 20 (RF-12, RF-14, RF-15, RF-24 a RF-29, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
+| Pendientes | 18 |

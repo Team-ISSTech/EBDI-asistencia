@@ -24,12 +24,25 @@ export type { AttendanceMethod, MarkPlan } from './marking.js';
 export {
   ABSENCE_CUTOFF_HOUR,
   ABSENCE_STATUSES,
+  CONTACT_CAUSES,
+  CONTACT_RESULTS,
+  EMERGENCY_ALERT_AFTER_ATTEMPTS,
   FOLLOW_UP_CAUSES,
   FOLLOW_UP_STATUSES,
   SECOND_ATTEMPT_DELAY_HOURS,
+  applyContact,
   cutoffReached,
   generatesFollowUp,
+  isEmergencyAlert,
   requiresMedicalRelease,
   secondAttemptDueAt,
 } from './follow-up.js';
-export type { FollowUpCause, FollowUpStatus } from './follow-up.js';
+export type {
+  ContactInput,
+  ContactOutcome,
+  ContactResult,
+  FollowUpAfterContact,
+  FollowUpCause,
+  FollowUpState,
+  FollowUpStatus,
+} from './follow-up.js';

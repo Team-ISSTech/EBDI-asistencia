@@ -139,4 +139,106 @@ describe.skipIf(!TEST_DATABASE_URL)('seguimientos de ausencias (integración)', 
     await expect(connection.db.execute(sql`UPDATE seguimientos SET estado = 'CERRADO' WHERE id = (SELECT id FROM (SELECT MIN(id) AS id FROM seguimientos) t)`)).rejects.toThrow();
     await expect(connection.db.execute(sql`UPDATE seguimientos SET clasificacion = 'OTRA' WHERE id = (SELECT id FROM (SELECT MIN(id) AS id FROM seguimientos) t)`)).rejects.toThrow();
   });
+
+  describe('contactos con el tutor', () => {
+    const SOCIAL_WORK = 'trabajo_social@sirai.test';
+    const NOTES = 'Fiebre desde ayer; se le indicó acudir a su clínica de adscripción.';
+    const PHONE = '5512345678';
+    let missedTicketId = 0;
+    let reachedTicketId = 0;
+    let guardianId = 0;
+
+    const ticketIdOf = async (childName: string): Promise<number> => {
+      const list = await call('get', '/seguimientos', SOCIAL_WORK);
+      const found = followUpListResponseSchema.parse(list.body).followUps.find((ticket) => ticket.childName === childName);
+      if (!found) throw new Error(`Sin ticket de ${childName}`);
+      return found.id;
+    };
+
+    beforeAll(async () => {
+      missedTicketId = await ticketIdOf('Infante1 Prueba');
+      reachedTicketId = await ticketIdOf('Infante2 Prueba');
+      const [child] = (await connection.db.execute(sql`SELECT id FROM infantes WHERE matricula = 'M-SEG-2'`)) as unknown as [{ id: number }[]];
+      const guardian = await call('post', '/tutores', DIRECTORA, { name: 'Tutora', paternalSurname: 'Prueba', phone: PHONE });
+      guardianId = guardian.body.id;
+      await call('post', `/infantes/${child[0]?.id}/tutores`, DIRECTORA, { guardianId, relationship: 'Madre', isPrimary: true, isEmergencyContact: true, validFrom: yesterday });
+    });
+
+    it('solo quien registra seguimiento puede registrar contactos', async () => {
+      for (const email of ['docente@sirai.test', 'admin_central@sirai.test', 'supervisor_central@sirai.test']) {
+        expect((await call('post', `/seguimientos/${missedTicketId}/contactos`, email, { result: 'SIN_RESPUESTA' })).status).toBe(403);
+      }
+    });
+
+    it('no localizar al tutor clasifica NO_LOC, programa el segundo intento y, al repetirse, activa la alerta', async () => {
+      const first = await call('post', `/seguimientos/${missedTicketId}/contactos`, SOCIAL_WORK, { result: 'SIN_RESPUESTA' });
+      expect(first.status).toBe(201);
+      expect(first.body).toMatchObject({ status: 'CLASIFICADO', cause: 'NO_LOC', attemptCount: 1, emergencyAlert: false });
+      const dueInMs = new Date(first.body.nextAttemptAt).getTime() - Date.now();
+      expect(dueInMs).toBeGreaterThan(3.9 * 3_600_000);
+      expect(dueInMs).toBeLessThanOrEqual(4 * 3_600_000);
+      const second = await call('post', `/seguimientos/${missedTicketId}/contactos`, SOCIAL_WORK, { result: 'SIN_RESPUESTA' });
+      expect(second.body).toMatchObject({ cause: 'NO_LOC', attemptCount: 2, emergencyAlert: true, nextAttemptAt: null });
+    });
+
+    it('contactar al tutor clasifica por enfermedad, fija el retorno y activa el candado médico', async () => {
+      const body = { result: 'CONTACTADO', guardianId, cause: 'ENF_CASA', expectedReturnDate: '2026-10-30', notes: NOTES };
+      const response = await call('post', `/seguimientos/${reachedTicketId}/contactos`, SOCIAL_WORK, body);
+      expect(response.status).toBe(201);
+      expect(response.body).toMatchObject({ status: 'CLASIFICADO', cause: 'ENF_CASA', requiresMedicalRelease: true, expectedReturnDate: '2026-10-30', attemptCount: 1 });
+      expect(JSON.stringify(response.body)).not.toContain('Fiebre');
+    });
+
+    it('guarda las notas y el teléfono marcado solo cifrados', async () => {
+      const [rows] = (await connection.db.execute(
+        sql`SELECT HEX(notas_asesoria_cifradas) AS notes, HEX(telefono_destino_cifrado) AS phone FROM contactos_seguimiento WHERE tutor_id = ${guardianId}`,
+      )) as unknown as [{ notes: string; phone: string }[]];
+      expect(rows).toHaveLength(1);
+      expect(Buffer.from(rows[0]?.notes ?? '', 'hex').toString('utf8')).not.toContain('Fiebre');
+      expect(Buffer.from(rows[0]?.phone ?? '', 'hex').toString('utf8')).not.toContain(PHONE);
+    });
+
+    it('el historial con notas descifradas solo lo ve quien accede a notas sensibles, y queda auditado', async () => {
+      const path = `/seguimientos/${reachedTicketId}/contactos`;
+      for (const email of ['docente@sirai.test', 'admin_central@sirai.test']) {
+        expect((await call('get', path, email)).status).toBe(403);
+      }
+      const response = await call('get', path, SOCIAL_WORK);
+      expect(response.status).toBe(200);
+      expect(response.body.contacts).toHaveLength(1);
+      expect(response.body.contacts[0]).toMatchObject({ attemptNumber: 1, result: 'CONTACTADO', guardianId, notes: NOTES });
+      expect(await count(sql`SELECT COUNT(*) AS n FROM auditoria WHERE accion = 'NOTAS_SEGUIMIENTO_CONSULTADAS'`)).toBe(1);
+    });
+
+    it('audita cada contacto con el antes y el después, sin notas ni teléfono', async () => {
+      const [rows] = (await connection.db.execute(sql`SELECT accion FROM auditoria WHERE accion = 'CONTACTO_REGISTRADO'`)) as unknown as [{ accion: string }[]];
+      expect(rows).toHaveLength(3);
+    });
+
+    it('rechaza a un tutor que no es del infante, cuerpos incompletos y tickets inexistentes', async () => {
+      const stranger = await call('post', '/tutores', DIRECTORA, { name: 'Ajeno', paternalSurname: 'Prueba', phone: '5599998888' });
+      const body = { result: 'CONTACTADO', guardianId: stranger.body.id, cause: 'PER_TUT', expectedReturnDate: '2026-10-30' };
+      expect((await call('post', `/seguimientos/${reachedTicketId}/contactos`, SOCIAL_WORK, body)).status).toBe(400);
+      expect((await call('post', `/seguimientos/${reachedTicketId}/contactos`, SOCIAL_WORK, { result: 'CONTACTADO', guardianId })).status).toBe(400);
+      expect((await call('post', '/seguimientos/99999/contactos', SOCIAL_WORK, { result: 'SIN_RESPUESTA' })).status).toBe(404);
+    });
+
+    it('un intento sin respuesta no reclasifica un caso ya clasificado ni quita el candado', async () => {
+      const response = await call('post', `/seguimientos/${reachedTicketId}/contactos`, SOCIAL_WORK, { result: 'SIN_RESPUESTA', guardianId });
+      expect(response.body).toMatchObject({ cause: 'ENF_CASA', requiresMedicalRelease: true, attemptCount: 2, emergencyAlert: false, nextAttemptAt: null });
+    });
+
+    it('el motor impide repetir el número de intento de un ticket', async () => {
+      await expect(
+        connection.db.execute(
+          sql`INSERT INTO contactos_seguimiento (seguimiento_id, numero_intento, fecha_hora, resultado, registrado_por) VALUES (${reachedTicketId}, 1, NOW(6), 'SIN_RESPUESTA', 1)`,
+        ),
+      ).rejects.toThrow();
+      await expect(
+        connection.db.execute(
+          sql`INSERT INTO contactos_seguimiento (seguimiento_id, numero_intento, fecha_hora, resultado, registrado_por) VALUES (${reachedTicketId}, 9, NOW(6), 'TAL_VEZ', 1)`,
+        ),
+      ).rejects.toThrow();
+    });
+  });
 });

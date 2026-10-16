@@ -109,6 +109,8 @@ Flujo en la API:
 | `GET /asistencia/jornadas/:id/lista` | ASISTENCIA_CONSULTAR | infantes con inscripción activa en salas del turno de la jornada y su estado; sin datos de salud ni contacto; se audita |
 | `POST /asistencia/jornadas/:id/registros` | ASISTENCIA_REGISTRAR | marca asistencia por lote, todo o nada y solo en jornada abierta; cada marca lleva un `clientId` (UUID) y un reintento no duplica ni audita; un cambio de estado se audita con el antes y el después |
 | `GET /seguimientos` | SEGUIMIENTO_CONSULTAR | bandeja de tickets abiertos de la estancia, sin teléfonos ni notas; se audita |
+| `POST /seguimientos/:id/contactos` | SEGUIMIENTO_REGISTRAR | registra un intento de llamada: hablar con el tutor exige tutor vinculado, causa (ENF_CASA, ACC_EXT o PER_TUT) y fecha de retorno; no contestar clasifica NO_LOC, programa el segundo intento a las 4 h y, al repetirse, activa la alerta a contactos de emergencia. Notas y teléfono marcado se guardan cifrados |
+| `GET /seguimientos/:id/contactos` | NOTA_SENSIBLE_CONSULTAR | historial con las notas descifradas; cada consulta se audita |
 | proceso `FOLLOW_UP_JOB_SECONDS` | interno | cada minuto abre un ticket por cada ausencia (ausente justificado o falta injustificada) de jornadas matutinas cuyo cierre de las 09:00 ya pasó en la zona horaria de la estancia; es repetible y se audita como `SISTEMA` |
 | `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
 

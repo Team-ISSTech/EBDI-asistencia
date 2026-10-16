@@ -69,3 +69,13 @@ describe('esquema Drizzle de los seguimientos', () => {
     );
   });
 });
+
+describe('esquema Drizzle de los contactos de seguimiento', () => {
+  it('mapea followUpContacts con teléfono y notas solo en columnas cifradas', () => {
+    expect(getTableName(schema.followUpContacts)).toBe('contactos_seguimiento');
+    const columns = Object.keys(getTableColumns(schema.followUpContacts));
+    expect(columns).toEqual(expect.arrayContaining(['followUpId', 'guardianId', 'attemptNumber', 'result', 'phoneEncrypted', 'notesEncrypted', 'nextAttemptAt', 'registeredBy']));
+    expect(columns).not.toContain('phone');
+    expect(columns).not.toContain('notes');
+  });
+});

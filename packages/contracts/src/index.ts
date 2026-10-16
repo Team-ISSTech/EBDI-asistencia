@@ -77,5 +77,11 @@ export type {
   RosterEntry,
   RosterResponse,
 } from './attendance/record.js';
-export { followUpListResponseSchema, followUpSchema } from './follow-ups/follow-up.js';
-export type { FollowUp, FollowUpListResponse } from './follow-ups/follow-up.js';
+export {
+  contactListResponseSchema,
+  contactSchema,
+  followUpListResponseSchema,
+  followUpSchema,
+  registerContactRequestSchema,
+} from './follow-ups/follow-up.js';
+export type { Contact, ContactListResponse, FollowUp, FollowUpListResponse, RegisterContactRequest } from './follow-ups/follow-up.js';
