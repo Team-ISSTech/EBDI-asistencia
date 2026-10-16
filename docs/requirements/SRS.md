@@ -29,6 +29,8 @@ funcional. Los demás pertenecen a Fase 1.
 - RF-09: (Fase 2) Directora de Estancia: mismos permisos que Trabajo Social/Enfermería más supervisión de su estancia.
 - RF-10: (Fase 2) Supervisor Central: consulta únicamente estadísticas agregadas, sin datos identificables de infantes.
 - RF-11: (Fase 2) Administrador Central: administra usuarios y roles y consulta la bitácora de auditoría.
+- RF-37: La API ofrece endpoints REST protegidos con Bearer tokens para que los sistemas institucionales interoperen con SIRAI. Cada token pertenece a un sistema, tiene permisos y alcance acotados, caduca, se puede revocar y toda su actividad se audita.
+- RF-38: Quien ingresa con una contraseña temporal debe cambiarla antes de usar el sistema; cualquier persona puede cambiar su contraseña después. La contraseña temporal caduca y la nueva debe cumplir la política mínima de longitud.
 
 ### Módulo 2: Asistencia rápida
 
@@ -123,4 +125,6 @@ explícitos hasta obtener confirmación; varios coinciden con las preguntas de
 - S-15: Los umbrales del semáforo (RF-16) no están definidos; se asumen verde desde 90 %, amarillo desde 75 % y rojo por debajo, calculados sobre los inscritos de los turnos con jornada ese día. Deben confirmarse con el cliente.
 - S-16: El corte trimestral (RF-17) es el trimestre calendario (enero-marzo, abril-junio, julio-septiembre, octubre-diciembre). En los cortes de periodo, la asistencia se mide sobre los registros capturados (presentes entre presentes, ausentes y otros), no sobre los inscritos. Deben confirmarse con el cliente.
 - S-17: El "sellado digital" del expediente (RF-19) es un sello de integridad con llave institucional (HMAC-SHA256 sobre folio, infante, fecha y huella del contenido), verificable en SIRAI; no es firma electrónica avanzada (e.firma) ni sello de tiempo de un tercero. Si el cliente exige e.firma, debe especificarse el proveedor. El expediente incluye datos de contacto y notas de asesoría descifrados: lo emite solo la Directora (permiso EXPEDIENTE_EXPORTAR).
+- S-18: El PDF del cliente pide Bearer tokens para interoperabilidad (RF-37) sin decir con qué sistemas ni qué datos. Se asume que son lecturas y altas acotadas por sistema, y que el alcance se define con el cliente en la actividad A21A (#52). Los datos que salgan por esa API respetan las mismas reglas de anonimización y auditoría que los reportes.
+- S-19: El plazo de caducidad de la contraseña temporal (RF-38) no está definido; se asume 7 días, configurable, y debe confirmarse con el cliente.
 - S-14: Los valores de `turno`, `estado` y `clasificacion` se fijan en `packages/domain`, no como `ENUM` en MySQL (pregunta P11).
