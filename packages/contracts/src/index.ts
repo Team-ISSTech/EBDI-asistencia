@@ -93,3 +93,5 @@ export type {
   RegisterContactRequest,
   RegisterMedicalReleaseRequest,
 } from './follow-ups/follow-up.js';
+export { dashboardQuerySchema, dashboardResponseSchema, dashboardRowSchema, dashboardTotalsSchema } from './reports/dashboard.js';
+export type { DashboardQuery, DashboardResponse, DashboardRow, DashboardTotals } from './reports/dashboard.js';

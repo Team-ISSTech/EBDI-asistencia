@@ -53,3 +53,5 @@ export type {
   ReleaseCheck,
   TicketLockState,
 } from './follow-up.js';
+export { GREEN_FROM, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, trafficLight } from './reports.js';
+export type { TrafficLight } from './reports.js';

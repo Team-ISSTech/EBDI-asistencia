@@ -30,9 +30,9 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance`, `apps/api/src/modules/attendance` | e2e Playwright, integración Vitest + MySQL | pendiente |
 | RF-14 | Estados de asistencia | `packages/domain` (estados y reglas), `apps/api/src/modules/attendance` | unitaria Vitest | en curso (rama feat/attendance-records: registro por lote con auditoría) |
 | RF-15 | Jornada por estancia, fecha y turno | `packages/domain`, `apps/api/src/modules/attendance`, `packages/db` (índice único) | unitaria Vitest, integración Vitest + MySQL | en curso (rama feat/phase-2-attendance-foundation) |
-| RF-16 | Tablero semaforizado en tiempo real | `apps/api/src/modules/reports`, `apps/web/src/features/reports` | integración Vitest + MySQL, e2e Playwright | pendiente |
+| RF-16 | Tablero semaforizado en tiempo real | `apps/api/src/modules/reports`, `apps/web/src/features/reports` | integración Vitest + MySQL, e2e Playwright | en curso (rama feat/reports: tablero con semáforo, filtros y actualización cada 30 s) |
 | RF-17 | Exportación Excel y PDF por periodo | `apps/api/src/modules/reports` | integración Vitest + MySQL | pendiente |
-| RF-18 | Reportes anonimizados para roles centrales | `apps/api/src/modules/reports`, `packages/auth` | integración Vitest + MySQL | pendiente |
+| RF-18 | Reportes anonimizados para roles centrales | `apps/api/src/modules/reports`, `packages/auth` | integración Vitest + MySQL | en curso (rama feat/reports: el tablero solo trae conteos y porcentajes; faltan las exportaciones) |
 | RF-19 | Expediente PDF para traslados | `apps/api/src/modules/reports`, `apps/api/src/modules/children` | integración Vitest + MySQL | pendiente |
 | RF-20 | Cola IndexedDB con Service Worker | `apps/web/src/offline` (Dexie/IndexedDB, Service Worker) | unitaria Vitest, e2e Playwright | pendiente |
 | RF-21 | Sincronización automática al reconectar | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
@@ -84,5 +84,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Mapeados a paquete o módulo | 53 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
-| En curso | 21 (RF-12, RF-14, RF-15, RF-24 a RF-30, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
-| Pendientes | 17 |
+| En curso | 23 (RF-12, RF-14 a RF-16, RF-18, RF-24 a RF-30, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
+| Pendientes | 15 |
