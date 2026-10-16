@@ -49,6 +49,8 @@ export interface NewContact {
   readonly phoneEncrypted: Buffer | null;
   readonly notesEncrypted: Buffer | null;
   readonly nextAttemptAt: Date | null;
+  /** UUID de la operación sin conexión que lo creó; nulo si se registró en línea. */
+  readonly operationId: string | null;
 }
 
 export interface TicketChange {

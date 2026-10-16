@@ -116,6 +116,11 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
     };
   }
 
+  async findContactOperation(operationId: string): Promise<number | null> {
+    const [row] = await this.db.select({ followUpId: followUpContacts.followUpId }).from(followUpContacts).where(eq(followUpContacts.operationId, operationId));
+    return row?.followUpId ?? null;
+  }
+
   async findGuardianPhone(childId: number, guardianId: number): Promise<{ phoneEncrypted: Buffer | null } | null> {
     const [row] = await this.db
       .select({ phone: guardians.phoneEncrypted })
@@ -143,6 +148,7 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
           phoneEncrypted: contact.phoneEncrypted,
           notesEncrypted: contact.notesEncrypted,
           nextAttemptAt: contact.nextAttemptAt,
+          operationId: contact.operationId,
           registeredBy: context.userId,
           createdAt: context.now,
           updatedAt: context.now,

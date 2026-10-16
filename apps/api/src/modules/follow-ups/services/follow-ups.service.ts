@@ -27,6 +27,12 @@ const CLOSE_MESSAGES: Record<Exclude<CloseCheck, { ok: true }>['reason'], string
 
 export const FOLLOW_UPS_CLOCK = Symbol('FOLLOW_UPS_CLOCK');
 
+/** Datos de una llamada capturada sin conexión: su UUID de operación y la hora en que se hizo. */
+export interface ContactOrigin {
+  readonly operationId?: string;
+  readonly at?: Date;
+}
+
 const toView = (row: FollowUpRow): FollowUp => ({
   id: row.id,
   childId: row.childId,
@@ -67,11 +73,15 @@ export class FollowUpsService {
    * Registra un intento de contacto y su efecto sobre el ticket (clasificación,
    * fecha de retorno, candado médico, segundo intento) en una sola transacción.
    */
-  async registerContact(auth: AuthContext, followUpId: number, input: RegisterContactRequest, request: RequestContext): Promise<FollowUp> {
+  async registerContact(auth: AuthContext, followUpId: number, input: RegisterContactRequest, request: RequestContext, origin: ContactOrigin = {}): Promise<FollowUp> {
     const estanciaId = this.requireEstancia(auth);
+    if (origin.operationId && (await this.followUps.findContactOperation(origin.operationId)) === followUpId) {
+      return this.requireView(followUpId, estanciaId);
+    }
     const current = await this.requireOpen(followUpId, estanciaId);
     const phone = await this.guardianPhone(current, input);
-    const now = this.clock();
+    const serverNow = this.clock();
+    const now = origin.at ? new Date(Math.min(origin.at.getTime(), serverNow.getTime())) : serverNow;
     const outcome = applyContact(
       { cause: current.cause, requiresMedicalRelease: current.requiresMedicalRelease, expectedReturnDate: current.expectedReturnDate, failedAttempts: current.failedAttempts },
       input.result === 'CONTACTADO' ? { result: input.result, cause: input.cause, expectedReturnDate: input.expectedReturnDate, at: now } : { result: input.result, at: now },
@@ -88,6 +98,7 @@ export class FollowUpsService {
         phoneEncrypted: phone,
         notesEncrypted: input.notes === undefined ? null : this.encryption.encrypt(input.notes),
         nextAttemptAt: state.nextAttemptAt,
+        operationId: origin.operationId ?? null,
       },
       { status: state.status, cause: state.cause, requiresMedicalRelease: state.requiresMedicalRelease, expectedReturnDate: state.expectedReturnDate },
       { userId: auth.userId, now },

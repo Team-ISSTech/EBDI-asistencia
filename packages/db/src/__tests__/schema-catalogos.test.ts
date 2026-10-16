@@ -97,3 +97,16 @@ describe('esquema Drizzle de los expedientes emitidos', () => {
     );
   });
 });
+
+describe('esquema Drizzle de la sincronización', () => {
+  it('mapea syncOperations a sincronizaciones con el acuse guardado', () => {
+    expect(getTableName(schema.syncOperations)).toBe('sincronizaciones');
+    expect(Object.keys(getTableColumns(schema.syncOperations))).toEqual(
+      expect.arrayContaining(['operationId', 'userId', 'estanciaId', 'entity', 'operation', 'capturedAt', 'status', 'payloadSha256', 'response']),
+    );
+  });
+
+  it('cada llamada de seguimiento puede llevar el UUID de la operación que la creó', () => {
+    expect(getTableColumns(schema.followUpContacts)).toHaveProperty('operationId');
+  });
+});

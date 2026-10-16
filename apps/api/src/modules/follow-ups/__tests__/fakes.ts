@@ -53,6 +53,10 @@ export class FakeRepo implements FollowUpsRepository {
     const t = this.tickets.get(id);
     return Promise.resolve(t?.estanciaId === estanciaId ? t : null);
   }
+  findContactOperation(operationId: string): Promise<number | null> {
+    for (const [followUpId, list] of this.contacts) if (list.some((contact) => contact.operationId === operationId)) return Promise.resolve(followUpId);
+    return Promise.resolve(null);
+  }
   findGuardianPhone(childId: number, guardianId: number): Promise<{ phoneEncrypted: Buffer | null } | null> {
     const key = `${childId}:${guardianId}`;
     return Promise.resolve(this.linked.has(key) ? { phoneEncrypted: this.linked.get(key) ?? null } : null);

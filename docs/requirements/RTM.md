@@ -35,9 +35,9 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-18 | Reportes anonimizados para roles centrales | `apps/api/src/modules/reports`, `packages/auth` | integración Vitest + MySQL | implementado en `main` |
 | RF-19 | Expediente PDF para traslados | `apps/api/src/modules/reports`, `apps/api/src/modules/children` | integración Vitest + MySQL | implementado en `main` (sello de integridad, no e.firma: S-17) |
 | RF-20 | Cola IndexedDB con Service Worker | `apps/web/src/offline` (Dexie/IndexedDB, Service Worker) | unitaria Vitest, e2e Playwright | pendiente |
-| RF-21 | Sincronización automática al reconectar | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
-| RF-22 | Eventos idempotentes | endpoint de sync en `apps/api`, `packages/db` (`uuid_cliente`, `uuid_operacion`) | integración Vitest + MySQL | parcial: el pase de lista ya es idempotente por UUID de operación; falta el endpoint de sincronización |
-| RF-23 | Sin pérdida de datos offline | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
+| RF-21 | Sincronización automática al reconectar | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | parcial: el servidor recibe y aplica lotes en orden al reconectar; falta el cliente que los envía solo |
+| RF-22 | Eventos idempotentes | endpoint de sync en `apps/api`, `packages/db` (`uuid_cliente`, `uuid_operacion`) | integración Vitest + MySQL | parcial: `POST /sincronizacion` idempotente por UUID de operación con acuse guardado; falta la cola del lado del navegador |
+| RF-23 | Sin pérdida de datos offline | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | parcial: el servidor no pierde ni duplica lo capturado (acepta captura tardía si se hizo antes del cierre); falta que la tablet conserve la cola |
 | RF-24 | Ticket automático por ausencia al cierre 09:00 | `apps/api/src/modules/follow-ups`, `packages/domain` | unitaria Vitest, integración Vitest + MySQL | implementado en `main` (solo jornadas matutinas; el SRS no define el vespertino) |
 | RF-25 | Contacto telefónico obligatorio | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | implementado en `main` |
 | RF-26 | Clasificación de causa | `packages/domain`, `apps/api/src/modules/follow-ups` | unitaria Vitest | implementado en `main` |
@@ -85,5 +85,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
 | Implementados | 32 |
-| Parciales | 14 |
-| Pendientes | 9 |
+| Parciales | 16 |
+| Pendientes | 7 |
