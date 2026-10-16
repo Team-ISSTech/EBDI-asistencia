@@ -38,6 +38,8 @@ export const AUDIT_ACTIONS = [
   'ALTA_MEDICA_REGISTRADA',
   'SEGUIMIENTO_CERRADO',
   'REPORTE_EXPORTADO',
+  'EXPEDIENTE_EXPORTADO',
+  'EXPEDIENTE_VERIFICADO',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

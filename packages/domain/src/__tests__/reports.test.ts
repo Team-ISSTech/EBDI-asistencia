@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GREEN_FROM, REPORT_PERIODS, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, periodRange, trafficLight } from '../reports.js';
+import { GREEN_FROM, REPORT_PERIODS, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, dossierFolio, parseDossierFolio, periodRange, trafficLight } from '../reports.js';
 
 describe('attendanceRate', () => {
   it('es la proporción de presentes sobre los esperados', () => {
@@ -62,5 +62,20 @@ describe('periodRange (RF-17)', () => {
 
   it('los periodos son los tres que pide el SRS', () => {
     expect(REPORT_PERIODS).toEqual(['DAY', 'MONTH', 'QUARTER']);
+  });
+});
+
+describe('dossierFolio (RF-19)', () => {
+  it('compone el folio con el año y el consecutivo a seis dígitos', () => {
+    expect(dossierFolio(42, 2026)).toBe('EXP-2026-000042');
+    expect(dossierFolio(1, 2026)).toBe('EXP-2026-000001');
+    expect(dossierFolio(1234567, 2027)).toBe('EXP-2027-1234567');
+  });
+
+  it('reconoce un folio bien formado y lo descompone', () => {
+    expect(parseDossierFolio('EXP-2026-000042')).toEqual({ year: 2026, sequence: 42 });
+    expect(parseDossierFolio('EXP-2026-42')).toBeNull();
+    expect(parseDossierFolio('OTRO-2026-000042')).toBeNull();
+    expect(parseDossierFolio('')).toBeNull();
   });
 });

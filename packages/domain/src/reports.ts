@@ -49,3 +49,15 @@ export function periodRange(period: ReportPeriod, anchor: string): DateRange {
   const lastMonth = firstMonth + MONTHS_PER_QUARTER - 1;
   return { from: `${year}-${pad(firstMonth)}-01`, to: `${year}-${pad(lastMonth)}-${pad(lastDayOf(year, lastMonth))}` };
 }
+
+const FOLIO_SEQUENCE_DIGITS = 6;
+const FOLIO_PATTERN = /^EXP-(\d{4})-(\d{6,})$/;
+
+/** Folio de un expediente emitido (RF-19): año y consecutivo, que es el id del registro. */
+export const dossierFolio = (sequence: number, year: number): string => `EXP-${year}-${String(sequence).padStart(FOLIO_SEQUENCE_DIGITS, '0')}`;
+
+/** Descompone un folio bien formado; `null` si no lo es. */
+export function parseDossierFolio(folio: string): { readonly year: number; readonly sequence: number } | null {
+  const match = FOLIO_PATTERN.exec(folio);
+  return match ? { year: Number(match[1]), sequence: Number(match[2]) } : null;
+}

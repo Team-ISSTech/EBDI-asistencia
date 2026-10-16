@@ -49,4 +49,18 @@ describe('EncryptionService', () => {
       expect(new EncryptionService(otherEnv).blindHash('5512345678').equals(service.blindHash('5512345678'))).toBe(false);
     });
   });
+
+  describe('seal (sello de expedientes)', () => {
+    it('es un HMAC determinista de 32 bytes que depende de la llave', () => {
+      const seal = service.seal('EXP-2026-000042|5|2026-10-15T12:00:00.000Z|abc');
+      expect(seal).toHaveLength(32);
+      expect(service.seal('EXP-2026-000042|5|2026-10-15T12:00:00.000Z|abc').equals(seal)).toBe(true);
+      expect(service.seal('EXP-2026-000043|5|2026-10-15T12:00:00.000Z|abc').equals(seal)).toBe(false);
+      expect(new EncryptionService(otherEnv).seal('EXP-2026-000042|5|2026-10-15T12:00:00.000Z|abc').equals(seal)).toBe(false);
+    });
+
+    it('no coincide con el hash ciego de otro uso, aunque el texto sea el mismo (separación de dominios)', () => {
+      expect(service.seal('5512345678').equals(service.blindHash('5512345678'))).toBe(false);
+    });
+  });
 });

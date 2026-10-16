@@ -97,3 +97,5 @@ export { dashboardQuerySchema, dashboardResponseSchema, dashboardRowSchema, dash
 export type { DashboardQuery, DashboardResponse, DashboardRow, DashboardTotals } from './reports/dashboard.js';
 export { EXPORT_FORMATS, exportQuerySchema } from './reports/export.js';
 export type { ExportFormat, ExportQuery } from './reports/export.js';
+export { verifyDossierRequestSchema, verifyDossierResponseSchema } from './dossier/dossier.js';
+export type { VerifyDossierRequest, VerifyDossierResponse } from './dossier/dossier.js';
