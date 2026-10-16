@@ -3,6 +3,7 @@ import { TRAFFIC_LIGHTS, type TrafficLight } from '@sirai/domain';
 import { EmptyState, Field, PageHeader, Select } from '@sirai/ui';
 import { useState } from 'react';
 import { DashboardSummary } from '../dashboard-summary';
+import { ExportBar } from '../export-bar';
 import { DashboardTable } from '../dashboard-table';
 import { LIGHT_LABELS } from '../lights';
 import { useDashboard } from '../use-dashboard';
@@ -54,6 +55,7 @@ export function ReportsPage() {
         </Select>
         <Field label="Buscar estancia" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre o clave" />
       </div>
+      <ExportBar date={date} />
       {query.isPending ? <p className="text-sm text-[var(--color-text-muted)]">Cargando tablero…</p> : null}
       {query.isError ? (
         <p role="alert" className="text-sm text-[var(--color-danger)]">

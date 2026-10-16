@@ -37,6 +37,7 @@ export const AUDIT_ACTIONS = [
   'NOTAS_SEGUIMIENTO_CONSULTADAS',
   'ALTA_MEDICA_REGISTRADA',
   'SEGUIMIENTO_CERRADO',
+  'REPORTE_EXPORTADO',
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

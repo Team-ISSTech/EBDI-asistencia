@@ -99,3 +99,72 @@ describe('ReportsPage (tablero semaforizado)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo cargar el tablero.');
   });
 });
+
+describe('ReportsPage: exportación (RF-17)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(URL, 'createObjectURL');
+    Reflect.deleteProperty(URL, 'revokeObjectURL');
+  });
+
+  /** jsdom no implementa las URL de objetos: se definen para la prueba y se quitan al terminar. */
+  const setupDownload = () => {
+    const created: Blob[] = [];
+    const click = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', { configurable: true, writable: true, value: vi.fn((blob: Blob) => { created.push(blob); return 'blob:reporte'; }) });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, writable: true, value: vi.fn() });
+    const originalCreate = document.createElement.bind(document);
+    const anchors: HTMLAnchorElement[] = [];
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string, options?: ElementCreationOptions) => {
+      const element = originalCreate(tag, options);
+      if (tag === 'a') {
+        anchors.push(element as HTMLAnchorElement);
+        (element as HTMLAnchorElement).click = click;
+      }
+      return element;
+    });
+    return { created, click, anchors };
+  };
+
+  const fetchFor = (exportResponse: () => Response) =>
+    vi.fn((url: string) => Promise.resolve(String(url).includes('/reportes/exportacion') ? exportResponse() : jsonResponse(200, dashboard([row(1, 'Estancia Roja', 'ROJO', 0.5)]))));
+
+  const excelFile = () => new Response('xlsx', { status: 200, headers: { 'content-disposition': 'attachment; filename="sirai-asistencia-mensual.xlsx"' } });
+
+  it('descarga el corte mensual en Excel de la fecha elegida', async () => {
+    const { click, anchors } = setupDownload();
+    const fetchMock = fetchFor(excelFile);
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithSession(<ReportsPage />, supervisorSession, '/app/reportes');
+    await screen.findByText('Estancia Roja');
+    await userEvent.selectOptions(screen.getByLabelText('Corte'), 'MONTH');
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar Excel' }));
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    const url = fetchMock.mock.calls.map(([u]) => String(u)).find((u) => u.includes('/reportes/exportacion')) ?? '';
+    expect(url).toMatch(/period=MONTH/);
+    expect(url).toMatch(/format=xlsx/);
+    expect(url).toMatch(/date=\d{4}-\d{2}-\d{2}/);
+    expect(anchors.at(-1)?.download).toBe('sirai-asistencia-mensual.xlsx');
+  });
+
+  it('descarga el PDF', async () => {
+    const { click } = setupDownload();
+    const fetchMock = fetchFor(() => new Response('pdf', { status: 200, headers: { 'content-disposition': 'attachment; filename="r.pdf"' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithSession(<ReportsPage />, supervisorSession, '/app/reportes');
+    await screen.findByText('Estancia Roja');
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar PDF' }));
+    await waitFor(() => expect(click).toHaveBeenCalled());
+    expect(fetchMock.mock.calls.map(([u]) => String(u)).some((u) => u.includes('format=pdf') && u.includes('period=DAY'))).toBe(true);
+  });
+
+  it('avisa si no se pudo descargar', async () => {
+    setupDownload();
+    vi.stubGlobal('fetch', fetchFor(() => jsonResponse(403, { error: { code: 'SIN_PERMISO', message: 'No' } })));
+    renderWithSession(<ReportsPage />, supervisorSession, '/app/reportes');
+    await screen.findByText('Estancia Roja');
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar Excel' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo descargar el reporte.');
+  });
+});

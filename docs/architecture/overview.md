@@ -115,6 +115,7 @@ Flujo en la API:
 | `POST /seguimientos/:id/cierre` | SEGUIMIENTO_REGISTRAR | cierra el caso: exige al menos una llamada, la causa clasificada y, si hay candado médico, el alta |
 | proceso `FOLLOW_UP_JOB_SECONDS` | interno | cada minuto abre un ticket por cada ausencia (ausente justificado o falta injustificada) de jornadas matutinas cuyo cierre de las 09:00 ya pasó en la zona horaria de la estancia; es repetible y se audita como `SISTEMA` |
 | `GET /reportes/tablero?date=` | REPORTE_AGREGADO_CONSULTAR | semáforo de asistencia por estancia: solo conteos y porcentajes (RF-18). Alcance por rol: administrador y supervisor sin región, todas; supervisor con región, la suya (P9); directora, su estancia. Verde desde 90 %, amarillo desde 75 %, rojo por debajo, sin captura si no hubo jornada (umbrales por confirmar, S-15) |
+| `GET /reportes/exportacion?period=&date=&format=` | REPORTE_AGREGADO_CONSULTAR | descarga el corte diario, mensual o trimestral que contiene a `date`, en `xlsx` (hojas Resumen y Detalle diario) o `pdf` (con "Página x de y"); solo conteos y porcentajes, acotado al alcance del usuario; cada exportación se audita |
 | `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
 
 Todo el padrón se acota a la estancia activa de la sesión: una sala, infante,

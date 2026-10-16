@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ABSENCE_STATUSES } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
-import { and, asc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, between, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module.js';
-import type { EstanciaFacts, ReportScope } from '../reports.types.js';
+import type { DateRange } from '@sirai/domain';
+import type { DayFact, EstanciaFacts, EstanciaInfo, PeriodFacts, ReportScope } from '../reports.types.js';
 import type { ReportsRepository } from './reports.repository.js';
 
 const { estancias, jornadasAsistencia, attendanceRecords, enrollments, rooms, children } = schema;
@@ -58,6 +59,33 @@ export class DrizzleReportsRepository implements ReportsRepository {
         other: counted?.other ?? 0,
       };
     });
+  }
+
+  async periodFacts(range: DateRange, scope: ReportScope): Promise<PeriodFacts> {
+    const base: EstanciaInfo[] = await this.db
+      .select({ estanciaId: estancias.id, code: estancias.ebdiCode, name: estancias.name, region: estancias.region })
+      .from(estancias)
+      .where(and(eq(estancias.status, 'ACTIVA'), isNull(estancias.deletedAt), scopeFilter(scope)))
+      .orderBy(asc(estancias.name));
+    if (base.length === 0) return { estancias: base, days: [] };
+    const rows = await this.db
+      .select({ estanciaId: jornadasAsistencia.estanciaId, date: jornadasAsistencia.date, status: attendanceRecords.status, total: sql<number>`COUNT(*)` })
+      .from(attendanceRecords)
+      .innerJoin(jornadasAsistencia, eq(jornadasAsistencia.id, attendanceRecords.journeyId))
+      .where(and(between(jornadasAsistencia.date, range.from, range.to), inArray(jornadasAsistencia.estanciaId, base.map((row) => row.estanciaId))))
+      .groupBy(jornadasAsistencia.estanciaId, jornadasAsistencia.date, attendanceRecords.status);
+    const byDay = new Map<string, { estanciaId: number; date: string; present: number; absent: number; other: number }>();
+    for (const row of rows) {
+      const key = `${row.estanciaId}:${row.date}`;
+      const day = byDay.get(key) ?? { estanciaId: row.estanciaId, date: row.date, present: 0, absent: 0, other: 0 };
+      const total = count(row.total);
+      if (row.status === 'PRESENTE') day.present += total;
+      else if ((ABSENCE_STATUSES as readonly string[]).includes(row.status)) day.absent += total;
+      else day.other += total;
+      byDay.set(key, day);
+    }
+    const days: DayFact[] = [...byDay.values()];
+    return { estancias: base, days };
   }
 
   /** Inscritos activos por estancia y turno de su sala. */

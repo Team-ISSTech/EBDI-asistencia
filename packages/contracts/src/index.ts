@@ -95,3 +95,5 @@ export type {
 } from './follow-ups/follow-up.js';
 export { dashboardQuerySchema, dashboardResponseSchema, dashboardRowSchema, dashboardTotalsSchema } from './reports/dashboard.js';
 export type { DashboardQuery, DashboardResponse, DashboardRow, DashboardTotals } from './reports/dashboard.js';
+export { EXPORT_FORMATS, exportQuerySchema } from './reports/export.js';
+export type { ExportFormat, ExportQuery } from './reports/export.js';

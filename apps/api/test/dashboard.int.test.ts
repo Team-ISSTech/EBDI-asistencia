@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import ExcelJS from 'exceljs';
 import { resolve } from 'node:path';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -135,5 +136,86 @@ describe.skipIf(!TEST_DATABASE_URL)('tablero de asistencia (integración)', () =
     expect(response.status).toBe(200);
     expect(dashboardResponseSchema.parse(response.body).estancias.length).toBeGreaterThanOrEqual(NATIONAL_ESTANCIAS);
     expect(elapsed).toBeLessThan(1500);
+  });
+
+  describe('exportación (RF-17)', () => {
+    const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    /** Descarga un archivo binario con la cookie ya resuelta. */
+    const download = async (email: string, query: string): Promise<request.Response> => {
+      const cookie = await cookieFor(email);
+      return request(app.getHttpServer())
+        .get(`/reportes/exportacion?${query}`)
+        .set('Cookie', cookie)
+        .buffer(true)
+        .parse((res, callback) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => callback(null, Buffer.concat(chunks)));
+        });
+    };
+
+    const summaryOf = async (buffer: Buffer): Promise<unknown[][]> => {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
+      const rows: unknown[][] = [];
+      workbook.getWorksheet('Resumen')?.eachRow((row) => rows.push((row.values as unknown[]).slice(1)));
+      return rows;
+    };
+
+    it('el administrador descarga el corte mensual en Excel con las cifras de la estancia', async () => {
+      const response = await download(ADMIN, `period=MONTH&date=${today}&format=xlsx`);
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toContain(XLSX);
+      expect(response.headers['content-disposition']).toMatch(/attachment; filename="sirai-asistencia-mensual-\d{4}-\d{2}-01_\d{4}-\d{2}-\d{2}\.xlsx"/);
+      const rows = await summaryOf(response.body as Buffer);
+      expect(rows.find((row) => row[0] === 'EBDI-TEST-01')).toMatchObject([ 'EBDI-TEST-01', 'Estancia de prueba 01', 'Norte', 1, 4, 3, 1, 0, 0.75, 'Amarillo' ]);
+      expect(rows.find((row) => row[0] === 'EBDI-TEST-02')?.[9]).toBe('Sin captura');
+    });
+
+    it('descarga el corte diario y el trimestral en PDF', async () => {
+      for (const period of ['DAY', 'QUARTER']) {
+        const response = await download(ADMIN, `period=${period}&date=${today}&format=pdf`);
+        expect(response.status).toBe(200);
+        expect(response.headers['content-type']).toContain('application/pdf');
+        expect((response.body as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
+      }
+    });
+
+    it('el archivo no contiene nombres ni datos de infantes (RF-18)', async () => {
+      const xlsx = await download(ADMIN, `period=DAY&date=${today}&format=xlsx`);
+      const pdf = await download(ADMIN, `period=DAY&date=${today}&format=pdf`);
+      for (const file of [xlsx.body as Buffer, pdf.body as Buffer]) {
+        expect(file.toString('latin1')).not.toMatch(/Infante\d|M-TAB|curp/i);
+      }
+      expect(JSON.stringify(await summaryOf(xlsx.body as Buffer))).not.toMatch(/Infante|M-TAB/);
+    });
+
+    it('un supervisor con región solo recibe su región', async () => {
+      const rows = await summaryOf((await download(SUPERVISOR, `period=DAY&date=${today}&format=xlsx`)).body as Buffer);
+      const codes = rows.map((row) => String(row[0]));
+      expect(codes).toContain('EBDI-TEST-01');
+      expect(codes).not.toContain('EBDI-TEST-02');
+    });
+
+    it('la directora recibe solo su estancia', async () => {
+      const rows = await summaryOf((await download(DIRECTORA, `period=DAY&date=${today}&format=xlsx`)).body as Buffer);
+      const codes = rows.map((row) => String(row[0])).filter((code) => code.startsWith('EBDI-'));
+      expect(codes).toEqual(['EBDI-TEST-01']);
+    });
+
+    it('audita cada exportación', async () => {
+      const [rows] = (await connection.db.execute(sql`SELECT COUNT(*) AS n FROM auditoria WHERE accion = 'REPORTE_EXPORTADO'`)) as unknown as [{ n: number }[]];
+      expect(Number(rows[0]?.n)).toBeGreaterThanOrEqual(5);
+    });
+
+    it('la docente y el médico no exportan, y los parámetros inválidos se rechazan', async () => {
+      for (const email of ['docente@sirai.test', 'medico@sirai.test']) {
+        expect((await download(email, `period=DAY&date=${today}&format=pdf`)).status).toBe(403);
+      }
+      expect((await download(ADMIN, `period=YEAR&date=${today}&format=pdf`)).status).toBe(400);
+      expect((await download(ADMIN, `period=DAY&date=${today}&format=csv`)).status).toBe(400);
+      expect((await download(ADMIN, 'period=DAY&format=pdf')).status).toBe(400);
+    });
   });
 });

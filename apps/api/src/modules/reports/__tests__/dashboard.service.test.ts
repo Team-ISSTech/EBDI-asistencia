@@ -2,7 +2,7 @@ import type { Principal } from '@sirai/auth';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../common/auth/auth-context.js';
 import type { ReportsRepository } from '../repositories/reports.repository.js';
-import type { EstanciaFacts, ReportScope } from '../reports.types.js';
+import type { EstanciaFacts, PeriodFacts, ReportScope } from '../reports.types.js';
 import { DashboardService, resolveReportScope } from '../services/dashboard.service.js';
 
 const facts = (id: number, overrides: Partial<EstanciaFacts> = {}): EstanciaFacts => ({
@@ -15,6 +15,9 @@ class FakeRepo implements ReportsRepository {
   dashboardFacts(_date: string, scope: ReportScope): Promise<EstanciaFacts[]> {
     this.lastScope = scope;
     return Promise.resolve(this.rows);
+  }
+  periodFacts(): Promise<PeriodFacts> {
+    return Promise.resolve({ estancias: [], days: [] });
   }
 }
 

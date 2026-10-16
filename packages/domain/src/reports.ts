@@ -20,3 +20,32 @@ export function trafficLight(rate: number | null): TrafficLight {
   if (rate >= GREEN_FROM) return 'VERDE';
   return rate >= YELLOW_FROM ? 'AMARILLO' : 'ROJO';
 }
+
+/** Cortes de las exportaciones (RF-17). El trimestre es el calendario (supuesto S-16). */
+export const REPORT_PERIODS = ['DAY', 'MONTH', 'QUARTER'] as const;
+export type ReportPeriod = (typeof REPORT_PERIODS)[number];
+
+export interface DateRange {
+  readonly from: string;
+  readonly to: string;
+}
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const MONTHS_PER_QUARTER = 3;
+
+const pad = (value: number): string => String(value).padStart(2, '0');
+/** Último día del mes (el día 0 del mes siguiente), sin depender de la zona horaria. */
+const lastDayOf = (year: number, month: number): number => new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+/** Rango de fechas (ambos extremos incluidos) del corte que contiene a `anchor` (`YYYY-MM-DD`). */
+export function periodRange(period: ReportPeriod, anchor: string): DateRange {
+  const match = ISO_DATE.exec(anchor);
+  if (!match) throw new Error(`Fecha inválida: ${anchor}`);
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (period === 'DAY') return { from: anchor, to: anchor };
+  if (period === 'MONTH') return { from: `${year}-${pad(month)}-01`, to: `${year}-${pad(month)}-${pad(lastDayOf(year, month))}` };
+  const firstMonth = Math.floor((month - 1) / MONTHS_PER_QUARTER) * MONTHS_PER_QUARTER + 1;
+  const lastMonth = firstMonth + MONTHS_PER_QUARTER - 1;
+  return { from: `${year}-${pad(firstMonth)}-01`, to: `${year}-${pad(lastMonth)}-${pad(lastDayOf(year, lastMonth))}` };
+}
