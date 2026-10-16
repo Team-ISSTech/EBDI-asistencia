@@ -60,3 +60,21 @@ export const followUpContacts = mysqlTable(
     index('idx_contactos_proximo_intento').on(table.nextAttemptAt),
   ],
 );
+
+/**
+ * Alta médica (RF-30): libera el candado "requiere alta para ingresar". Una por
+ * ticket. Las observaciones son datos de salud y solo existen cifradas.
+ */
+export const medicalReleases = mysqlTable(
+  'altas_medicas',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
+    followUpId: bigint('seguimiento_id', { mode: 'number', unsigned: true }).notNull().references(() => followUps.id),
+    dischargeDate: date('fecha_alta', { mode: 'string' }).notNull(),
+    doctorId: bigint('medico_usuario_id', { mode: 'number', unsigned: true }).notNull().references(() => usuarios.id),
+    folio: varchar('folio', { length: 100 }),
+    observationsEncrypted: longblob('observaciones_cifradas'),
+    createdAt: datetime('created_at', { fsp: 6 }).notNull(),
+  },
+  (table) => [uniqueIndex('uq_alta_seguimiento').on(table.followUpId), index('idx_altas_medico_fecha').on(table.doctorId, table.dischargeDate)],
+);

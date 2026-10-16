@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contactListResponseSchema, followUpListResponseSchema, registerContactRequestSchema } from '../follow-ups/follow-up.js';
+import { contactListResponseSchema, followUpListResponseSchema, registerContactRequestSchema, registerMedicalReleaseRequestSchema } from '../follow-ups/follow-up.js';
 
 const ticket = {
   id: 1,
@@ -13,6 +13,7 @@ const ticket = {
   cause: null,
   expectedReturnDate: null,
   requiresMedicalRelease: false,
+  medicalReleased: false,
   attemptCount: 0,
   nextAttemptAt: null,
   emergencyAlert: false,
@@ -71,5 +72,20 @@ describe('contactListResponseSchema', () => {
   it('trae el historial con las notas descifradas, que solo viajan por una ruta con permiso propio', () => {
     const contact = { id: 1, attemptNumber: 1, occurredAt: '2026-10-15T16:00:00.000Z', result: 'SIN_RESPUESTA', guardianId: null, notes: null, nextAttemptAt: '2026-10-15T20:00:00.000Z' };
     expect(contactListResponseSchema.safeParse({ contacts: [contact] }).success).toBe(true);
+  });
+});
+
+describe('registerMedicalReleaseRequestSchema', () => {
+  it('acepta la fecha de alta con folio y observaciones opcionales', () => {
+    expect(registerMedicalReleaseRequestSchema.safeParse({ dischargeDate: '2026-10-28' }).success).toBe(true);
+    expect(registerMedicalReleaseRequestSchema.safeParse({ dischargeDate: '2026-10-28', folio: 'ALTA-0042', observations: 'Sin fiebre desde hace 48 h.' }).success).toBe(true);
+  });
+
+  it('exige una fecha válida y limita folio y observaciones', () => {
+    expect(registerMedicalReleaseRequestSchema.safeParse({}).success).toBe(false);
+    expect(registerMedicalReleaseRequestSchema.safeParse({ dischargeDate: '28/10/2026' }).success).toBe(false);
+    expect(registerMedicalReleaseRequestSchema.safeParse({ dischargeDate: '2026-10-28', folio: 'x'.repeat(101) }).success).toBe(false);
+    expect(registerMedicalReleaseRequestSchema.safeParse({ dischargeDate: '2026-10-28', observations: 'x'.repeat(2001) }).success).toBe(false);
+    expect(registerMedicalReleaseRequestSchema.safeParse({ dischargeDate: '2026-10-28', observations: '  ' }).success).toBe(false);
   });
 });

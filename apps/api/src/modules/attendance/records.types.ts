@@ -8,6 +8,8 @@ export interface RosterRow {
   readonly roomId: number;
   readonly roomName: string;
   readonly status: AttendanceStatus | null;
+  /** RF-29: el infante requiere alta médica y no puede marcarse Presente. */
+  readonly medicalLock: boolean;
 }
 
 /** Inscripción activa en la estancia, con el turno de su sala. */

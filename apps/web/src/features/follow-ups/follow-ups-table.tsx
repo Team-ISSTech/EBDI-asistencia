@@ -10,7 +10,9 @@ function CauseCell({ ticket }: { readonly ticket: FollowUp }) {
     <div className="flex flex-col items-start gap-1">
       <div className="flex flex-wrap gap-1">
         <Badge tone={ticket.cause === 'NO_LOC' ? 'danger' : 'accent'}>{CAUSE_LABELS[ticket.cause]}</Badge>
-        {ticket.requiresMedicalRelease ? <Badge tone="danger">Requiere alta médica</Badge> : null}
+        {ticket.requiresMedicalRelease ? (
+          ticket.medicalReleased ? <Badge tone="success">Alta médica registrada</Badge> : <Badge tone="danger">Requiere alta médica</Badge>
+        ) : null}
         {ticket.emergencyAlert ? <Badge tone="danger">Avisar a contactos de emergencia</Badge> : null}
       </div>
       {ticket.nextAttemptAt ? <span className="text-xs text-[var(--color-text-muted)]">Segundo intento: {formatTime(ticket.nextAttemptAt)}</span> : null}

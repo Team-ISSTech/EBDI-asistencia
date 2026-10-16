@@ -28,15 +28,15 @@ describe('markAttendanceRequestSchema', () => {
 });
 
 describe('rosterResponseSchema', () => {
-  const entry = { enrollmentId: 1, childId: 5, childName: 'Infante Prueba', enrollmentNumber: 'M-1', roomId: 7, roomName: 'Lactantes', status: null };
+  const entry = { enrollmentId: 1, childId: 5, childName: 'Infante Prueba', enrollmentNumber: 'M-1', roomId: 7, roomName: 'Lactantes', status: null, medicalLock: false };
 
   it('acepta la lista con infantes sin marcar o con su estado', () => {
     expect(rosterResponseSchema.safeParse({ entries: [entry, { ...entry, enrollmentId: 2, status: 'PRESENTE' }] }).success).toBe(true);
   });
 
-  it('no expone datos de salud ni de contacto', () => {
+  it('solo indica si hay candado médico, sin diagnósticos ni contacto', () => {
     expect(Object.keys(rosterResponseSchema.shape.entries.element.shape).sort()).toEqual(
-      ['childId', 'childName', 'enrollmentId', 'enrollmentNumber', 'roomId', 'roomName', 'status'].sort(),
+      ['childId', 'childName', 'enrollmentId', 'enrollmentNumber', 'medicalLock', 'roomId', 'roomName', 'status'].sort(),
     );
   });
 });

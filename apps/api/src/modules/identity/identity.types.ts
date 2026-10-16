@@ -6,6 +6,8 @@ export interface AssignmentRecord {
   readonly role: RoleCode;
   readonly estanciaId: number | null;
   readonly estanciaName: string | null;
+  /** Región del supervisor (P9); nulo = sin acotar por región. */
+  readonly region?: string | null;
 }
 
 export interface AssignmentInput {
@@ -69,5 +71,5 @@ export interface QueryScope {
 
 export const principalOf = (user: UserRecord): Principal => ({
   userId: user.id,
-  assignments: user.assignments.map(({ role, estanciaId }) => ({ role, estanciaId })),
+  assignments: user.assignments.map(({ role, estanciaId, region }) => ({ role, estanciaId, region: region ?? null })),
 });

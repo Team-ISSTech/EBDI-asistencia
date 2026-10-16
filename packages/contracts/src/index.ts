@@ -83,5 +83,19 @@ export {
   followUpListResponseSchema,
   followUpSchema,
   registerContactRequestSchema,
+  registerMedicalReleaseRequestSchema,
 } from './follow-ups/follow-up.js';
-export type { Contact, ContactListResponse, FollowUp, FollowUpListResponse, RegisterContactRequest } from './follow-ups/follow-up.js';
+export type {
+  Contact,
+  ContactListResponse,
+  FollowUp,
+  FollowUpListResponse,
+  RegisterContactRequest,
+  RegisterMedicalReleaseRequest,
+} from './follow-ups/follow-up.js';
+export { dashboardQuerySchema, dashboardResponseSchema, dashboardRowSchema, dashboardTotalsSchema } from './reports/dashboard.js';
+export type { DashboardQuery, DashboardResponse, DashboardRow, DashboardTotals } from './reports/dashboard.js';
+export { EXPORT_FORMATS, exportQuerySchema } from './reports/export.js';
+export type { ExportFormat, ExportQuery } from './reports/export.js';
+export { verifyDossierRequestSchema, verifyDossierResponseSchema } from './dossier/dossier.js';
+export type { VerifyDossierRequest, VerifyDossierResponse } from './dossier/dossier.js';

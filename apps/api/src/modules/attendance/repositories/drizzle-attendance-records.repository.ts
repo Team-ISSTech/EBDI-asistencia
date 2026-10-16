@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ATTENDANCE_STATUSES, isShift, type AttendanceStatus, type Shift } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module.js';
 import type { EnrollmentForMarking, ExistingMark, MarkChange, RosterRow } from '../records.types.js';
 import type { AttendanceRecordsRepository, MarkChangeHook } from './records.repository.js';
@@ -19,6 +19,22 @@ const requireShift = (value: string): Shift => {
 };
 
 const fullName = (name: string, paternal: string, maternal: string | null): string => [name, paternal, maternal].filter((part): part is string => Boolean(part)).join(' ');
+
+/**
+ * RF-29: el infante tiene un caso abierto que requiere alta médica y aún no la
+ * tiene. Sigue al infante, no a una inscripción: un traslado no lo libera.
+ */
+const medicalLockExpr = sql<number>`EXISTS (
+  SELECT 1 FROM seguimientos s
+  INNER JOIN asistencias a ON a.id = s.asistencia_id
+  INNER JOIN inscripciones e2 ON e2.id = a.inscripcion_id
+  LEFT JOIN altas_medicas m ON m.seguimiento_id = s.id
+  WHERE e2.infante_id = ${enrollments.childId}
+    AND s.requiere_alta_medica = 1
+    AND m.id IS NULL
+    AND s.estado <> 'CERRADO'
+    AND s.deleted_at IS NULL
+)`.mapWith(Boolean);
 
 /** Inscripciones activas, sin borrado lógico, de una estancia. */
 const activeIn = (estanciaId: number) =>
@@ -40,6 +56,7 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
         roomId: rooms.id,
         roomName: rooms.name,
         status: attendanceRecords.status,
+        medicalLock: medicalLockExpr,
       })
       .from(enrollments)
       .innerJoin(children, eq(children.id, enrollments.childId))
@@ -55,6 +72,7 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       roomId: row.roomId,
       roomName: row.roomName,
       status: row.status === null ? null : requireStatus(row.status),
+      medicalLock: row.medicalLock,
     }));
   }
 
@@ -67,6 +85,16 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       .innerJoin(rooms, eq(rooms.id, enrollments.roomId))
       .where(and(activeIn(estanciaId), inArray(enrollments.id, [...enrollmentIds])));
     return rows.map((row) => ({ enrollmentId: row.enrollmentId, roomShift: requireShift(row.shift) }));
+  }
+
+  async findLockedEnrollmentIds(estanciaId: number, enrollmentIds: readonly number[]): Promise<Set<number>> {
+    if (enrollmentIds.length === 0) return new Set();
+    const rows = await this.db
+      .select({ id: enrollments.id })
+      .from(enrollments)
+      .innerJoin(children, eq(children.id, enrollments.childId))
+      .where(and(activeIn(estanciaId), inArray(enrollments.id, [...enrollmentIds]), medicalLockExpr));
+    return new Set(rows.map((row) => row.id));
   }
 
   async findMarks(journeyId: number, enrollmentIds: readonly number[]): Promise<ExistingMark[]> {

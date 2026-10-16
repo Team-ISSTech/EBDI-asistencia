@@ -121,3 +121,47 @@ const notReached = (state: FollowUpState, input: ContactInput): ContactOutcome =
  */
 export const applyContact = (state: FollowUpState, input: ContactInput): ContactOutcome =>
   input.result === 'CONTACTADO' ? reached(state, input) : notReached(state, input);
+
+export interface TicketLockState {
+  readonly status: FollowUpStatus;
+  readonly requiresMedicalRelease: boolean;
+  /** Ya existe el alta médica del caso. */
+  readonly released: boolean;
+}
+
+/** RF-29: el infante no puede marcarse Presente mientras su caso requiera alta y no la tenga. */
+export const isMedicalLockActive = (state: TicketLockState): boolean =>
+  state.requiresMedicalRelease && !state.released && state.status !== 'CERRADO';
+
+export type ReleaseCheck =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: 'YA_CERRADO' | 'NO_REQUIERE_ALTA' | 'YA_LIBERADO' };
+
+/** RF-30: el alta solo tiene sentido en un caso abierto con candado activo. */
+export function canRegisterRelease(state: TicketLockState): ReleaseCheck {
+  if (state.status === 'CERRADO') return { ok: false, reason: 'YA_CERRADO' };
+  if (!state.requiresMedicalRelease) return { ok: false, reason: 'NO_REQUIERE_ALTA' };
+  if (state.released) return { ok: false, reason: 'YA_LIBERADO' };
+  return { ok: true };
+}
+
+export interface CloseState extends TicketLockState {
+  readonly cause: FollowUpCause | null;
+  readonly attemptCount: number;
+}
+
+export type CloseCheck =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: 'YA_CERRADO' | 'SIN_CONTACTO' | 'SIN_CLASIFICAR' | 'FALTA_ALTA_MEDICA' };
+
+/**
+ * Cuándo se puede cerrar un caso: ya se llamó al tutor (RF-25), se clasificó
+ * la causa (RF-26) y, si hay candado médico, el médico dio el alta (RF-30).
+ */
+export function canClose(state: CloseState): CloseCheck {
+  if (state.status === 'CERRADO') return { ok: false, reason: 'YA_CERRADO' };
+  if (state.attemptCount === 0) return { ok: false, reason: 'SIN_CONTACTO' };
+  if (state.cause === null) return { ok: false, reason: 'SIN_CLASIFICAR' };
+  if (isMedicalLockActive(state)) return { ok: false, reason: 'FALTA_ALTA_MEDICA' };
+  return { ok: true };
+}

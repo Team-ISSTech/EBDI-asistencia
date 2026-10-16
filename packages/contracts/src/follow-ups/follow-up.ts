@@ -20,6 +20,8 @@ export const followUpSchema = z.object({
   cause: z.enum(FOLLOW_UP_CAUSES).nullable(),
   expectedReturnDate: z.iso.date().nullable(),
   requiresMedicalRelease: z.boolean(),
+  /** El médico ya registró el alta: el candado, si lo había, está liberado. */
+  medicalReleased: z.boolean(),
   /** Intentos de contacto registrados (con o sin respuesta). */
   attemptCount: z.number().int().nonnegative(),
   /** Cuándo toca el segundo intento tras no localizar al tutor (RF-27). */
@@ -64,10 +66,20 @@ export const contactSchema = z.object({
   nextAttemptAt: z.iso.datetime().nullable(),
 });
 
+const MAX_FOLIO_LENGTH = 100;
+
+/** Alta médica (RF-30): la registra solo el médico; las observaciones, que son salud, se guardan cifradas. */
+export const registerMedicalReleaseRequestSchema = z.object({
+  dischargeDate: z.iso.date(),
+  folio: z.string().trim().min(1).max(MAX_FOLIO_LENGTH).optional(),
+  observations: notesSchema,
+});
+
 export const contactListResponseSchema = z.object({ contacts: z.array(contactSchema) });
 
 export type FollowUp = z.infer<typeof followUpSchema>;
 export type FollowUpListResponse = z.infer<typeof followUpListResponseSchema>;
 export type RegisterContactRequest = z.infer<typeof registerContactRequestSchema>;
+export type RegisterMedicalReleaseRequest = z.infer<typeof registerMedicalReleaseRequestSchema>;
 export type Contact = z.infer<typeof contactSchema>;
 export type ContactListResponse = z.infer<typeof contactListResponseSchema>;

@@ -20,6 +20,7 @@ export interface FollowUpRow {
   readonly cause: FollowUpCause | null;
   readonly expectedReturnDate: string | null;
   readonly requiresMedicalRelease: boolean;
+  readonly medicalReleased: boolean;
   readonly attemptCount: number;
   readonly failedAttempts: number;
   /** Próximo intento programado por el último contacto fallido; nulo si no hay. */
@@ -35,6 +36,7 @@ export interface FollowUpDetail {
   readonly cause: FollowUpCause | null;
   readonly requiresMedicalRelease: boolean;
   readonly expectedReturnDate: string | null;
+  readonly released: boolean;
   readonly attemptCount: number;
   readonly failedAttempts: number;
 }
@@ -64,4 +66,11 @@ export interface ContactRow {
   readonly guardianId: number | null;
   readonly notesEncrypted: Buffer | null;
   readonly nextAttemptAt: Date | null;
+}
+
+export interface NewRelease {
+  readonly dischargeDate: string;
+  readonly folio: string | null;
+  /** Ya cifradas por el servicio: son datos de salud. */
+  readonly observationsEncrypted: Buffer | null;
 }
