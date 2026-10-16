@@ -7,6 +7,7 @@ import { EstanciaStamp } from '../components/estancia-stamp';
 import { Field } from '../components/field';
 import { PageHeader } from '../components/page-header';
 import { Select } from '../components/select';
+import { Textarea } from '../components/textarea';
 import { Table, Td, Th } from '../components/table';
 
 describe('Button', () => {
@@ -96,5 +97,27 @@ describe('Select', () => {
     expect(select).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('alert')).toHaveTextContent('Elige una sala');
     expect(screen.getByRole('option', { name: 'Lactantes' })).toBeInTheDocument();
+  });
+});
+
+describe('Textarea', () => {
+  it('asocia etiqueta, ayuda y error', () => {
+    render(<Textarea label="Notas" hint="Se guardan cifradas" error="Escribe algo" />);
+    const area = screen.getByLabelText('Notas');
+    expect(area.tagName).toBe('TEXTAREA');
+    expect(area).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('alert')).toHaveTextContent('Escribe algo');
+  });
+
+  it('muestra la ayuda cuando no hay error y la enlaza con aria-describedby', () => {
+    render(<Textarea label="Notas" hint="Se guardan cifradas" />);
+    const area = screen.getByLabelText('Notas');
+    expect(area).not.toHaveAttribute('aria-invalid');
+    expect(area.getAttribute('aria-describedby')).toBe(screen.getByText('Se guardan cifradas').id);
+  });
+
+  it('sin ayuda ni error no declara descripción', () => {
+    render(<Textarea label="Notas" />);
+    expect(screen.getByLabelText('Notas')).not.toHaveAttribute('aria-describedby');
   });
 });

@@ -20,6 +20,7 @@ describe('isPermissionCode', () => {
   it('acepta un código conocido y rechaza desconocidos o no cadenas', () => {
     expect(isPermissionCode('AUDITORIA_CONSULTAR')).toBe(true);
     expect(isPermissionCode('INFANTE_ADMINISTRAR')).toBe(true);
+    expect(isPermissionCode('EXPEDIENTE_EXPORTAR')).toBe(true);
     expect(isPermissionCode('BORRAR_TODO')).toBe(false);
     expect(isPermissionCode(null)).toBe(false);
   });

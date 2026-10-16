@@ -26,7 +26,7 @@ describe('SessionService', () => {
     const auth = await service.resolve(token);
     expect(auth).toEqual(context);
     expect(auth).toMatchObject({ userId: user.id, activeEstanciaId: 1 });
-    expect(auth?.principal.assignments).toEqual([{ role: 'DOCENTE', estanciaId: 1 }]);
+    expect(auth?.principal.assignments).toEqual([{ role: 'DOCENTE', estanciaId: 1, region: null }]);
   });
 
   it('no resuelve tokens expirados ni desconocidos', async () => {

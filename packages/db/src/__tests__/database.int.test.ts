@@ -30,17 +30,17 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(7);
+    expect(second.skipped).toHaveLength(11);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
     const roleRows = await connection.db.select().from(roles);
     const permissionRows = await connection.db.select().from(permisos);
     expect(roleRows).toHaveLength(7);
-    expect(permissionRows).toHaveLength(13);
+    expect(permissionRows).toHaveLength(14);
   });
 
   it('sincroniza rol_permiso con la matriz y es idempotente', async () => {
@@ -156,5 +156,24 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     const seededRooms = await connection.db.select().from(rooms);
     expect(seededRooms.length).toBeGreaterThanOrEqual(DEV_ROOMS.length);
     expect(seededRooms.map((room) => room.name)).toEqual(expect.arrayContaining(DEV_ROOMS.map((room) => room.name)));
+  });
+
+  it('el registro de expedientes emitidos es inmutable una vez sellado', async () => {
+    const rootMessage = (error: unknown): string =>
+      error instanceof Error ? ((error.cause as Error | undefined)?.message ?? error.message) : String(error);
+    await connection.db.execute(sql`INSERT INTO estancias (clave_ebdi, nombre) VALUES ('EXP-01', 'Estancia de expedientes')`);
+    await connection.db.execute(sql`INSERT INTO usuarios (nombre, correo, password_hash) VALUES ('Emisor', 'emisor@sirai.test', 'x')`);
+    await connection.db.execute(
+      sql`INSERT INTO infantes (matricula, nombre, apellido_paterno, fecha_nacimiento) VALUES ('M-EXP-1', 'Infante', 'Prueba', '2025-01-01')`,
+    );
+    await connection.db.execute(
+      sql`INSERT INTO expedientes_emitidos (infante_id, estancia_id, emitido_por, emitido_at, contenido_sha256)
+          SELECT i.id, e.id, u.id, NOW(6), UNHEX(SHA2('contenido', 256)) FROM infantes i, estancias e, usuarios u
+          WHERE i.matricula = 'M-EXP-1' AND e.clave_ebdi = 'EXP-01' AND u.correo = 'emisor@sirai.test'`,
+    );
+    // Sin sello todavía: se puede sellar una vez.
+    await connection.db.execute(sql`UPDATE expedientes_emitidos SET sello = UNHEX(SHA2('sello', 256)) WHERE sello IS NULL`);
+    await expect(connection.db.execute(sql`UPDATE expedientes_emitidos SET sello = UNHEX(SHA2('otro', 256))`).catch((e: unknown) => Promise.reject(rootMessage(e)))).rejects.toMatch(/inmutable/);
+    await expect(connection.db.execute(sql`DELETE FROM expedientes_emitidos`).catch((e: unknown) => Promise.reject(rootMessage(e)))).rejects.toMatch(/inmutable/);
   });
 });

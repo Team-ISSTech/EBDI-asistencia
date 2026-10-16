@@ -19,3 +19,39 @@ export type { EnrollmentTransition, RoomAgeRange } from './enrollment.js';
 export { CONSENT_STATUSES, CONSENT_TYPES, canRevoke, currentConsentStatus, isConsentType } from './consent.js';
 export type { ConsentFact, ConsentStatus, ConsentType } from './consent.js';
 export * from './attendance.js';
+export { ATTENDANCE_METHODS, planMark } from './marking.js';
+export type { AttendanceMethod, MarkPlan } from './marking.js';
+export {
+  ABSENCE_CUTOFF_HOUR,
+  ABSENCE_STATUSES,
+  CONTACT_CAUSES,
+  CONTACT_RESULTS,
+  EMERGENCY_ALERT_AFTER_ATTEMPTS,
+  FOLLOW_UP_CAUSES,
+  FOLLOW_UP_STATUSES,
+  SECOND_ATTEMPT_DELAY_HOURS,
+  applyContact,
+  canClose,
+  canRegisterRelease,
+  cutoffReached,
+  generatesFollowUp,
+  isEmergencyAlert,
+  isMedicalLockActive,
+  requiresMedicalRelease,
+  secondAttemptDueAt,
+} from './follow-up.js';
+export type {
+  CloseCheck,
+  CloseState,
+  ContactInput,
+  ContactOutcome,
+  ContactResult,
+  FollowUpAfterContact,
+  FollowUpCause,
+  FollowUpState,
+  FollowUpStatus,
+  ReleaseCheck,
+  TicketLockState,
+} from './follow-up.js';
+export { GREEN_FROM, REPORT_PERIODS, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, dossierFolio, parseDossierFolio, periodRange, trafficLight } from './reports.js';
+export type { DateRange, ReportPeriod, TrafficLight } from './reports.js';

@@ -62,3 +62,40 @@ export {
 export type { Consent, ConsentListResponse, RegisterConsentRequest } from './catalogs/consent.js';
 export { attendanceJourneyQuerySchema, attendanceJourneySchema, openAttendanceJourneyRequestSchema } from './attendance/journey.js';
 export type { AttendanceJourney, AttendanceJourneyQuery, OpenAttendanceJourneyRequest } from './attendance/journey.js';
+export {
+  attendanceMarkSchema,
+  attendanceStatusSchema,
+  markAttendanceRequestSchema,
+  markAttendanceResponseSchema,
+  rosterEntrySchema,
+  rosterResponseSchema,
+} from './attendance/record.js';
+export type {
+  AttendanceMark,
+  MarkAttendanceRequest,
+  MarkAttendanceResponse,
+  RosterEntry,
+  RosterResponse,
+} from './attendance/record.js';
+export {
+  contactListResponseSchema,
+  contactSchema,
+  followUpListResponseSchema,
+  followUpSchema,
+  registerContactRequestSchema,
+  registerMedicalReleaseRequestSchema,
+} from './follow-ups/follow-up.js';
+export type {
+  Contact,
+  ContactListResponse,
+  FollowUp,
+  FollowUpListResponse,
+  RegisterContactRequest,
+  RegisterMedicalReleaseRequest,
+} from './follow-ups/follow-up.js';
+export { dashboardQuerySchema, dashboardResponseSchema, dashboardRowSchema, dashboardTotalsSchema } from './reports/dashboard.js';
+export type { DashboardQuery, DashboardResponse, DashboardRow, DashboardTotals } from './reports/dashboard.js';
+export { EXPORT_FORMATS, exportQuerySchema } from './reports/export.js';
+export type { ExportFormat, ExportQuery } from './reports/export.js';
+export { verifyDossierRequestSchema, verifyDossierResponseSchema } from './dossier/dossier.js';
+export type { VerifyDossierRequest, VerifyDossierResponse } from './dossier/dossier.js';

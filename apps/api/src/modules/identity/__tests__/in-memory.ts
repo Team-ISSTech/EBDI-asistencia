@@ -186,6 +186,7 @@ export const testEnv: ApiEnv = {
   TRUST_PROXY: false,
   WEB_ORIGIN: 'http://localhost:5173',
   DATA_ENCRYPTION_KEY: 'a'.repeat(64),
+  FOLLOW_UP_JOB_SECONDS: 0,
 };
 
 export const request: RequestContext = { ip: '127.0.0.1', userAgent: 'vitest', requestId: null };

@@ -51,3 +51,49 @@ describe('esquema Drizzle de los catálogos', () => {
     }
   });
 });
+
+describe('esquema Drizzle de los registros de asistencia', () => {
+  it('mapea attendanceRecords a la tabla asistencias con su identificador de operación', () => {
+    expect(getTableName(schema.attendanceRecords)).toBe('asistencias');
+    expect(Object.keys(getTableColumns(schema.attendanceRecords))).toEqual(
+      expect.arrayContaining(['journeyId', 'enrollmentId', 'status', 'clientId', 'method', 'recordedBy', 'enteredAt']),
+    );
+  });
+});
+
+describe('esquema Drizzle de los seguimientos', () => {
+  it('mapea followUps a la tabla seguimientos con su borrado lógico atribuible', () => {
+    expect(getTableName(schema.followUps)).toBe('seguimientos');
+    expect(Object.keys(getTableColumns(schema.followUps))).toEqual(
+      expect.arrayContaining(['attendanceRecordId', 'cause', 'status', 'expectedReturnDate', 'requiresMedicalRelease', 'assigneeId', 'openedAt', 'deletedAt', 'deletedBy']),
+    );
+  });
+});
+
+describe('esquema Drizzle de los contactos de seguimiento', () => {
+  it('mapea followUpContacts con teléfono y notas solo en columnas cifradas', () => {
+    expect(getTableName(schema.followUpContacts)).toBe('contactos_seguimiento');
+    const columns = Object.keys(getTableColumns(schema.followUpContacts));
+    expect(columns).toEqual(expect.arrayContaining(['followUpId', 'guardianId', 'attemptNumber', 'result', 'phoneEncrypted', 'notesEncrypted', 'nextAttemptAt', 'registeredBy']));
+    expect(columns).not.toContain('phone');
+    expect(columns).not.toContain('notes');
+  });
+});
+
+describe('esquema Drizzle del alta médica', () => {
+  it('mapea medicalReleases a altas_medicas con las observaciones solo cifradas', () => {
+    expect(getTableName(schema.medicalReleases)).toBe('altas_medicas');
+    const columns = Object.keys(getTableColumns(schema.medicalReleases));
+    expect(columns).toEqual(expect.arrayContaining(['followUpId', 'dischargeDate', 'doctorId', 'folio', 'observationsEncrypted']));
+    expect(columns).not.toContain('observations');
+  });
+});
+
+describe('esquema Drizzle de los expedientes emitidos', () => {
+  it('mapea issuedDossiers a expedientes_emitidos con la huella y el sello', () => {
+    expect(getTableName(schema.issuedDossiers)).toBe('expedientes_emitidos');
+    expect(Object.keys(getTableColumns(schema.issuedDossiers))).toEqual(
+      expect.arrayContaining(['childId', 'estanciaId', 'issuedBy', 'issuedAt', 'contentSha256', 'seal']),
+    );
+  });
+});
