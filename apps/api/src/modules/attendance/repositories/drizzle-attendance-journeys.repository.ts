@@ -7,7 +7,7 @@ import { ApiError } from '../../../common/errors/api-error.js';
 import type { AttendanceJourneyRecord } from '../attendance.types.js';
 import type { AttendanceJourneysRepository, JourneyTransactionHook } from './repositories.js';
 
-const { jornadasAsistencia } = schema;
+const { jornadasAsistencia, ciclosEscolares } = schema;
 type Row = typeof jornadasAsistencia.$inferSelect;
 
 const requireStatus = (status: string): JourneyStatus => {
@@ -18,7 +18,8 @@ const requireShift = (shift: string): Shift => {
   if (!isShift(shift)) throw new Error(`Turno de jornada no reconocido: ${shift}`);
   return shift;
 };
-const toRecord = (row: Row): AttendanceJourneyRecord => ({ ...row, shift: requireShift(row.shift), status: requireStatus(row.status) });
+/** El ciclo escolar es de la base (retención); la jornada del dominio no lo expone. */
+const toRecord = ({ schoolYearId: _schoolYearId, ...row }: Row): AttendanceJourneyRecord => ({ ...row, shift: requireShift(row.shift), status: requireStatus(row.status) });
 const driverCode = (error: unknown): string | null => {
   if (typeof error !== 'object' || error === null) return null;
   const { code, cause } = error as { code?: unknown; cause?: unknown };
@@ -42,7 +43,8 @@ export class DrizzleAttendanceJourneysRepository implements AttendanceJourneysRe
   async create(input: Omit<AttendanceJourneyRecord, 'id' | 'status' | 'closedAt' | 'closedBy'>, hook?: JourneyTransactionHook<number>): Promise<AttendanceJourneyRecord> {
     try {
       const id = await this.db.transaction(async (tx) => {
-        const [result] = await tx.insert(jornadasAsistencia).values({ ...input, createdAt: input.openedAt });
+        const schoolYearId = await this.activeSchoolYearId(tx);
+        const [result] = await tx.insert(jornadasAsistencia).values({ ...input, schoolYearId, createdAt: input.openedAt });
         await hook?.(tx, result.insertId);
         return result.insertId;
       });
@@ -53,6 +55,13 @@ export class DrizzleAttendanceJourneysRepository implements AttendanceJourneysRe
       if (driverCode(error) === 'ER_DUP_ENTRY') throw new ApiError('CONFLICTO', 'Ya existe una jornada para esa estancia, fecha y turno.');
       throw error;
     }
+  }
+
+  /** Toda jornada pertenece al ciclo escolar activo: de ahí depende su archivo histórico (RNF-05). */
+  private async activeSchoolYearId(executor: Pick<Db, 'select'>): Promise<number> {
+    const [row] = await executor.select({ id: ciclosEscolares.id }).from(ciclosEscolares).where(eq(ciclosEscolares.status, 'ACTIVO')).limit(1);
+    if (!row) throw new ApiError('CONFLICTO', 'No hay un ciclo escolar activo.');
+    return row.id;
   }
 
   async close(id: number, estanciaId: number, closedBy: number, closedAt: Date, hook?: JourneyTransactionHook<void>): Promise<AttendanceJourneyRecord | null> {

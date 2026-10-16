@@ -88,7 +88,8 @@ Abre `http://localhost:8080` y entra con `admin_central@sirai.test` y la
 - La semilla de desarrollo solo corre con `SEED_DEV_DATA=true` y nunca con
   `NODE_ENV=production`. `docker compose down -v` borra la base.
 - Un despliegue real necesita `NODE_ENV=production`, `COOKIE_SECURE=true`,
-  `SEED_DEV_DATA=false` y HTTPS delante de nginx (con un balanceador, ajusta
+  `PRIVACY_NOTICE_VERSION` (versión vigente del aviso de privacidad, que la
+  API guarda como evidencia en cada consentimiento), `SEED_DEV_DATA=false` y HTTPS delante de nginx (con un balanceador, ajusta
   `set_real_ip_from` en `apps/web/nginx.conf`).
 
 ## Inicio rápido (desarrollo con pnpm)

@@ -80,7 +80,7 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
 
     const me = await request(app.getHttpServer()).get('/auth/me').set('Cookie', cookie);
     expect(me.status).toBe(200);
-    expect(me.body.permissions.sort()).toEqual(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR']);
+    expect(me.body.permissions.sort()).toEqual(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR', 'INFANTE_CONSULTAR']);
   });
 
   it('sin cookie responde 401 NO_AUTENTICADO', async () => {
@@ -184,8 +184,12 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
 
     const connection = connect(TEST_DATABASE_URL!);
     const actions = await connection.db.select({ action: schema.auditoria.action }).from(schema.auditoria);
+    const [journey] = await connection.db.select({ schoolYearId: schema.jornadasAsistencia.schoolYearId }).from(schema.jornadasAsistencia);
+    const [activeYear] = await connection.db.select({ id: schema.ciclosEscolares.id }).from(schema.ciclosEscolares);
     await connection.close();
     expect(actions.map((row) => row.action)).toEqual(expect.arrayContaining(['JORNADA_ABIERTA', 'JORNADA_CERRADA']));
+    // La jornada queda ligada al ciclo escolar activo: de ahí depende la retención.
+    expect(journey?.schoolYearId).toBe(activeYear?.id);
   });
 
   it('el límite de intentos por IP responde 429 DEMASIADAS_SOLICITUDES', async () => {

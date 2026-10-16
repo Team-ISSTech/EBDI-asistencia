@@ -71,14 +71,14 @@ Decisiones sobre el esquema del equipo (preguntas P1..P11 de
 | P | Decisión |
 | --- | --- |
 | P1 | Diseño normalizado (`jornadas_asistencia` + `asistencias`); sin desnormalizar `infante_id`. |
-| P2 | `deleted_by` (FK a `usuarios`, nulo) junto a cada `deleted_at`. |
+| P2 | `deleted_by` (FK a `usuarios`, nulo) junto a cada `deleted_at` (migración 0003). |
 | P3 | Inmutabilidad de `auditoria` por triggers más usuario de ejecución con solo `INSERT`/`SELECT`; se documenta en el manual de instalación. |
 | P4 | Los diagnósticos van en las columnas cifradas existentes (`incidencias_asistencia`, `altas_medicas`); sin expediente médico en Fase 1. |
-| P5 | `infantes.grupo_discapacidad` pasa a columna cifrada; los reportes agrupan por `tiene_discapacidad`. |
+| P5 | `infantes.grupo_discapacidad` pasa a columna cifrada; los reportes agrupan por `tiene_discapacidad` (migración 0003). |
 | P6 | Todo contacto de emergencia es un tutor (`infante_tutor.es_contacto_emergencia`). |
 | P7 | Tabla `sesiones` (migración 0001). |
-| P8 | `ciclos_escolares` con `ACTIVO`/`ARCHIVADO`; la retención de 5 años se aplica por ciclo. |
-| P9 | Un solo rol `SUPERVISOR_CENTRAL` con alcance por región (`usuario_rol.region`). |
+| P8 | `ciclos_escolares` con `ACTIVO`/`ARCHIVADO`; la retención de 5 años se aplica por ciclo (migración 0003). |
+| P9 | Un solo rol `SUPERVISOR_CENTRAL` con alcance por región (`usuario_rol.region`, migración 0003). |
 | P10 | Los permisos de cada módulo se agregan al iniciarlo, con su prueba en la matriz. |
 | P11 | Estados en `VARCHAR`; valores válidos en `packages/domain` y `CHECK` en la migración de cada módulo. |
 

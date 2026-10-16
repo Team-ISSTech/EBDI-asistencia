@@ -12,3 +12,5 @@ export type { FieldProps } from './components/field';
 export { PageHeader } from './components/page-header';
 export type { PageHeaderProps } from './components/page-header';
 export { Table, Td, Th } from './components/table';
+export { Select } from './components/select';
+export type { SelectProps } from './components/select';

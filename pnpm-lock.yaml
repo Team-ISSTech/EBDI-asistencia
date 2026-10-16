@@ -123,6 +123,9 @@ importers:
       '@sirai/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@sirai/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@sirai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -307,6 +310,9 @@ importers:
         specifier: 3.24.5
         version: 3.24.5(@types/node@26.6.2)
     devDependencies:
+      '@sirai/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@sirai/eslint-config':
         specifier: workspace:*
         version: link:../eslint-config

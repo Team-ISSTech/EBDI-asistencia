@@ -1,4 +1,5 @@
-import { bigint, date, datetime, index, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
+import { bigint, date, datetime, index, mysqlTable, smallint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
+import { ciclosEscolares } from './ciclos.js';
 import { estancias } from './estancias.js';
 import { usuarios } from './usuarios.js';
 
@@ -7,6 +8,7 @@ export const jornadasAsistencia = mysqlTable(
   {
     id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
     estanciaId: bigint('estancia_id', { mode: 'number', unsigned: true }).notNull().references(() => estancias.id),
+    schoolYearId: smallint('ciclo_escolar_id', { unsigned: true }).notNull().references(() => ciclosEscolares.id),
     date: date('fecha', { mode: 'string' }).notNull(),
     shift: varchar('turno', { length: 20 }).notNull(),
     status: varchar('estado', { length: 20 }).notNull().default('ABIERTA'),

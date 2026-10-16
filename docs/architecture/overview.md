@@ -98,7 +98,18 @@ Flujo en la API:
 | `GET /auth/me` | sesión | usuario, asignaciones, estancia activa y permisos resueltos |
 | `POST /auth/estancia` | sesión | cambia la estancia activa (solo a una asignada) |
 | `GET/POST /usuarios`, `PATCH /usuarios/:id/roles` | USUARIO_ADMINISTRAR | administración de usuarios; nadie puede quitarse su propio rol central |
+| `GET /salas` | INFANTE_CONSULTAR | salas activas de la estancia activa |
+| `GET /infantes` | INFANTE_CONSULTAR | padrón de la estancia activa; se audita como lectura |
+| `POST /infantes` | INFANTE_ADMINISTRAR | alta con inscripción inicial, movimiento ALTA y auditoría en una transacción; cifra el grupo de discapacidad |
+| `POST /tutores` | INFANTE_ADMINISTRAR | alta de tutor; teléfono cifrado (AES-256-GCM) y hash con llave (HMAC) |
+| `GET/POST /infantes/:id/tutores` | INFANTE_CONSULTAR / INFANTE_ADMINISTRAR | tutores del infante y su vínculo; un solo tutor principal; nunca devuelve el teléfono |
+| `GET /tutores/:id/telefono` | NOTA_SENSIBLE_CONSULTAR | teléfono descifrado; se audita antes de responder |
+| `GET/POST /infantes/:id/consentimientos` | INFANTE_CONSULTAR / CONSENTIMIENTO_REGISTRAR | historial y registro de aceptación o rechazo del tutor; la versión del aviso la fija el servidor (`PRIVACY_NOTICE_VERSION`), nunca el cliente |
+| `POST /consentimientos/:id/revocar` | CONSENTIMIENTO_REGISTRAR | marca `revocado_at`; nunca borra la evidencia |
 | `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
+
+Todo el padrón se acota a la estancia activa de la sesión: una sala, infante,
+tutor o consentimiento de otra estancia responde 404 como si no existiera.
 
 Reglas de sesión: inactividad máxima `SESSION_TTL_HOURS` (12 h) con tope
 absoluto `SESSION_MAX_HOURS` (72 h); el bloqueo de cuenta solo se comunica a

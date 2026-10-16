@@ -3,8 +3,12 @@ import { landingPathFor, NAV_ITEMS, visibleNavItems } from '../app/nav-items';
 
 describe('visibleNavItems', () => {
   it('una docente ve solo operación', () => {
-    const items = visibleNavItems(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR']);
+    const items = visibleNavItems(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR', 'INFANTE_CONSULTAR']);
     expect(items.map((i) => i.label)).toEqual(['Pase de lista', 'Infantes']);
+  });
+
+  it('infantes depende de su propio permiso, no del de asistencia', () => {
+    expect(visibleNavItems(['ASISTENCIA_CONSULTAR']).map((i) => i.label)).toEqual(['Pase de lista']);
   });
 
   it('administración central ve usuarios, auditoría y reportes, nunca pase de lista', () => {

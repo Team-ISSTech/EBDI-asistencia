@@ -10,7 +10,7 @@ export const docenteSession: SessionResponse = {
   assignments: [{ role: 'DOCENTE', estanciaId: 1, estanciaName: 'Estancia de prueba 01' }],
   activeEstancia: { id: 1, name: 'Estancia de prueba 01' },
   availableEstancias: [{ id: 1, name: 'Estancia de prueba 01' }],
-  permissions: ['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR'],
+  permissions: ['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR', 'INFANTE_CONSULTAR'],
 };
 
 /**

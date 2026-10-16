@@ -32,5 +32,33 @@ export { apiErrorSchema } from './common/error.js';
 export type { ApiError } from './common/error.js';
 export { healthResponseSchema } from './common/health.js';
 export type { HealthResponse } from './common/health.js';
+export { positiveIdSchema, isoDateSchema } from './catalogs/common.js';
+export { childListResponseSchema, childSchema, createChildRequestSchema, enrollChildRequestSchema } from './catalogs/child.js';
+export type { Child, ChildListResponse, CreateChildRequest, EnrollChildRequest } from './catalogs/child.js';
+export {
+  childGuardianListResponseSchema,
+  childGuardianSchema,
+  createGuardianRequestSchema,
+  guardianPhoneResponseSchema,
+  guardianSchema,
+  linkGuardianRequestSchema,
+} from './catalogs/guardian.js';
+export type {
+  ChildGuardian,
+  ChildGuardianListResponse,
+  CreateGuardianRequest,
+  Guardian,
+  GuardianPhoneResponse,
+  LinkGuardianRequest,
+} from './catalogs/guardian.js';
+export { createRoomRequestSchema, roomListResponseSchema, roomSchema, shiftSchema } from './catalogs/room.js';
+export type { CreateRoomRequest, Room, RoomListResponse } from './catalogs/room.js';
+export {
+  consentListResponseSchema,
+  consentSchema,
+  consentTypeSchema,
+  registerConsentRequestSchema,
+} from './catalogs/consent.js';
+export type { Consent, ConsentListResponse, RegisterConsentRequest } from './catalogs/consent.js';
 export { attendanceJourneyQuerySchema, attendanceJourneySchema, openAttendanceJourneyRequestSchema } from './attendance/journey.js';
 export type { AttendanceJourney, AttendanceJourneyQuery, OpenAttendanceJourneyRequest } from './attendance/journey.js';

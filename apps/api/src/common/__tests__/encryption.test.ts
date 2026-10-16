@@ -36,4 +36,17 @@ describe('EncryptionService', () => {
     const blob = service.encryptJson({ a: 1 });
     expect(blob && JSON.parse(service.decrypt(blob))).toEqual({ a: 1 });
   });
+
+  describe('blindHash', () => {
+    it('es determinista, de 32 bytes y no revierte por fuerza bruta sin la llave', () => {
+      const hash = service.blindHash('5512345678');
+      expect(hash).toHaveLength(32);
+      expect(service.blindHash('5512345678').equals(hash)).toBe(true);
+      expect(service.blindHash('5512345679').equals(hash)).toBe(false);
+    });
+
+    it('depende de la llave: otra llave produce otro hash', () => {
+      expect(new EncryptionService(otherEnv).blindHash('5512345678').equals(service.blindHash('5512345678'))).toBe(false);
+    });
+  });
 });

@@ -24,13 +24,14 @@ describe('ROLE_PERMISSIONS', () => {
 
   it('DOCENTE consulta y registra asistencia, nada más', () => {
     expect(sorted(ROLE_PERMISSIONS.DOCENTE)).toEqual(
-      sorted(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR']),
+      sorted(['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR', 'INFANTE_CONSULTAR']),
     );
   });
 
   it('TRABAJO_SOCIAL y ENFERMERIA comparten seguimiento y notas sensibles', () => {
     const expected = sorted([
       'ASISTENCIA_CONSULTAR',
+      'INFANTE_CONSULTAR',
       'SEGUIMIENTO_CONSULTAR',
       'SEGUIMIENTO_REGISTRAR',
       'NOTA_SENSIBLE_CONSULTAR',
@@ -50,6 +51,9 @@ describe('ROLE_PERMISSIONS', () => {
       sorted([
         'ASISTENCIA_CONSULTAR',
         'ASISTENCIA_REGISTRAR',
+        'INFANTE_CONSULTAR',
+        'INFANTE_ADMINISTRAR',
+        'CONSENTIMIENTO_REGISTRAR',
         'SEGUIMIENTO_CONSULTAR',
         'SEGUIMIENTO_REGISTRAR',
         'NOTA_SENSIBLE_CONSULTAR',
@@ -69,5 +73,18 @@ describe('ROLE_PERMISSIONS', () => {
     );
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('ASISTENCIA_CONSULTAR');
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('NOTA_SENSIBLE_CONSULTAR');
+  });
+
+  it('solo la directora administra el padrón y registra consentimientos', () => {
+    for (const role of ROLE_CODES) {
+      const expected = role === 'DIRECTORA';
+      expect(ROLE_PERMISSIONS[role].includes('INFANTE_ADMINISTRAR')).toBe(expected);
+      expect(ROLE_PERMISSIONS[role].includes('CONSENTIMIENTO_REGISTRAR')).toBe(expected);
+    }
+  });
+
+  it('los roles centrales nunca consultan datos de infantes', () => {
+    expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('INFANTE_CONSULTAR');
+    expect(ROLE_PERMISSIONS.SUPERVISOR_CENTRAL).not.toContain('INFANTE_CONSULTAR');
   });
 });

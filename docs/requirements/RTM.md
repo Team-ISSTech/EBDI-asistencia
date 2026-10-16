@@ -46,23 +46,23 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-29 | Candado médico | `packages/domain`, `apps/api/src/modules/follow-ups`, `apps/api/src/modules/attendance` | unitaria Vitest, integración Vitest + MySQL | pendiente |
 | RF-30 | Alta médica por Médico | `apps/api/src/modules/follow-ups`, `packages/auth` | integración Vitest + MySQL | pendiente |
 | RF-31 | Catálogo de estancias | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | pendiente |
-| RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | pendiente |
-| RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | pendiente |
-| RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | pendiente |
-| RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | pendiente |
-| RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | pendiente |
+| RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: solo listado de salas; falta el CRUD) |
+| RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: alta y listado; faltan edición y baja) |
+| RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: alta, vínculo y teléfono cifrado; falta editar y quitar) |
+| RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: alta inicial y movimiento ALTA; faltan cambio de sala, traslado y baja) |
+| RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: registro y revocación) |
 
 ## Requisitos no funcionales
 
 | ID | Requisito | Paquete o módulo | Verificación | Estado |
 | --- | --- | --- | --- | --- |
-| RNF-01 | AES-256 en reposo | `apps/api/src/common` (encryption service), `packages/db` (columnas `*_cifrado`) | unitaria Vitest, integración Vitest + MySQL | pendiente |
-| RNF-02 | Auditoría inmutable con diff | `apps/api/src/common` (audit interceptor), `packages/db` (tabla `auditoria`, solo INSERT) | integración Vitest + MySQL, revisión de código | pendiente |
-| RNF-03 | Auditoría de lecturas confidenciales | `apps/api/src/common` (audit interceptor), `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | pendiente |
-| RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | pendiente |
-| RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/db`, `apps/api/src/modules/administration` | integración Vitest + MySQL, revisión de código | pendiente |
+| RNF-01 | AES-256 en reposo | `apps/api/src/common` (encryption service), `packages/db` (columnas `*_cifrado`) | unitaria Vitest, integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: teléfono, discapacidad y bitácora cifrados; faltan las notas de seguimiento) |
+| RNF-02 | Auditoría inmutable con diff | `apps/api/src/common` (audit interceptor), `packages/db` (tabla `auditoria`, solo INSERT) | integración Vitest + MySQL, revisión de código | en curso (rama initialFeaturesContinuation: triggers de la migración 0002; auditoría activa en usuarios, infantes, tutores y consentimientos) |
+| RNF-03 | Auditoría de lecturas confidenciales | `apps/api/src/common` (audit interceptor), `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: lecturas de padrón, tutores, teléfono y consentimientos; faltan las notas de seguimiento) |
+| RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | en curso (rama initialFeaturesContinuation: `deleted_at` y `deleted_by`; falta aplicarlo en edición y baja) |
+| RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/db`, `apps/api/src/modules/administration` | integración Vitest + MySQL, revisión de código | en curso (rama initialFeaturesContinuation: tabla `ciclos_escolares`) |
 | RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth` | integración Vitest + MySQL, revisión de código | pendiente |
-| RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | pendiente |
+| RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | en curso (rama initialFeaturesContinuation: semillas sintéticas, sin infantes ni tutores reales) |
 | RNF-08 | p95 < 1.5 s con 212 estancias | `apps/api/src/modules/attendance`, `apps/api/src/modules/follow-ups`, `packages/db` (índices) | medición de carga | pendiente |
 | RNF-09 | Cobertura 80 % en lógica de negocio | `packages/domain`, `packages/auth`, `apps/api/src/modules/*` | unitaria Vitest, integración Vitest + MySQL (reporte de cobertura) | pendiente |
 | RNF-10 | Complejidad ciclomática < 10 | `packages/eslint-config` (regla `complexity: 10`) | inspección de ESLint | implementado en `main` |
@@ -84,5 +84,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Mapeados a paquete o módulo | 53 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
-| En curso | 2 (RF-14, RF-15) |
-| Pendientes | 36 |
+| En curso | 13 (RF-14, RF-15, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
+| Pendientes | 25 |
