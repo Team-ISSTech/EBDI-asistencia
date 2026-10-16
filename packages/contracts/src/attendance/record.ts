@@ -15,6 +15,8 @@ export const rosterEntrySchema = z.object({
   roomId: positiveIdSchema,
   roomName: z.string(),
   status: attendanceStatusSchema.nullable(),
+  /** RF-29: el infante requiere alta médica y no puede marcarse Presente. Solo el indicador, nunca el motivo. */
+  medicalLock: z.boolean(),
 });
 
 export const rosterResponseSchema = z.object({ entries: z.array(rosterEntrySchema) });

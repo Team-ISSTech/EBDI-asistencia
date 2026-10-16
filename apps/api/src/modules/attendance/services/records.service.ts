@@ -45,6 +45,7 @@ export class AttendanceRecordsService {
     if (journey.status === 'CERRADA') throw new ApiError('CONFLICTO', 'La jornada ya está cerrada.');
     const enrollmentIds = input.marks.map((mark) => mark.enrollmentId);
     this.assertEnrollable(journey, enrollmentIds, await this.records.findEnrollments(journey.estanciaId, enrollmentIds));
+    await this.assertNoMedicalLock(journey.estanciaId, input);
     const changes = await this.planChanges(journey.id, input);
     if (changes.length > 0) {
       await this.records.applyChanges(journey.id, auth.userId, this.clock(), changes, (tx, change, recordId) =>
@@ -84,6 +85,14 @@ export class AttendanceRecordsService {
     if (found.some((enrollment) => enrollment.roomShift !== journey.shift)) {
       throw new ApiError('DATOS_INVALIDOS', 'Hay infantes de una sala de otro turno.');
     }
+  }
+
+  /** RF-29: con candado médico activo no se puede marcar Presente; otros estados (ausencia, comisión médica) sí. */
+  private async assertNoMedicalLock(estanciaId: number, input: MarkAttendanceRequest): Promise<void> {
+    const presentIds = input.marks.filter((mark) => mark.status === 'PRESENTE').map((mark) => mark.enrollmentId);
+    if (presentIds.length === 0) return;
+    const locked = await this.records.findLockedEnrollmentIds(estanciaId, presentIds);
+    if (locked.size > 0) throw new ApiError('CONFLICTO', 'Hay infantes que requieren alta médica para ingresar: no se pueden marcar presentes hasta que el médico la registre.');
   }
 
   private async requireJourney(auth: AuthContext, journeyId: number): Promise<AttendanceJourneyRecord> {

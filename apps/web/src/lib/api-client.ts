@@ -45,3 +45,19 @@ export async function apiRequest<T = undefined>(path: string, options: RequestOp
   if (!parsed.success) throw new ApiClientError(response.status, 'RESPUESTA_INVALIDA', 'La respuesta del servidor no tiene el formato esperado.');
   return parsed.data;
 }
+
+const FILENAME_PATTERN = /filename="?([^";]+)"?/i;
+
+/** Archivo descargado: su contenido y el nombre que propone el servidor. */
+export interface DownloadedFile {
+  readonly blob: Blob;
+  readonly filename: string;
+}
+
+/** Descarga un archivo (Excel, PDF) con las cookies de sesión; los errores llegan como `ApiClientError`. */
+export async function apiDownload(path: string, fallbackName = 'descarga'): Promise<DownloadedFile> {
+  const response = await fetch(`${API_URL}${path}`, { method: 'GET', credentials: 'include' });
+  if (!response.ok) throw await parseError(response);
+  const filename = FILENAME_PATTERN.exec(response.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  return { blob: await response.blob(), filename };
+}

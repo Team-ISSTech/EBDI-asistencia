@@ -7,10 +7,12 @@ const fullName = (child: Child): string =>
 export interface ChildrenTableProps {
   readonly children: readonly Child[];
   readonly onSelect: (child: Child) => void;
+  /** Sin esta función no hay botón de expediente (RF-19). */
+  readonly onExport?: (child: Child) => void;
 }
 
 /** Padrón de la estancia: nombre, matrícula y sala; sin datos de salud. */
-export function ChildrenTable({ children, onSelect }: ChildrenTableProps) {
+export function ChildrenTable({ children, onSelect, onExport }: ChildrenTableProps) {
   return (
     <Table>
       <thead>
@@ -39,6 +41,11 @@ export function ChildrenTable({ children, onSelect }: ChildrenTableProps) {
               <Button variant="ghost" aria-label={`Tutores de ${child.name} ${child.paternalSurname}`} onClick={() => onSelect(child)}>
                 Tutores
               </Button>
+              {onExport ? (
+                <Button variant="ghost" aria-label={`Expediente de ${child.name} ${child.paternalSurname}`} onClick={() => onExport(child)}>
+                  Expediente
+                </Button>
+              ) : null}
             </Td>
           </tr>
         ))}

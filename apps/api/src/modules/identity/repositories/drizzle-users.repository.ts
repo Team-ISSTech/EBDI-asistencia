@@ -178,6 +178,7 @@ export class DrizzleUsersRepository implements UsersRepository {
         userId: usuarioRol.userId,
         role: roles.code,
         estanciaId: usuarioRol.estanciaId,
+        region: usuarioRol.region,
         estanciaName: sql<string | null>`${estancias.name}`,
       })
       .from(usuarioRol)
@@ -187,7 +188,7 @@ export class DrizzleUsersRepository implements UsersRepository {
     for (const row of rows) {
       if (!isRoleCode(row.role)) continue;
       const list = result.get(row.userId) ?? [];
-      result.set(row.userId, [...list, { role: row.role, estanciaId: row.estanciaId, estanciaName: row.estanciaName }]);
+      result.set(row.userId, [...list, { role: row.role, estanciaId: row.estanciaId, estanciaName: row.estanciaName, region: row.region }]);
     }
     return result;
   }

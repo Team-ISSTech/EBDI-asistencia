@@ -21,8 +21,11 @@ import {
   type RegisterConsentRequest,
   type RoomListResponse,
   roomListResponseSchema,
+  type VerifyDossierRequest,
+  type VerifyDossierResponse,
+  verifyDossierResponseSchema,
 } from '@sirai/contracts';
-import { apiRequest } from '../../lib/api-client';
+import { apiDownload, apiRequest, type DownloadedFile } from '../../lib/api-client';
 
 export const fetchChildren = (): Promise<ChildListResponse> => apiRequest('/infantes', { schema: childListResponseSchema });
 
@@ -51,3 +54,9 @@ export const registerConsent = (childId: number, body: RegisterConsentRequest): 
 
 export const revokeConsent = (consentId: number): Promise<Consent> =>
   apiRequest(`/consentimientos/${consentId}/revocar`, { method: 'POST', schema: consentSchema });
+
+/** Expediente del infante en PDF, foliado y sellado (RF-19). */
+export const downloadDossier = (childId: number): Promise<DownloadedFile> => apiDownload(`/expedientes/${childId}`, `expediente-${childId}.pdf`);
+
+export const verifyDossier = (body: VerifyDossierRequest): Promise<VerifyDossierResponse> =>
+  apiRequest('/expedientes/verificar', { method: 'POST', body, schema: verifyDossierResponseSchema });
