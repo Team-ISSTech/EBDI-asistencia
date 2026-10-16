@@ -51,6 +51,8 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: alta, vínculo y teléfono cifrado; falta editar y quitar) |
 | RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: alta inicial y movimiento ALTA; faltan cambio de sala, traslado y baja) |
 | RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | en curso (rama initialFeaturesContinuation: registro y revocación) |
+| RF-37 | API con Bearer tokens para sistemas institucionales (A21A, #52) | `apps/api/src/modules/integration` (por crear), `packages/db` (tabla de tokens), `packages/auth` | integración Vitest + MySQL | pendiente |
+| RF-38 | Cambio de contraseña temporal y voluntario | `apps/api/src/modules/identity`, `apps/web/src/features/auth`, `packages/contracts` | integración Vitest + MySQL, unitaria Vitest | pendiente |
 
 ## Requisitos no funcionales
 
@@ -78,11 +80,11 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 
 | Métrica | Valor |
 | --- | --- |
-| Requisitos funcionales (RF) | 36 |
+| Requisitos funcionales (RF) | 38 |
 | Requisitos no funcionales (RNF) | 17 |
-| Total | 53 |
-| Mapeados a paquete o módulo | 53 (100 %) |
+| Total | 55 |
+| Mapeados a paquete o módulo | 55 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
 | En curso | 25 (RF-12, RF-14 a RF-19, RF-24 a RF-30, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
-| Pendientes | 13 |
+| Pendientes | 15 |
