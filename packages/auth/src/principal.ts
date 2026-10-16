@@ -7,6 +7,8 @@ import type { RoleCode } from './roles.js';
 export interface RoleAssignment {
   readonly role: RoleCode;
   readonly estanciaId: number | null;
+  /** Solo roles centrales: acota el alcance a una región (P9). Nulo o ausente = sin acotar. */
+  readonly region?: string | null;
 }
 
 /** Identidad autenticada tal como la ven las políticas de autorización. */
