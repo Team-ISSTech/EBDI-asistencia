@@ -5,10 +5,10 @@ import { and, asc, eq, gte, inArray, isNull, ne, notExists, sql } from 'drizzle-
 import { ApiError } from '../../../common/errors/api-error.js';
 import { DB } from '../../../common/database/database.module.js';
 import type { AuditExecutor } from '../../../common/audit/audit.service.js';
-import type { AbsenceCandidate, ContactRow, FollowUpDetail, FollowUpRow, NewContact, TicketChange } from '../follow-ups.types.js';
+import type { AbsenceCandidate, ContactRow, FollowUpDetail, FollowUpRow, NewContact, NewRelease, TicketChange } from '../follow-ups.types.js';
 import type { FollowUpsRepository, TicketHook } from './follow-ups.repository.js';
 
-const { attendanceRecords, jornadasAsistencia, estancias, followUps, followUpContacts, enrollments, children, rooms, childGuardians, guardians } = schema;
+const { attendanceRecords, jornadasAsistencia, estancias, followUps, followUpContacts, medicalReleases, enrollments, children, rooms, childGuardians, guardians } = schema;
 const DUPLICATE_ENTRY = 'ER_DUP_ENTRY';
 
 const driverCode = (error: unknown): string | null => {
@@ -77,9 +77,11 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
         cause: followUps.cause,
         expectedReturnDate: followUps.expectedReturnDate,
         requiresMedicalRelease: followUps.requiresMedicalRelease,
+        releaseId: medicalReleases.id,
         openedAt: followUps.openedAt,
       })
       .from(followUps)
+      .leftJoin(medicalReleases, eq(medicalReleases.followUpId, followUps.id))
       .innerJoin(attendanceRecords, eq(attendanceRecords.id, followUps.attendanceRecordId))
       .innerJoin(jornadasAsistencia, eq(jornadasAsistencia.id, attendanceRecords.journeyId))
       .innerJoin(enrollments, eq(enrollments.id, attendanceRecords.enrollmentId))
@@ -108,6 +110,7 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
       cause: row.cause,
       requiresMedicalRelease: row.requiresMedicalRelease,
       expectedReturnDate: row.expectedReturnDate,
+      released: row.medicalReleased,
       attemptCount: row.attemptCount,
       failedAttempts: row.failedAttempts,
     };
@@ -157,6 +160,42 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
     }
   }
 
+  async registerRelease(
+    followUpId: number,
+    release: NewRelease,
+    context: { readonly userId: number; readonly now: Date },
+    hook: (executor: AuditExecutor) => Promise<void>,
+  ): Promise<void> {
+    try {
+      await this.db.transaction(async (tx) => {
+        await tx.insert(medicalReleases).values({
+          followUpId,
+          dischargeDate: release.dischargeDate,
+          doctorId: context.userId,
+          folio: release.folio,
+          observationsEncrypted: release.observationsEncrypted,
+          createdAt: context.now,
+        });
+        await tx.update(followUps).set({ updatedAt: context.now }).where(eq(followUps.id, followUpId));
+        await hook(tx);
+      });
+    } catch (error) {
+      if (driverCode(error) === DUPLICATE_ENTRY) throw new ApiError('CONFLICTO', 'El alta médica de este caso ya está registrada.');
+      throw error;
+    }
+  }
+
+  async closeTicket(followUpId: number, closedAt: Date, hook: (executor: AuditExecutor) => Promise<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const [result] = await tx
+        .update(followUps)
+        .set({ status: 'CERRADO', closedAt, updatedAt: closedAt })
+        .where(and(eq(followUps.id, followUpId), ne(followUps.status, 'CERRADO')));
+      if (result.affectedRows === 0) throw new ApiError('CONFLICTO', 'El seguimiento ya está cerrado.');
+      await hook(tx);
+    });
+  }
+
   async listContacts(followUpId: number): Promise<ContactRow[]> {
     const rows = await this.db
       .select()
@@ -196,6 +235,7 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
         cause: row.cause === null ? null : pick<FollowUpCause>(FOLLOW_UP_CAUSES, row.cause),
         expectedReturnDate: row.expectedReturnDate,
         requiresMedicalRelease: row.requiresMedicalRelease,
+        medicalReleased: row.releaseId !== null,
         attemptCount: own.length,
         failedAttempts: own.filter((contact) => contact.result === 'SIN_RESPUESTA').length,
         nextAttemptAt: own.at(-1)?.nextAttemptAt ?? null,

@@ -21,6 +21,7 @@ const ticket = (overrides: Record<string, unknown> = {}) => ({
   cause: null,
   expectedReturnDate: null,
   requiresMedicalRelease: false,
+  medicalReleased: false,
   attemptCount: 0,
   nextAttemptAt: null,
   emergencyAlert: false,

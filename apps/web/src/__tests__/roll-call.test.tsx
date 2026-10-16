@@ -19,7 +19,7 @@ const readOnlySession = {
 
 const journey = { id: 3, estanciaId: 1, date: TODAY, shift: 'MATUTINO', status: 'ABIERTA', openedAt: '2026-10-15T13:00:00.000Z', closedAt: null };
 
-const entry = (n: number, status: string | null = null) => ({
+const entry = (n: number, status: string | null = null, medicalLock = false) => ({
   enrollmentId: n,
   childId: n,
   childName: `Infante ${n} Prueba`,
@@ -27,6 +27,7 @@ const entry = (n: number, status: string | null = null) => ({
   roomId: 1,
   roomName: 'Lactantes (prueba)',
   status,
+  medicalLock,
 });
 
 const jsonResponse = (status: number, body: unknown): Response =>
@@ -166,5 +167,31 @@ describe('RollCallPage', () => {
     vi.stubGlobal('fetch', withJourney([], { 'GET /asistencia/jornadas/3/lista': () => jsonResponse(500, { error: { code: 'ERROR_INTERNO', message: 'x' } }) }));
     renderWithSession(<RollCallPage />, docenteSession, '/app/pase-de-lista');
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo cargar la lista de asistencia.');
+  });
+
+  it('un infante con candado médico muestra el aviso y no se puede marcar presente', async () => {
+    vi.stubGlobal('fetch', withJourney([entry(1), entry(2, null, true)]));
+    renderWithSession(<RollCallPage />, docenteSession, '/app/pase-de-lista');
+    const locked = within(await rowOf('Infante 2 Prueba'));
+    expect(locked.getByText('Requiere alta médica')).toBeInTheDocument();
+    expect(locked.getByRole('button', { name: 'Presente' })).toBeDisabled();
+    expect(locked.getByRole('button', { name: 'Falta injustificada' })).toBeEnabled();
+    expect(within(await rowOf('Infante 1 Prueba')).queryByText('Requiere alta médica')).toBeNull();
+  });
+
+  it('marcar a todos presentes se salta a quien tiene candado médico', async () => {
+    const fetchMock = withJourney([entry(1), entry(2, null, true)], { 'POST /asistencia/jornadas/3/registros': () => jsonResponse(200, { saved: 1, unchanged: 0 }) });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithSession(<RollCallPage />, docenteSession, '/app/pase-de-lista');
+    await userEvent.click(await screen.findByRole('button', { name: 'Marcar a todos presentes' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar asistencia' }));
+    await waitFor(() => expect(postedMarks(fetchMock)).toHaveLength(1));
+    expect(postedMarks(fetchMock).map((m) => m.enrollmentId)).toEqual([1]);
+  });
+
+  it('quien solo consulta también ve el aviso de candado médico', async () => {
+    vi.stubGlobal('fetch', withJourney([entry(1, null, true)]));
+    renderWithSession(<RollCallPage />, readOnlySession, '/app/pase-de-lista');
+    expect(within(await rowOf('Infante 1 Prueba')).getByText('Requiere alta médica')).toBeInTheDocument();
   });
 });

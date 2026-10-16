@@ -79,3 +79,12 @@ describe('esquema Drizzle de los contactos de seguimiento', () => {
     expect(columns).not.toContain('notes');
   });
 });
+
+describe('esquema Drizzle del alta médica', () => {
+  it('mapea medicalReleases a altas_medicas con las observaciones solo cifradas', () => {
+    expect(getTableName(schema.medicalReleases)).toBe('altas_medicas');
+    const columns = Object.keys(getTableColumns(schema.medicalReleases));
+    expect(columns).toEqual(expect.arrayContaining(['followUpId', 'dischargeDate', 'doctorId', 'folio', 'observationsEncrypted']));
+    expect(columns).not.toContain('observations');
+  });
+});

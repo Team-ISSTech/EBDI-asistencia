@@ -10,4 +10,4 @@ export { childGuardians, guardians } from './tutores.js';
 export { enrollmentMovements, enrollments } from './inscripciones.js';
 export { consents } from './consentimientos.js';
 export { attendanceRecords, jornadasAsistencia } from './asistencia.js';
-export { followUpContacts, followUps } from './seguimientos.js';
+export { followUpContacts, followUps, medicalReleases } from './seguimientos.js';

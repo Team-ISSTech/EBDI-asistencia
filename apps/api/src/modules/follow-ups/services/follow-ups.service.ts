@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Contact, FollowUp, RegisterContactRequest } from '@sirai/contracts';
-import { applyContact, isEmergencyAlert } from '@sirai/domain';
+import type { Contact, FollowUp, RegisterContactRequest, RegisterMedicalReleaseRequest } from '@sirai/contracts';
+import { applyContact, canClose, canRegisterRelease, type CloseCheck, isEmergencyAlert, type ReleaseCheck } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service.js';
 import type { AuthContext } from '../../../common/auth/auth-context.js';
 import { EncryptionService } from '../../../common/crypto/encryption.service.js';
@@ -10,6 +10,20 @@ import type { ContactRow, FollowUpDetail, FollowUpRow } from '../follow-ups.type
 import { FOLLOW_UPS_REPOSITORY, type FollowUpsRepository } from '../repositories/follow-ups.repository.js';
 
 const FOLLOW_UPS_TABLE = 'seguimientos';
+const DATE_LENGTH = 10;
+
+const RELEASE_MESSAGES: Record<Exclude<ReleaseCheck, { ok: true }>['reason'], string> = {
+  YA_CERRADO: 'El seguimiento ya está cerrado.',
+  NO_REQUIERE_ALTA: 'Este caso no requiere alta médica.',
+  YA_LIBERADO: 'El alta médica de este caso ya está registrada.',
+};
+
+const CLOSE_MESSAGES: Record<Exclude<CloseCheck, { ok: true }>['reason'], string> = {
+  YA_CERRADO: 'El seguimiento ya está cerrado.',
+  SIN_CONTACTO: 'Registra al menos una llamada al tutor antes de cerrar el seguimiento.',
+  SIN_CLASIFICAR: 'Clasifica la causa de la ausencia antes de cerrar el seguimiento.',
+  FALTA_ALTA_MEDICA: 'El caso requiere el alta médica del médico de estancia antes de cerrarse.',
+};
 
 export const FOLLOW_UPS_CLOCK = Symbol('FOLLOW_UPS_CLOCK');
 
@@ -25,6 +39,7 @@ const toView = (row: FollowUpRow): FollowUp => ({
   cause: row.cause,
   expectedReturnDate: row.expectedReturnDate,
   requiresMedicalRelease: row.requiresMedicalRelease,
+  medicalReleased: row.medicalReleased,
   attemptCount: row.attemptCount,
   nextAttemptAt: row.nextAttemptAt?.toISOString() ?? null,
   emergencyAlert: isEmergencyAlert(row.cause, row.failedAttempts),
@@ -90,9 +105,7 @@ export class FollowUpsService {
           tx,
         ),
     );
-    const updated = await this.followUps.findOne(followUpId, estanciaId);
-    if (!updated) throw new ApiError('NO_ENCONTRADO', 'Seguimiento no encontrado.');
-    return toView(updated);
+    return this.requireView(followUpId, estanciaId);
   }
 
   /** Historial con las notas descifradas: es una lectura de datos sensibles y se audita. */
@@ -109,6 +122,65 @@ export class FollowUpsService {
       notes: row.notesEncrypted === null ? null : this.encryption.decrypt(row.notesEncrypted),
       nextAttemptAt: row.nextAttemptAt?.toISOString() ?? null,
     }));
+  }
+
+  /**
+   * RF-30: el alta médica libera el candado. La observación es un dato de
+   * salud: se guarda cifrada y no entra a la bitácora.
+   */
+  async registerRelease(auth: AuthContext, followUpId: number, input: RegisterMedicalReleaseRequest, request: RequestContext): Promise<FollowUp> {
+    const estanciaId = this.requireEstancia(auth);
+    const current = await this.requireTicket(followUpId, estanciaId);
+    const check = canRegisterRelease({ status: current.status, requiresMedicalRelease: current.requiresMedicalRelease, released: current.released });
+    if (!check.ok) throw new ApiError('CONFLICTO', RELEASE_MESSAGES[check.reason]);
+    const now = this.clock();
+    if (input.dischargeDate > now.toISOString().slice(0, DATE_LENGTH)) throw new ApiError('DATOS_INVALIDOS', 'La fecha del alta no puede ser futura.');
+    await this.followUps.registerRelease(
+      followUpId,
+      { dischargeDate: input.dischargeDate, folio: input.folio ?? null, observationsEncrypted: input.observations === undefined ? null : this.encryption.encrypt(input.observations) },
+      { userId: auth.userId, now },
+      (tx) =>
+        this.audit.record(
+          {
+            ...this.actor(auth),
+            action: 'ALTA_MEDICA_REGISTRADA',
+            tableName: FOLLOW_UPS_TABLE,
+            recordId: String(followUpId),
+            before: { medicalLock: true },
+            after: { medicalLock: false, dischargeDate: input.dischargeDate, folio: input.folio ?? null },
+            request,
+          },
+          tx,
+        ),
+    );
+    return this.requireView(followUpId, estanciaId);
+  }
+
+  /** Cierra el caso si ya se llamó al tutor, se clasificó la causa y, de haber candado, hay alta (RF-25, RF-26, RF-30). */
+  async close(auth: AuthContext, followUpId: number, request: RequestContext): Promise<FollowUp> {
+    const estanciaId = this.requireEstancia(auth);
+    const current = await this.requireTicket(followUpId, estanciaId);
+    const check = canClose({
+      status: current.status,
+      cause: current.cause,
+      attemptCount: current.attemptCount,
+      requiresMedicalRelease: current.requiresMedicalRelease,
+      released: current.released,
+    });
+    if (!check.ok) throw new ApiError('CONFLICTO', CLOSE_MESSAGES[check.reason]);
+    await this.followUps.closeTicket(followUpId, this.clock(), (tx) =>
+      this.audit.record(
+        { ...this.actor(auth), action: 'SEGUIMIENTO_CERRADO', tableName: FOLLOW_UPS_TABLE, recordId: String(followUpId), before: { status: current.status }, after: { status: 'CERRADO' }, request },
+        tx,
+      ),
+    );
+    return this.requireView(followUpId, estanciaId);
+  }
+
+  private async requireView(id: number, estanciaId: number): Promise<FollowUp> {
+    const row = await this.followUps.findOne(id, estanciaId);
+    if (!row) throw new ApiError('NO_ENCONTRADO', 'Seguimiento no encontrado.');
+    return toView(row);
   }
 
   /** El teléfono marcado se copia cifrado del tutor; el tutor debe estar vinculado al infante. */

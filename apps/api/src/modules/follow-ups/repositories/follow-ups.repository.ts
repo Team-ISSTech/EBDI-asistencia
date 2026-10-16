@@ -1,5 +1,5 @@
 import type { AuditExecutor } from '../../../common/audit/audit.service.js';
-import type { AbsenceCandidate, ContactRow, FollowUpDetail, FollowUpRow, NewContact, TicketChange } from '../follow-ups.types.js';
+import type { AbsenceCandidate, ContactRow, FollowUpDetail, FollowUpRow, NewContact, NewRelease, TicketChange } from '../follow-ups.types.js';
 
 /** Se ejecuta dentro de la transacción, una vez por ticket creado. */
 export type TicketHook = (executor: AuditExecutor, candidate: AbsenceCandidate, ticketId: number) => Promise<void>;
@@ -23,6 +23,15 @@ export interface FollowUpsRepository {
     context: { readonly userId: number; readonly now: Date },
     hook: (executor: AuditExecutor, contactId: number) => Promise<void>,
   ): Promise<number>;
+  /** Guarda el alta médica y ejecuta `hook`, en una sola transacción. */
+  registerRelease(
+    followUpId: number,
+    release: NewRelease,
+    context: { readonly userId: number; readonly now: Date },
+    hook: (executor: AuditExecutor) => Promise<void>,
+  ): Promise<void>;
+  /** Marca el ticket como CERRADO y ejecuta `hook`, en una sola transacción. */
+  closeTicket(followUpId: number, closedAt: Date, hook: (executor: AuditExecutor) => Promise<void>): Promise<void>;
   listContacts(followUpId: number): Promise<ContactRow[]>;
 }
 

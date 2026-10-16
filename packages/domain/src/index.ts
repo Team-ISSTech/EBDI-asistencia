@@ -31,13 +31,18 @@ export {
   FOLLOW_UP_STATUSES,
   SECOND_ATTEMPT_DELAY_HOURS,
   applyContact,
+  canClose,
+  canRegisterRelease,
   cutoffReached,
   generatesFollowUp,
   isEmergencyAlert,
+  isMedicalLockActive,
   requiresMedicalRelease,
   secondAttemptDueAt,
 } from './follow-up.js';
 export type {
+  CloseCheck,
+  CloseState,
   ContactInput,
   ContactOutcome,
   ContactResult,
@@ -45,4 +50,6 @@ export type {
   FollowUpCause,
   FollowUpState,
   FollowUpStatus,
+  ReleaseCheck,
+  TicketLockState,
 } from './follow-up.js';

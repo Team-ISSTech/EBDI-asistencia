@@ -6,9 +6,12 @@ import {
   FOLLOW_UP_STATUSES,
   SECOND_ATTEMPT_DELAY_HOURS,
   applyContact,
+  canClose,
+  canRegisterRelease,
   cutoffReached,
   generatesFollowUp,
   isEmergencyAlert,
+  isMedicalLockActive,
   requiresMedicalRelease,
   secondAttemptDueAt,
 } from '../follow-up.js';
@@ -138,5 +141,60 @@ describe('isEmergencyAlert', () => {
     expect(isEmergencyAlert('NO_LOC', 1)).toBe(false);
     expect(isEmergencyAlert('ENF_CASA', 3)).toBe(false);
     expect(isEmergencyAlert(null, 3)).toBe(false);
+  });
+});
+
+describe('isMedicalLockActive (RF-29)', () => {
+  it('el candado está activo mientras el caso requiera alta, no haya alta y no esté cerrado', () => {
+    expect(isMedicalLockActive({ requiresMedicalRelease: true, released: false, status: 'CLASIFICADO' })).toBe(true);
+  });
+
+  it('el alta médica lo libera', () => {
+    expect(isMedicalLockActive({ requiresMedicalRelease: true, released: true, status: 'CLASIFICADO' })).toBe(false);
+  });
+
+  it('un caso que no requiere alta, o ya cerrado, no bloquea el ingreso', () => {
+    expect(isMedicalLockActive({ requiresMedicalRelease: false, released: false, status: 'CLASIFICADO' })).toBe(false);
+    expect(isMedicalLockActive({ requiresMedicalRelease: true, released: false, status: 'CERRADO' })).toBe(false);
+  });
+});
+
+describe('canRegisterRelease (RF-30)', () => {
+  const locked = { status: 'CLASIFICADO', requiresMedicalRelease: true, released: false } as const;
+
+  it('se puede dar el alta de un caso con candado activo', () => {
+    expect(canRegisterRelease(locked)).toEqual({ ok: true });
+  });
+
+  it('no aplica si el caso no requiere alta, ya se liberó o está cerrado', () => {
+    expect(canRegisterRelease({ ...locked, requiresMedicalRelease: false })).toEqual({ ok: false, reason: 'NO_REQUIERE_ALTA' });
+    expect(canRegisterRelease({ ...locked, released: true })).toEqual({ ok: false, reason: 'YA_LIBERADO' });
+    expect(canRegisterRelease({ ...locked, status: 'CERRADO' })).toEqual({ ok: false, reason: 'YA_CERRADO' });
+  });
+});
+
+describe('canClose (RF-25 y RF-29)', () => {
+  const ready = { status: 'CLASIFICADO', cause: 'PER_TUT', attemptCount: 1, requiresMedicalRelease: false, released: false } as const;
+
+  it('se cierra un caso clasificado con al menos un contacto registrado', () => {
+    expect(canClose(ready)).toEqual({ ok: true });
+  });
+
+  it('exige haber registrado al menos un contacto con el tutor (RF-25)', () => {
+    expect(canClose({ ...ready, attemptCount: 0 })).toEqual({ ok: false, reason: 'SIN_CONTACTO' });
+  });
+
+  it('exige haber clasificado la causa', () => {
+    expect(canClose({ ...ready, cause: null })).toEqual({ ok: false, reason: 'SIN_CLASIFICAR' });
+  });
+
+  it('un caso con candado médico no se cierra sin el alta del médico', () => {
+    const medical = { ...ready, cause: 'ENF_CASA', requiresMedicalRelease: true } as const;
+    expect(canClose(medical)).toEqual({ ok: false, reason: 'FALTA_ALTA_MEDICA' });
+    expect(canClose({ ...medical, released: true })).toEqual({ ok: true });
+  });
+
+  it('un caso ya cerrado no se vuelve a cerrar', () => {
+    expect(canClose({ ...ready, status: 'CERRADO' })).toEqual({ ok: false, reason: 'YA_CERRADO' });
   });
 });

@@ -10,6 +10,8 @@ export interface AttendanceRecordsRepository {
   listRoster(estanciaId: number, journeyId: number, shift: Shift): Promise<RosterRow[]>;
   /** Solo devuelve las inscripciones activas de la estancia; las demás se omiten. */
   findEnrollments(estanciaId: number, enrollmentIds: readonly number[]): Promise<EnrollmentForMarking[]>;
+  /** De las inscripciones dadas, las de infantes con candado médico activo (caso abierto que requiere alta y no la tiene). */
+  findLockedEnrollmentIds(estanciaId: number, enrollmentIds: readonly number[]): Promise<Set<number>>;
   findMarks(journeyId: number, enrollmentIds: readonly number[]): Promise<ExistingMark[]>;
   /** Identificadores de operación ya aplicados, para reconocer reintentos. */
   findAppliedClientIds(clientIds: readonly string[]): Promise<Set<string>>;

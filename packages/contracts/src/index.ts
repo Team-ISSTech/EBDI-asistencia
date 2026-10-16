@@ -83,5 +83,13 @@ export {
   followUpListResponseSchema,
   followUpSchema,
   registerContactRequestSchema,
+  registerMedicalReleaseRequestSchema,
 } from './follow-ups/follow-up.js';
-export type { Contact, ContactListResponse, FollowUp, FollowUpListResponse, RegisterContactRequest } from './follow-ups/follow-up.js';
+export type {
+  Contact,
+  ContactListResponse,
+  FollowUp,
+  FollowUpListResponse,
+  RegisterContactRequest,
+  RegisterMedicalReleaseRequest,
+} from './follow-ups/follow-up.js';

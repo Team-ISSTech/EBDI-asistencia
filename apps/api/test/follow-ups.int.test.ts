@@ -241,4 +241,107 @@ describe.skipIf(!TEST_DATABASE_URL)('seguimientos de ausencias (integración)', 
       ).rejects.toThrow();
     });
   });
+
+  describe('alta médica, candado y cierre', () => {
+    const SOCIAL_WORK = 'trabajo_social@sirai.test';
+    const DOCTOR = 'medico@sirai.test';
+    const DOCENTE = 'docente@sirai.test';
+    const tomorrow = new Date(Date.now() + MS_PER_DAY).toISOString().slice(0, 10);
+    let lockedTicketId = 0;
+    let lockedEnrollmentId = 0;
+    let noContactTicketId = 0;
+    let journeyId = 0;
+
+    const marks = (enrollmentId: number, status: string) => ({ marks: [{ enrollmentId, status, clientId: randomUUID() }] });
+    const rosterOf = async (): Promise<Array<{ enrollmentId: number; childName: string; medicalLock: boolean }>> => {
+      const response = await call('get', `/asistencia/jornadas/${journeyId}/lista`, DOCENTE);
+      return response.body.entries;
+    };
+
+    beforeAll(async () => {
+      const list = await call('get', '/seguimientos', SOCIAL_WORK);
+      const tickets = followUpListResponseSchema.parse(list.body).followUps;
+      lockedTicketId = tickets.find((ticket) => ticket.childName === 'Infante2 Prueba')?.id ?? 0;
+      noContactTicketId = tickets.find((ticket) => ticket.childName === 'Infante1 Prueba' && ticket.attemptCount === 0)?.id ?? 0;
+      const [rows] = (await connection.db.execute(sql`SELECT i.id FROM inscripciones i JOIN infantes c ON c.id = i.infante_id WHERE c.matricula = 'M-SEG-2'`)) as unknown as [{ id: number }[]];
+      lockedEnrollmentId = rows[0]?.id ?? 0;
+      const journey = await call('post', '/asistencia/jornadas', DIRECTORA, { date: tomorrow, shift: 'MATUTINO' });
+      journeyId = journey.body.id;
+    });
+
+    it('con candado médico activo el infante no puede marcarse presente, pero sí ausente', async () => {
+      const denied = await call('post', `/asistencia/jornadas/${journeyId}/registros`, DOCENTE, marks(lockedEnrollmentId, 'PRESENTE'));
+      expect(denied.status).toBe(409);
+      expect(denied.body.error.message).toMatch(/alta médica/);
+      expect((await call('post', `/asistencia/jornadas/${journeyId}/registros`, DOCENTE, marks(lockedEnrollmentId, 'AUSENTE_JUSTIFICADO'))).status).toBe(200);
+    });
+
+    it('la lista marca el candado solo en quien lo tiene, sin revelar el motivo', async () => {
+      const entries = await rosterOf();
+      expect(entries.find((entry) => entry.childName === 'Infante2 Prueba')?.medicalLock).toBe(true);
+      expect(entries.filter((entry) => entry.medicalLock)).toHaveLength(1);
+    });
+
+    it('solo el médico registra el alta', async () => {
+      for (const email of [DOCENTE, SOCIAL_WORK, DIRECTORA, 'admin_central@sirai.test']) {
+        expect((await call('post', `/seguimientos/${lockedTicketId}/alta`, email, { dischargeDate: yesterday })).status).toBe(403);
+      }
+    });
+
+    it('rechaza un alta con fecha futura y un alta de un caso que no requiere alta', async () => {
+      expect((await call('post', `/seguimientos/${lockedTicketId}/alta`, DOCTOR, { dischargeDate: tomorrow })).status).toBe(400);
+      expect((await call('post', `/seguimientos/${noContactTicketId}/alta`, DOCTOR, { dischargeDate: yesterday })).status).toBe(409);
+    });
+
+    it('el médico registra el alta con observaciones cifradas y queda auditada', async () => {
+      const response = await call('post', `/seguimientos/${lockedTicketId}/alta`, DOCTOR, { dischargeDate: yesterday, folio: 'ALTA-0042', observations: 'Sin fiebre desde hace 48 h.' });
+      expect(response.status).toBe(201);
+      expect(response.body).toMatchObject({ requiresMedicalRelease: true, medicalReleased: true });
+      expect(JSON.stringify(response.body)).not.toContain('fiebre');
+      const [rows] = (await connection.db.execute(
+        sql`SELECT folio, HEX(observaciones_cifradas) AS obs FROM altas_medicas WHERE seguimiento_id = ${lockedTicketId}`,
+      )) as unknown as [{ folio: string; obs: string }[]];
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.folio).toBe('ALTA-0042');
+      expect(Buffer.from(rows[0]?.obs ?? '', 'hex').toString('utf8')).not.toContain('fiebre');
+      const [audits] = (await connection.db.execute(sql`SELECT rol_codigo AS role FROM auditoria WHERE accion = 'ALTA_MEDICA_REGISTRADA'`)) as unknown as [{ role: string }[]];
+      expect(audits).toEqual([{ role: 'MEDICO' }]);
+    });
+
+    it('no se registra dos veces el alta del mismo caso', async () => {
+      expect((await call('post', `/seguimientos/${lockedTicketId}/alta`, DOCTOR, { dischargeDate: yesterday })).status).toBe(409);
+    });
+
+    it('liberado el candado, el infante puede marcarse presente', async () => {
+      expect((await call('post', `/asistencia/jornadas/${journeyId}/registros`, DOCENTE, marks(lockedEnrollmentId, 'PRESENTE'))).status).toBe(200);
+      expect((await rosterOf()).some((entry) => entry.medicalLock)).toBe(false);
+    });
+
+    it('solo quien registra seguimiento cierra el caso', async () => {
+      for (const email of [DOCENTE, 'admin_central@sirai.test']) {
+        expect((await call('post', `/seguimientos/${lockedTicketId}/cierre`, email)).status).toBe(403);
+      }
+    });
+
+    it('no se cierra un caso sin haber llamado al tutor', async () => {
+      const response = await call('post', `/seguimientos/${noContactTicketId}/cierre`, SOCIAL_WORK);
+      expect(response.status).toBe(409);
+      expect(response.body.error.message).toMatch(/llamada/);
+    });
+
+    it('trabajo social cierra el caso con alta, y deja de aparecer en la bandeja', async () => {
+      const response = await call('post', `/seguimientos/${lockedTicketId}/cierre`, SOCIAL_WORK);
+      expect(response.status).toBe(201);
+      expect(response.body.status).toBe('CERRADO');
+      const list = await call('get', '/seguimientos', SOCIAL_WORK);
+      expect(followUpListResponseSchema.parse(list.body).followUps.some((ticket) => ticket.id === lockedTicketId)).toBe(false);
+      expect(await count(sql`SELECT COUNT(*) AS n FROM seguimientos WHERE id = ${lockedTicketId} AND estado = 'CERRADO' AND cerrado_at IS NOT NULL`)).toBe(1);
+      expect(await count(sql`SELECT COUNT(*) AS n FROM auditoria WHERE accion = 'SEGUIMIENTO_CERRADO'`)).toBe(1);
+    });
+
+    it('un caso cerrado no se vuelve a cerrar ni admite más llamadas', async () => {
+      expect((await call('post', `/seguimientos/${lockedTicketId}/cierre`, SOCIAL_WORK)).status).toBe(409);
+      expect((await call('post', `/seguimientos/${lockedTicketId}/contactos`, SOCIAL_WORK, { result: 'SIN_RESPUESTA' })).status).toBe(409);
+    });
+  });
 });
