@@ -1,8 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { ApiEnv } from '@sirai/config';
 import type { Consent, RegisterConsentRequest } from '@sirai/contracts';
 import { canRevoke, currentConsentStatus } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { AuthContext } from '../../../common/auth/auth-context';
+import { API_ENV } from '../../../common/config/config.module';
 import { ApiError } from '../../../common/errors/api-error';
 import type { RequestContext } from '../../../common/http/request-context';
 import { rolesSummary } from '../../identity/services/session-response';
@@ -14,6 +16,8 @@ import { CLOCK } from './children.service';
 
 const CONSENTS_TABLE = 'consentimientos';
 const CHILDREN_TABLE = 'infantes';
+/** Solo fuera de producción: la configuración exige la versión real al arrancar en producción. */
+const DEV_NOTICE_VERSION = 'SIN-VERSION-DESARROLLO';
 
 const toView = (record: ConsentRecord): Consent => ({
   id: record.id,
@@ -45,6 +49,7 @@ export class ConsentsService {
     @Inject(GUARDIANS_REPOSITORY) private readonly guardians: GuardiansRepository,
     @Inject(CONSENTS_REPOSITORY) private readonly consents: ConsentsRepository,
     private readonly audit: AuditService,
+    @Inject(API_ENV) private readonly env: ApiEnv,
     @Inject(CLOCK) private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -60,8 +65,9 @@ export class ConsentsService {
     await this.requireLinkedGuardian(childId, input.guardianId);
     await this.assertNotAlreadyAccepted(childId, input);
     const now = this.clock();
-    const id = await this.consents.create({ childId, ...input }, now, auth.userId, (tx, newId) =>
-      this.audit.record({ ...this.actor(auth), action: 'CONSENTIMIENTO_REGISTRADO', tableName: CONSENTS_TABLE, recordId: String(newId), after: { childId, ...input }, request }, tx),
+    const consent = { childId, ...input, noticeVersion: this.env.PRIVACY_NOTICE_VERSION ?? DEV_NOTICE_VERSION };
+    const id = await this.consents.create(consent, now, auth.userId, (tx, newId) =>
+      this.audit.record({ ...this.actor(auth), action: 'CONSENTIMIENTO_REGISTRADO', tableName: CONSENTS_TABLE, recordId: String(newId), after: consent, request }, tx),
     );
     return toView(await this.requireConsent(auth, id));
   }

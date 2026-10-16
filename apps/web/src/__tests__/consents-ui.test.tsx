@@ -110,7 +110,7 @@ describe('consentimientos en el panel de tutores', () => {
     expect(screen.queryByRole('button', { name: /Registrar aceptación|Revocar/ })).toBeNull();
   });
 
-  it('la directora registra la aceptación con la versión del aviso', async () => {
+  it('la directora registra la aceptación sin enviar versión de aviso (la fija el servidor)', async () => {
     const fetchMock = routeFetch([], { 'POST /infantes/5/consentimientos': () => jsonResponse(201, consent()) });
     vi.stubGlobal('fetch', fetchMock);
     renderCard(directoraSession);
@@ -118,7 +118,7 @@ describe('consentimientos en el panel de tutores', () => {
     await userEvent.click(within(row).getByRole('button', { name: 'Registrar aceptación' }));
     await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'POST')).toBe(true));
     const post = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'POST');
-    expect(JSON.parse(String((post?.[1] as RequestInit).body))).toEqual({ guardianId: 1, type: 'CONTACTO_TELEFONICO', noticeVersion: 'AP-2026-1', accepted: true });
+    expect(JSON.parse(String((post?.[1] as RequestInit).body))).toEqual({ guardianId: 1, type: 'CONTACTO_TELEFONICO', accepted: true });
   });
 
   it('la directora revoca una aceptación vigente', async () => {

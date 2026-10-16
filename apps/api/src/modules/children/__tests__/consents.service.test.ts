@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../common/auth/auth-context';
-import { RecordingAudit, request } from '../../identity/__tests__/in-memory';
+import { RecordingAudit, request, testEnv } from '../../identity/__tests__/in-memory';
 import { ConsentsService } from '../services/consents.service';
 import { InMemoryChildren, InMemoryConsents, InMemoryGuardians, room } from './in-memory';
 
@@ -11,7 +11,8 @@ const directora: AuthContext = {
   activeEstanciaId: 1,
 };
 
-const phoneConsent = { guardianId: 1, type: 'CONTACTO_TELEFONICO' as const, noticeVersion: 'AP-2026-1', accepted: true };
+const phoneConsent = { guardianId: 1, type: 'CONTACTO_TELEFONICO' as const, accepted: true };
+const NOTICE = 'AP-CONFIG-1';
 
 describe('ConsentsService', () => {
   let children: InMemoryChildren;
@@ -29,7 +30,7 @@ describe('ConsentsService', () => {
     guardians = new InMemoryGuardians(children);
     consents = new InMemoryConsents();
     audit = new RecordingAudit();
-    service = new ConsentsService(children, guardians, consents, audit.asService(), () => now);
+    service = new ConsentsService(children, guardians, consents, audit.asService(), { ...testEnv, PRIVACY_NOTICE_VERSION: NOTICE }, () => now);
     childId = await children.registerChild(
       { enrollmentNumber: 'M-1', curp: null, name: 'Infante', paternalSurname: 'Prueba', maternalSurname: null, birthDate: '2025-06-01', gender: null, hasDisability: false, disabilityGroupEncrypted: null },
       { estanciaId: 1, roomId: 1, schoolYearId: 1, startDate: '2026-10-14' },
@@ -42,9 +43,21 @@ describe('ConsentsService', () => {
 
   it('registra la aceptación con versión del aviso y la audita en la misma transacción', async () => {
     const created = await service.register(directora, childId, phoneConsent, request);
-    expect(created).toMatchObject({ childId, guardianId: 1, type: 'CONTACTO_TELEFONICO', accepted: true, revokedAt: null, acceptedAt: now.toISOString() });
+    expect(created).toMatchObject({ childId, guardianId: 1, type: 'CONTACTO_TELEFONICO', accepted: true, revokedAt: null, acceptedAt: now.toISOString(), noticeVersion: NOTICE });
     expect(audit.entries[0]).toMatchObject({ action: 'CONSENTIMIENTO_REGISTRADO', recordId: String(created.id), roleCode: 'DIRECTORA' });
     expect(audit.transactional).toBe(1);
+  });
+
+  it('registra la versión del aviso configurada en el servidor, también en la bitácora', async () => {
+    const created = await service.register(directora, childId, phoneConsent, request);
+    expect(consents.rows.get(created.id)?.noticeVersion).toBe(NOTICE);
+    expect(audit.entries[0]?.after).toMatchObject({ noticeVersion: NOTICE });
+  });
+
+  it('sin versión configurada (solo fuera de producción) usa una marca de desarrollo visible', async () => {
+    service = new ConsentsService(children, guardians, consents, audit.asService(), testEnv, () => now);
+    const created = await service.register(directora, childId, phoneConsent, request);
+    expect(created.noticeVersion).toBe('SIN-VERSION-DESARROLLO');
   });
 
   it('solo registra consentimientos de tutores vinculados al infante', async () => {

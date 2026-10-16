@@ -4,12 +4,6 @@ import { Badge, type BadgeTone, Button } from '@sirai/ui';
 import { ApiClientError } from '../../lib/api-client';
 import { useConsentActions } from './use-consents';
 
-/**
- * Versión vigente del aviso de privacidad que el tutor firmó en papel.
- * Pendiente de confirmar con el área jurídica; mientras tanto es un valor fijo.
- */
-export const NOTICE_VERSION = 'AP-2026-1';
-
 const TYPE_LABELS: Readonly<Record<ConsentType, string>> = {
   TRATAMIENTO_DATOS_SENSIBLES: 'Datos sensibles',
   CONTACTO_TELEFONICO: 'Contacto telefónico',
@@ -67,7 +61,7 @@ export function ConsentCell({ childId, guardianId, consents, canManage }: Consen
                 </Button>
               ) : null}
               {canManage && !active ? (
-                <Button variant="ghost" disabled={busy} onClick={() => register.mutate({ guardianId, type, noticeVersion: NOTICE_VERSION, accepted: true })}>
+                <Button variant="ghost" disabled={busy} onClick={() => register.mutate({ guardianId, type, accepted: true })}>
                   Registrar aceptación
                 </Button>
               ) : null}

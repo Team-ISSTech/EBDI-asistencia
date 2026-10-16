@@ -104,7 +104,7 @@ Flujo en la API:
 | `POST /tutores` | INFANTE_ADMINISTRAR | alta de tutor; teléfono cifrado (AES-256-GCM) y hash con llave (HMAC) |
 | `GET/POST /infantes/:id/tutores` | INFANTE_CONSULTAR / INFANTE_ADMINISTRAR | tutores del infante y su vínculo; un solo tutor principal; nunca devuelve el teléfono |
 | `GET /tutores/:id/telefono` | NOTA_SENSIBLE_CONSULTAR | teléfono descifrado; se audita antes de responder |
-| `GET/POST /infantes/:id/consentimientos` | INFANTE_CONSULTAR / CONSENTIMIENTO_REGISTRAR | historial y registro de aceptación o rechazo del tutor |
+| `GET/POST /infantes/:id/consentimientos` | INFANTE_CONSULTAR / CONSENTIMIENTO_REGISTRAR | historial y registro de aceptación o rechazo del tutor; la versión del aviso la fija el servidor (`PRIVACY_NOTICE_VERSION`), nunca el cliente |
 | `POST /consentimientos/:id/revocar` | CONSENTIMIENTO_REGISTRAR | marca `revocado_at`; nunca borra la evidencia |
 | `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
 

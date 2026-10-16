@@ -2,8 +2,6 @@ import { CONSENT_TYPES } from '@sirai/domain';
 import { z } from 'zod';
 import { positiveIdSchema } from './common.js';
 
-const MAX_NOTICE_VERSION = 30;
-
 export const consentTypeSchema = z.enum(CONSENT_TYPES);
 
 export const consentSchema = z.object({
@@ -20,10 +18,10 @@ export const consentSchema = z.object({
 /** Historial completo: la UI deduce el estado vigente con las reglas de `@sirai/domain`. */
 export const consentListResponseSchema = z.object({ consents: z.array(consentSchema) });
 
+/** La versión del aviso no viaja aquí: la fija el servidor desde su configuración. */
 export const registerConsentRequestSchema = z.object({
   guardianId: positiveIdSchema,
   type: consentTypeSchema,
-  noticeVersion: z.string().trim().min(1).max(MAX_NOTICE_VERSION),
   accepted: z.boolean().default(true),
 });
 

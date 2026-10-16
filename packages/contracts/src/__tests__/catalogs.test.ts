@@ -137,14 +137,18 @@ describe('contratos de consentimiento', () => {
     revokedAt: null,
   };
 
-  it('registra una aceptación con versión del aviso', () => {
-    const result = registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'CONTACTO_TELEFONICO', noticeVersion: 'AP-2026-1' });
+  it('registra una aceptación por omisión', () => {
+    const result = registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'CONTACTO_TELEFONICO' });
     expect(result.success && result.data.accepted).toBe(true);
   });
 
-  it('rechaza tipos desconocidos y avisos sin versión', () => {
-    expect(registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'OTRO', noticeVersion: 'v1' }).success).toBe(false);
-    expect(registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'CONTACTO_TELEFONICO', noticeVersion: ' ' }).success).toBe(false);
+  it('la versión del aviso no la elige el cliente: la fija el servidor', () => {
+    const result = registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'CONTACTO_TELEFONICO', noticeVersion: 'FALSA-1' });
+    expect(result.success && Object.keys(result.data)).not.toContain('noticeVersion');
+  });
+
+  it('rechaza tipos desconocidos', () => {
+    expect(registerConsentRequestSchema.safeParse({ guardianId: 2, type: 'OTRO' }).success).toBe(false);
   });
 
   it('acepta el historial de consentimientos del infante', () => {

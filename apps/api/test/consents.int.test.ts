@@ -37,13 +37,14 @@ describe.skipIf(!TEST_DATABASE_URL)('consentimientos (integración)', () => {
     return body ? pending.send(body) : pending;
   };
 
-  const phoneConsent = { type: 'CONTACTO_TELEFONICO', noticeVersion: 'AP-2026-1' };
+  const phoneConsent = { type: 'CONTACTO_TELEFONICO' };
 
   beforeAll(async () => {
     if (!TEST_DATABASE_URL) return;
     process.env['DATABASE_URL'] = TEST_DATABASE_URL;
     process.env['DATA_ENCRYPTION_KEY'] = process.env['DATA_ENCRYPTION_KEY'] ?? 'c'.repeat(64);
     process.env['LOGIN_RATE_LIMIT_PER_MINUTE'] = '200';
+    process.env['PRIVACY_NOTICE_VERSION'] = 'AP-INT-1';
     await dropAllObjects(TEST_DATABASE_URL);
     await applyMigrations(TEST_DATABASE_URL, SQL_DIR);
     connection = connect(TEST_DATABASE_URL);
@@ -73,7 +74,7 @@ describe.skipIf(!TEST_DATABASE_URL)('consentimientos (integración)', () => {
     }
     const created = await call('post', path, DIRECTORA, { guardianId, ...phoneConsent });
     expect(created.status).toBe(201);
-    expect(consentSchema.parse(created.body)).toMatchObject({ accepted: true, revokedAt: null, noticeVersion: 'AP-2026-1' });
+    expect(consentSchema.parse(created.body)).toMatchObject({ accepted: true, revokedAt: null, noticeVersion: 'AP-INT-1' });
     consentId = created.body.id;
   });
 
@@ -112,7 +113,7 @@ describe.skipIf(!TEST_DATABASE_URL)('consentimientos (integración)', () => {
   });
 
   it('el motor rechaza revocar un rechazo y tipos desconocidos', async () => {
-    const refused = await call('post', `/infantes/${childId}/consentimientos`, DIRECTORA, { guardianId, type: 'TRATAMIENTO_DATOS_SENSIBLES', noticeVersion: 'AP-2026-1', accepted: false });
+    const refused = await call('post', `/infantes/${childId}/consentimientos`, DIRECTORA, { guardianId, type: 'TRATAMIENTO_DATOS_SENSIBLES', accepted: false });
     await expect(connection.db.execute(sql`UPDATE consentimientos SET revocado_at = NOW(6) WHERE id = ${refused.body.id}`)).rejects.toThrow();
     await expect(
       connection.db.execute(
@@ -122,7 +123,15 @@ describe.skipIf(!TEST_DATABASE_URL)('consentimientos (integración)', () => {
   });
 
   it('rechaza cuerpos inválidos y consentimientos inexistentes', async () => {
-    expect((await call('post', `/infantes/${childId}/consentimientos`, DIRECTORA, { guardianId, type: 'OTRO', noticeVersion: 'v1' })).status).toBe(400);
+    expect((await call('post', `/infantes/${childId}/consentimientos`, DIRECTORA, { guardianId, type: 'OTRO' })).status).toBe(400);
     expect((await call('post', '/consentimientos/99999/revocar', DIRECTORA)).status).toBe(404);
+  });
+
+  it('ignora una versión de aviso enviada por el cliente', async () => {
+    const stranger = await call('post', '/tutores', DIRECTORA, { name: 'Otra', paternalSurname: 'Prueba', phone: '5577778888' });
+    await call('post', `/infantes/${childId}/tutores`, DIRECTORA, { guardianId: stranger.body.id, relationship: 'Tía', validFrom: '2026-10-14' });
+    const response = await call('post', `/infantes/${childId}/consentimientos`, DIRECTORA, { guardianId: stranger.body.id, ...phoneConsent, noticeVersion: 'FALSA-9' });
+    expect(response.status).toBe(201);
+    expect(response.body.noticeVersion).toBe('AP-INT-1');
   });
 });

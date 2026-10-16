@@ -7,6 +7,7 @@ const DEFAULT_LOGIN_MAX_ATTEMPTS = 5;
 const DEFAULT_LOGIN_LOCK_MINUTES = 15;
 const DEFAULT_WEB_ORIGIN = 'http://localhost:5173';
 const DEFAULT_LOGIN_RATE_LIMIT_PER_MINUTE = 10;
+const MAX_NOTICE_VERSION_LENGTH = 30;
 /** Llave pública de .env.example y CI; válida solo fuera de producción. */
 export const EXAMPLE_DATA_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
@@ -40,6 +41,16 @@ export const apiEnvSchema = z.object({
   DATA_ENCRYPTION_KEY: z
     .string()
     .regex(/^[0-9a-f]{64}$/i, { message: 'Debe ser 32 bytes en hexadecimal (64 caracteres)' }),
+  /**
+   * Versión del aviso de privacidad vigente. El servidor la guarda como
+   * evidencia en cada consentimiento; el cliente nunca la elige. La confirma
+   * el área jurídica, por eso en producción es obligatoria.
+   */
+  PRIVACY_NOTICE_VERSION: z.preprocess(
+    // Una variable vacía (`VAR=` en .env o `${VAR:-}` en compose) significa "sin definir".
+    (value) => (value === '' ? undefined : value),
+    z.string().trim().min(1).max(MAX_NOTICE_VERSION_LENGTH).optional(),
+  ),
 })
   .refine((env) => env.NODE_ENV !== 'production' || env.COOKIE_SECURE, {
     path: ['COOKIE_SECURE'],
@@ -48,6 +59,10 @@ export const apiEnvSchema = z.object({
   .refine((env) => env.NODE_ENV !== 'production' || env.DATA_ENCRYPTION_KEY.toLowerCase() !== EXAMPLE_DATA_ENCRYPTION_KEY, {
     path: ['DATA_ENCRYPTION_KEY'],
     message: 'En producción no puede usarse la llave de ejemplo; genera una con openssl rand -hex 32',
+  })
+  .refine((env) => env.NODE_ENV !== 'production' || env.PRIVACY_NOTICE_VERSION !== undefined, {
+    path: ['PRIVACY_NOTICE_VERSION'],
+    message: 'En producción debe definirse la versión vigente del aviso de privacidad',
   })
   .refine((env) => env.SESSION_MAX_HOURS >= env.SESSION_TTL_HOURS, {
     path: ['SESSION_MAX_HOURS'],
