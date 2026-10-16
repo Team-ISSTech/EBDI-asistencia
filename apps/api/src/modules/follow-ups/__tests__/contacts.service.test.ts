@@ -80,4 +80,34 @@ describe('FollowUpsService: contactos', () => {
     expect(contacts[0]).toMatchObject({ attemptNumber: 1, result: 'CONTACTADO', guardianId: 3, notes: reached.notes, nextAttemptAt: null });
     expect(audit.entries[0]).toMatchObject({ action: 'NOTAS_SEGUIMIENTO_CONSULTADAS', recordId: '1' });
   });
+
+  describe('captura sin conexión (RF-22)', () => {
+    const OPERATION = '00000000-0000-4000-8000-000000000001';
+    const CAPTURED = new Date('2026-10-15T12:00:00Z');
+
+    it('registra el intento con la hora en que se capturó y calcula el segundo intento desde esa hora', async () => {
+      const result = await service.registerContact(auth, 1, { result: 'SIN_RESPUESTA' }, request, { operationId: OPERATION, at: CAPTURED });
+      expect(repo.contacts.get(1)?.[0]).toMatchObject({ operationId: OPERATION, occurredAt: CAPTURED });
+      expect(result.nextAttemptAt).toBe('2026-10-15T16:00:00.000Z');
+    });
+
+    it('un reintento de la misma operación no duplica el intento ni lo audita otra vez', async () => {
+      await service.registerContact(auth, 1, { result: 'SIN_RESPUESTA' }, request, { operationId: OPERATION, at: CAPTURED });
+      audit.entries.length = 0;
+      const again = await service.registerContact(auth, 1, { result: 'SIN_RESPUESTA' }, request, { operationId: OPERATION, at: CAPTURED });
+      expect(repo.contacts.get(1)).toHaveLength(1);
+      expect(again.attemptCount).toBe(1);
+      expect(audit.entries).toHaveLength(0);
+    });
+
+    it('una hora de captura en el futuro se ajusta a la hora del servidor', async () => {
+      await service.registerContact(auth, 1, { result: 'SIN_RESPUESTA' }, request, { operationId: OPERATION, at: new Date('2026-10-16T00:00:00Z') });
+      expect(repo.contacts.get(1)?.[0]?.occurredAt).toEqual(NOW);
+    });
+
+    it('sin metadatos de operación se comporta como antes', async () => {
+      await service.registerContact(auth, 1, { result: 'SIN_RESPUESTA' }, request);
+      expect(repo.contacts.get(1)?.[0]).toMatchObject({ operationId: null, occurredAt: NOW });
+    });
+  });
 });

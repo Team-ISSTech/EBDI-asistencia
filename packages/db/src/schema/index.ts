@@ -12,3 +12,4 @@ export { consents } from './consentimientos.js';
 export { attendanceRecords, jornadasAsistencia } from './asistencia.js';
 export { followUpContacts, followUps, medicalReleases } from './seguimientos.js';
 export { issuedDossiers } from './expedientes.js';
+export { syncOperations } from './sincronizacion.js';

@@ -55,3 +55,13 @@ export type {
 } from './follow-up.js';
 export { GREEN_FROM, REPORT_PERIODS, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, dossierFolio, parseDossierFolio, periodRange, trafficLight } from './reports.js';
 export type { DateRange, ReportPeriod, TrafficLight } from './reports.js';
+export {
+  RETRY_BASE_MS,
+  RETRY_MAX_MS,
+  SYNC_ENTITIES,
+  SYNC_OPERATION_TYPES,
+  SYNC_RESULT_STATUSES,
+  isTransientFailure,
+  nextRetryDelayMs,
+} from './sync.js';
+export type { SyncOperationType, SyncResultStatus } from './sync.js';

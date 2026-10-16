@@ -99,3 +99,5 @@ export { EXPORT_FORMATS, exportQuerySchema } from './reports/export.js';
 export type { ExportFormat, ExportQuery } from './reports/export.js';
 export { verifyDossierRequestSchema, verifyDossierResponseSchema } from './dossier/dossier.js';
 export type { VerifyDossierRequest, VerifyDossierResponse } from './dossier/dossier.js';
+export { SYNC_MAX_OPERATIONS, syncOperationSchema, syncRejectionSchema, syncRequestSchema, syncResponseSchema, syncResultSchema } from './sync/sync.js';
+export type { SyncOperation, SyncRejection, SyncRequest, SyncResponse, SyncResult } from './sync/sync.js';

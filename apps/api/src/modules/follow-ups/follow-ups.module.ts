@@ -15,5 +15,6 @@ import { FOLLOW_UPS_CLOCK, FollowUpsService } from './services/follow-ups.servic
     FollowUpsScheduler,
     FollowUpsService,
   ],
+  exports: [FollowUpsService],
 })
 export class FollowUpsModule {}
