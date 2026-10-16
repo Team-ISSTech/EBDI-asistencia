@@ -106,6 +106,8 @@ Flujo en la API:
 | `GET /tutores/:id/telefono` | NOTA_SENSIBLE_CONSULTAR | teléfono descifrado; se audita antes de responder |
 | `GET/POST /infantes/:id/consentimientos` | INFANTE_CONSULTAR / CONSENTIMIENTO_REGISTRAR | historial y registro de aceptación o rechazo del tutor; la versión del aviso la fija el servidor (`PRIVACY_NOTICE_VERSION`), nunca el cliente |
 | `POST /consentimientos/:id/revocar` | CONSENTIMIENTO_REGISTRAR | marca `revocado_at`; nunca borra la evidencia |
+| `GET /asistencia/jornadas/:id/lista` | ASISTENCIA_CONSULTAR | infantes con inscripción activa en salas del turno de la jornada y su estado; sin datos de salud ni contacto; se audita |
+| `POST /asistencia/jornadas/:id/registros` | ASISTENCIA_REGISTRAR | marca asistencia por lote, todo o nada y solo en jornada abierta; cada marca lleva un `clientId` (UUID) y un reintento no duplica ni audita; un cambio de estado se audita con el antes y el después |
 | `GET /health` | pública | estado de la API, la base y el tiempo activo del proceso |
 
 Todo el padrón se acota a la estancia activa de la sesión: una sala, infante,

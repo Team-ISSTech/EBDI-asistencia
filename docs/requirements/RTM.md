@@ -26,7 +26,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-09 | Permisos de Directora | `packages/auth`, `apps/api/src/modules/identity` | unitaria Vitest, integración Vitest + MySQL | implementado en `main` |
 | RF-10 | Supervisor Central solo agregados | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/reports` | integración Vitest + MySQL | parcial: permisos listos; reportes pendientes |
 | RF-11 | Admin Central: usuarios, roles y auditoría | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/administration` | integración Vitest + MySQL | parcial: usuarios y roles listos; auditoría pendiente |
-| RF-12 | Pase de lista en menos de 3 clics | `apps/web/src/features/attendance` | e2e Playwright | pendiente |
+| RF-12 | Pase de lista en menos de 3 clics | `apps/web/src/features/attendance` | e2e Playwright | en curso (rama feat/attendance-records: pase de lista en dos clics) |
 | RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance`, `apps/api/src/modules/attendance` | e2e Playwright, integración Vitest + MySQL | pendiente |
 | RF-14 | Estados de asistencia | `packages/domain` (estados y reglas), `apps/api/src/modules/attendance` | unitaria Vitest | en curso (rama feat/attendance-records: registro por lote con auditoría) |
 | RF-15 | Jornada por estancia, fecha y turno | `packages/domain`, `apps/api/src/modules/attendance`, `packages/db` (índice único) | unitaria Vitest, integración Vitest + MySQL | en curso (rama feat/phase-2-attendance-foundation) |
@@ -84,5 +84,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Mapeados a paquete o módulo | 53 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
-| En curso | 13 (RF-14, RF-15, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
-| Pendientes | 25 |
+| En curso | 14 (RF-12, RF-14, RF-15, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
+| Pendientes | 24 |
