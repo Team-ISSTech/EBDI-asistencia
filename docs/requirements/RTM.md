@@ -33,7 +33,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-16 | Tablero semaforizado en tiempo real | `apps/api/src/modules/reports`, `apps/web/src/features/reports` | integración Vitest + MySQL, e2e Playwright | en curso (rama feat/reports: tablero con semáforo, filtros y actualización cada 30 s) |
 | RF-17 | Exportación Excel y PDF por periodo | `apps/api/src/modules/reports` | integración Vitest + MySQL | en curso (rama feat/reports: cortes diario, mensual y trimestral en Excel y PDF) |
 | RF-18 | Reportes anonimizados para roles centrales | `apps/api/src/modules/reports`, `packages/auth` | integración Vitest + MySQL | en curso (rama feat/reports: tablero y exportaciones solo con conteos y porcentajes) |
-| RF-19 | Expediente PDF para traslados | `apps/api/src/modules/reports`, `apps/api/src/modules/children` | integración Vitest + MySQL | pendiente |
+| RF-19 | Expediente PDF para traslados | `apps/api/src/modules/reports`, `apps/api/src/modules/children` | integración Vitest + MySQL | en curso (rama feat/dossier: PDF foliado y sellado con permiso propio y verificación) |
 | RF-20 | Cola IndexedDB con Service Worker | `apps/web/src/offline` (Dexie/IndexedDB, Service Worker) | unitaria Vitest, e2e Playwright | pendiente |
 | RF-21 | Sincronización automática al reconectar | `apps/web/src/offline`, endpoint de sync en `apps/api` | e2e Playwright | pendiente |
 | RF-22 | Eventos idempotentes | endpoint de sync en `apps/api`, `packages/db` (`uuid_cliente`, `uuid_operacion`) | integración Vitest + MySQL | pendiente |
@@ -84,5 +84,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Mapeados a paquete o módulo | 53 (100 %) |
 | Implementados | 13 (RF-01 a RF-09, RNF-10 a RNF-13) |
 | Parciales | 2 (RF-10, RF-11) |
-| En curso | 24 (RF-12, RF-14 a RF-18, RF-24 a RF-30, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
-| Pendientes | 14 |
+| En curso | 25 (RF-12, RF-14 a RF-19, RF-24 a RF-30, RF-32 a RF-36, RNF-01 a RNF-05, RNF-07) |
+| Pendientes | 13 |

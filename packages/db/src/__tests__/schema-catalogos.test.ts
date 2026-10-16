@@ -88,3 +88,12 @@ describe('esquema Drizzle del alta médica', () => {
     expect(columns).not.toContain('observations');
   });
 });
+
+describe('esquema Drizzle de los expedientes emitidos', () => {
+  it('mapea issuedDossiers a expedientes_emitidos con la huella y el sello', () => {
+    expect(getTableName(schema.issuedDossiers)).toBe('expedientes_emitidos');
+    expect(Object.keys(getTableColumns(schema.issuedDossiers))).toEqual(
+      expect.arrayContaining(['childId', 'estanciaId', 'issuedBy', 'issuedAt', 'contentSha256', 'seal']),
+    );
+  });
+});

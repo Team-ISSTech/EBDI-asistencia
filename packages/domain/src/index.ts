@@ -53,5 +53,5 @@ export type {
   ReleaseCheck,
   TicketLockState,
 } from './follow-up.js';
-export { GREEN_FROM, REPORT_PERIODS, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, periodRange, trafficLight } from './reports.js';
+export { GREEN_FROM, REPORT_PERIODS, TRAFFIC_LIGHTS, YELLOW_FROM, attendanceRate, dossierFolio, parseDossierFolio, periodRange, trafficLight } from './reports.js';
 export type { DateRange, ReportPeriod, TrafficLight } from './reports.js';

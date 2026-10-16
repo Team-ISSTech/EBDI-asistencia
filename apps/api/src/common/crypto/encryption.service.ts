@@ -54,6 +54,15 @@ export class EncryptionService {
     return createHmac('sha256', this.key).update(`blind-hash:${value}`).digest();
   }
 
+  /**
+   * Sello de un expediente emitido (RF-19): HMAC-SHA256 con la llave del
+   * servidor. Quien no la tiene no puede fabricar un sello válido. El prefijo
+   * separa este uso del de `blindHash`, aunque el texto coincida.
+   */
+  seal(message: string): Buffer {
+    return createHmac('sha256', this.key).update(`dossier-seal:${message}`).digest();
+  }
+
   /** Serializa y cifra un objeto; `null` se conserva como `null`. */
   encryptJson(value: unknown): Buffer | null {
     return value === null || value === undefined ? null : this.encrypt(JSON.stringify(value));
