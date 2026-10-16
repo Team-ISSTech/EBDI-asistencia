@@ -28,7 +28,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-11 | Admin Central: usuarios, roles y auditoría | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/administration` | integración Vitest + MySQL | parcial: usuarios y roles listos; auditoría pendiente |
 | RF-12 | Pase de lista en menos de 3 clics | `apps/web/src/features/attendance` | e2e Playwright | pendiente |
 | RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance`, `apps/api/src/modules/attendance` | e2e Playwright, integración Vitest + MySQL | pendiente |
-| RF-14 | Estados de asistencia | `packages/domain` (estados y reglas), `apps/api/src/modules/attendance` | unitaria Vitest | en curso (rama feat/phase-2-attendance-foundation) |
+| RF-14 | Estados de asistencia | `packages/domain` (estados y reglas), `apps/api/src/modules/attendance` | unitaria Vitest | en curso (rama feat/attendance-records: registro por lote con auditoría) |
 | RF-15 | Jornada por estancia, fecha y turno | `packages/domain`, `apps/api/src/modules/attendance`, `packages/db` (índice único) | unitaria Vitest, integración Vitest + MySQL | en curso (rama feat/phase-2-attendance-foundation) |
 | RF-16 | Tablero semaforizado en tiempo real | `apps/api/src/modules/reports`, `apps/web/src/features/reports` | integración Vitest + MySQL, e2e Playwright | pendiente |
 | RF-17 | Exportación Excel y PDF por periodo | `apps/api/src/modules/reports` | integración Vitest + MySQL | pendiente |

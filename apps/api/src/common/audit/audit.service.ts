@@ -24,7 +24,10 @@ export type AuditAction =
   | 'CONSENTIMIENTO_REVOCADO'
   | 'CONSENTIMIENTOS_CONSULTADOS'
   | 'JORNADA_ABIERTA'
-  | 'JORNADA_CERRADA';
+  | 'JORNADA_CERRADA'
+  | 'ASISTENCIA_REGISTRADA'
+  | 'ASISTENCIA_MODIFICADA'
+  | 'LISTA_ASISTENCIA_CONSULTADA';
 
 export interface AuditEntry {
   readonly userId: number | null;

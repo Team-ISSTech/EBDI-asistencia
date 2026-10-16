@@ -51,3 +51,12 @@ describe('esquema Drizzle de los catálogos', () => {
     }
   });
 });
+
+describe('esquema Drizzle de los registros de asistencia', () => {
+  it('mapea attendanceRecords a la tabla asistencias con su identificador de operación', () => {
+    expect(getTableName(schema.attendanceRecords)).toBe('asistencias');
+    expect(Object.keys(getTableColumns(schema.attendanceRecords))).toEqual(
+      expect.arrayContaining(['journeyId', 'enrollmentId', 'status', 'clientId', 'method', 'recordedBy', 'enteredAt']),
+    );
+  });
+});

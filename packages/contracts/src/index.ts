@@ -62,3 +62,18 @@ export {
 export type { Consent, ConsentListResponse, RegisterConsentRequest } from './catalogs/consent.js';
 export { attendanceJourneyQuerySchema, attendanceJourneySchema, openAttendanceJourneyRequestSchema } from './attendance/journey.js';
 export type { AttendanceJourney, AttendanceJourneyQuery, OpenAttendanceJourneyRequest } from './attendance/journey.js';
+export {
+  attendanceMarkSchema,
+  attendanceStatusSchema,
+  markAttendanceRequestSchema,
+  markAttendanceResponseSchema,
+  rosterEntrySchema,
+  rosterResponseSchema,
+} from './attendance/record.js';
+export type {
+  AttendanceMark,
+  MarkAttendanceRequest,
+  MarkAttendanceResponse,
+  RosterEntry,
+  RosterResponse,
+} from './attendance/record.js';

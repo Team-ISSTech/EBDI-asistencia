@@ -9,4 +9,4 @@ export { children } from './infantes.js';
 export { childGuardians, guardians } from './tutores.js';
 export { enrollmentMovements, enrollments } from './inscripciones.js';
 export { consents } from './consentimientos.js';
-export { jornadasAsistencia } from './asistencia.js';
+export { attendanceRecords, jornadasAsistencia } from './asistencia.js';

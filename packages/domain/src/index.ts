@@ -19,3 +19,5 @@ export type { EnrollmentTransition, RoomAgeRange } from './enrollment.js';
 export { CONSENT_STATUSES, CONSENT_TYPES, canRevoke, currentConsentStatus, isConsentType } from './consent.js';
 export type { ConsentFact, ConsentStatus, ConsentType } from './consent.js';
 export * from './attendance.js';
+export { ATTENDANCE_METHODS, planMark } from './marking.js';
+export type { AttendanceMethod, MarkPlan } from './marking.js';
