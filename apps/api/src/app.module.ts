@@ -9,7 +9,10 @@ import { API_ENV, ConfigModule } from './common/config/config.module';
 import { DatabaseModule } from './common/database/database.module';
 import { ApiExceptionFilter } from './common/errors/api-exception.filter';
 import { ChildrenModule } from './modules/children/children.module';
+import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
+import { DossiersModule } from './modules/dossiers/dossiers.module';
 import { HealthModule } from './modules/health/health.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 
@@ -32,6 +35,9 @@ const THROTTLE_WINDOW_MS = 60_000;
     IdentityModule,
     ChildrenModule,
     AttendanceModule,
+    FollowUpsModule,
+    ReportsModule,
+    DossiersModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ApiExceptionFilter },

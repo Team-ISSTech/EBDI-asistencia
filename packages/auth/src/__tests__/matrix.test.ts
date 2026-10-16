@@ -54,6 +54,7 @@ describe('ROLE_PERMISSIONS', () => {
         'INFANTE_CONSULTAR',
         'INFANTE_ADMINISTRAR',
         'CONSENTIMIENTO_REGISTRAR',
+        'EXPEDIENTE_EXPORTAR',
         'SEGUIMIENTO_CONSULTAR',
         'SEGUIMIENTO_REGISTRAR',
         'NOTA_SENSIBLE_CONSULTAR',
@@ -86,5 +87,11 @@ describe('ROLE_PERMISSIONS', () => {
   it('los roles centrales nunca consultan datos de infantes', () => {
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('INFANTE_CONSULTAR');
     expect(ROLE_PERMISSIONS.SUPERVISOR_CENTRAL).not.toContain('INFANTE_CONSULTAR');
+  });
+
+  it('solo la directora exporta el expediente de un infante para traslados (RF-19)', () => {
+    for (const role of ROLE_CODES) {
+      expect(ROLE_PERMISSIONS[role].includes('EXPEDIENTE_EXPORTAR')).toBe(role === 'DIRECTORA');
+    }
   });
 });

@@ -17,12 +17,15 @@ interface StatusButtonsProps {
   readonly onSelect: (status: AttendanceStatus) => void;
 }
 
+/** RF-29: con candado médico no se puede marcar Presente; lo demás sí. */
+const isBlocked = (entry: RosterEntry, status: AttendanceStatus): boolean => entry.medicalLock && status === 'PRESENTE';
+
 /** Un botón por estado; el activo queda marcado con `aria-pressed`. */
 function StatusButtons({ entry, current, onSelect }: StatusButtonsProps) {
   return (
     <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Asistencia de ${entry.childName}`}>
       {ATTENDANCE_STATUSES.map((status) => (
-        <Button key={status} variant={current === status ? 'primary' : 'ghost'} aria-pressed={current === status} onClick={() => onSelect(status)}>
+        <Button key={status} variant={current === status ? 'primary' : 'ghost'} aria-pressed={current === status} disabled={isBlocked(entry, status)} onClick={() => onSelect(status)}>
           {STATUS_LABELS[status]}
         </Button>
       ))}
@@ -55,6 +58,11 @@ export function RosterTable({ entries, statusOf, onSelect }: RosterTableProps) {
               <Td>
                 <p className="font-medium text-[var(--color-ink)]">{entry.childName}</p>
                 <p className="text-xs text-[var(--color-text-muted)]">{entry.enrollmentNumber}</p>
+                {entry.medicalLock ? (
+                  <Badge tone="danger" className="mt-1">
+                    Requiere alta médica
+                  </Badge>
+                ) : null}
               </Td>
               <Td>{entry.roomName}</Td>
               <Td>

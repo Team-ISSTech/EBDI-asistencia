@@ -13,6 +13,8 @@ import { AttendanceRecordsService } from '../services/records.service.js';
 const request: RequestContext = { ip: '127.0.0.1', userAgent: 'vitest', requestId: 'req-1' };
 const principal: Principal = { userId: 5, assignments: [{ role: 'DOCENTE', estanciaId: 7 }] };
 const auth: AuthContext = { sessionId: 3, userId: 5, principal, activeEstanciaId: 7 };
+/** Coincide con un mensaje que contenga el texto, sin propagar `any` a las aserciones. */
+const containing = (text: string): string => expect.stringContaining(text) as string;
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 const journey = (overrides: Partial<AttendanceJourneyRecord> = {}): AttendanceJourneyRecord => ({
@@ -39,6 +41,7 @@ class FakeJourneys {
 class FakeRecords implements AttendanceRecordsRepository {
   enrollments = new Map<number, EnrollmentForMarking & { estanciaId: number; childName: string }>();
   marks = new Map<number, { id: number; status: ExistingMark['status']; clientId: string }>();
+  locked = new Set<number>();
   appliedBatches: MarkChange[][] = [];
   private nextId = 1;
 
@@ -46,12 +49,16 @@ class FakeRecords implements AttendanceRecordsRepository {
     return Promise.resolve(
       [...this.enrollments.values()]
         .filter((e) => e.estanciaId === estanciaId && e.roomShift === shift)
-        .map((e) => ({ enrollmentId: e.enrollmentId, childId: e.enrollmentId, childName: e.childName, enrollmentNumber: `M-${e.enrollmentId}`, roomId: 1, roomName: 'Sala', status: this.marks.get(e.enrollmentId)?.status ?? null })),
+        .map((e) => ({ enrollmentId: e.enrollmentId, childId: e.enrollmentId, childName: e.childName, enrollmentNumber: `M-${e.enrollmentId}`, roomId: 1, roomName: 'Sala', status: this.marks.get(e.enrollmentId)?.status ?? null, medicalLock: this.locked.has(e.enrollmentId) })),
     );
   }
 
   findEnrollments(estanciaId: number, ids: readonly number[]): Promise<EnrollmentForMarking[]> {
     return Promise.resolve(ids.flatMap((id) => { const e = this.enrollments.get(id); return e?.estanciaId === estanciaId ? [e] : []; }));
+  }
+
+  findLockedEnrollmentIds(_estanciaId: number, ids: readonly number[]): Promise<Set<number>> {
+    return Promise.resolve(new Set(ids.filter((id) => this.locked.has(id))));
   }
 
   findMarks(_journeyId: number, ids: readonly number[]): Promise<ExistingMark[]> {
@@ -170,5 +177,30 @@ describe('AttendanceRecordsService', () => {
     const entries = await service.roster(auth, 1, request);
     expect(entries.map((e) => [e.enrollmentId, e.status])).toEqual([[1, 'PRESENTE'], [2, null], [3, null]]);
     expect(audit.entries[0]).toMatchObject({ action: 'LISTA_ASISTENCIA_CONSULTADA', recordId: '1' });
+  });
+
+  it('un infante con candado médico no puede marcarse presente: se rechaza todo el lote', async () => {
+    records.locked.add(2);
+    await expect(service.mark(auth, 1, batch([1, 'PRESENTE'], [2, 'PRESENTE']), request)).rejects.toMatchObject({ code: 'CONFLICTO', message: containing('alta médica') });
+    expect(records.appliedBatches).toHaveLength(0);
+    expect(audit.entries).toHaveLength(0);
+  });
+
+  it('con candado médico sí se puede registrar otro estado, como ausencia o comisión médica', async () => {
+    records.locked.add(2);
+    expect(await service.mark(auth, 1, batch([2, 'AUSENTE_JUSTIFICADO'], [1, 'PRESENTE']), request)).toEqual({ saved: 2, unchanged: 0 });
+    expect(await service.mark(auth, 1, batch([2, 'COMISION_MEDICA', 22]), request)).toEqual({ saved: 1, unchanged: 0 });
+  });
+
+  it('liberado el candado, el infante vuelve a poder marcarse presente', async () => {
+    records.locked.add(2);
+    records.locked.delete(2);
+    expect(await service.mark(auth, 1, batch([2, 'PRESENTE']), request)).toEqual({ saved: 1, unchanged: 0 });
+  });
+
+  it('la lista indica qué infantes tienen candado médico, sin decir por qué', async () => {
+    records.locked.add(3);
+    const entries = await service.roster(auth, 1, request);
+    expect(entries.map((e) => [e.enrollmentId, e.medicalLock])).toEqual([[1, false], [2, false], [3, true]]);
   });
 });

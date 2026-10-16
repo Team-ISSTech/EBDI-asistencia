@@ -14,3 +14,5 @@ export type { PageHeaderProps } from './components/page-header';
 export { Table, Td, Th } from './components/table';
 export { Select } from './components/select';
 export type { SelectProps } from './components/select';
+export { Textarea } from './components/textarea';
+export type { TextareaProps } from './components/textarea';

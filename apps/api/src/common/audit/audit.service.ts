@@ -4,30 +4,45 @@ import { EncryptionService } from '../crypto/encryption.service';
 import { DB } from '../database/database.module';
 import { packIp, type RequestContext } from '../http/request-context';
 
-/** Acciones auditadas por el módulo de identidad. */
-export type AuditAction =
-  | 'USUARIOS_CONSULTADOS'
-  | 'LOGIN'
-  | 'LOGIN_FALLIDO'
-  | 'CUENTA_BLOQUEADA'
-  | 'LOGOUT'
-  | 'CAMBIO_ESTANCIA'
-  | 'USUARIO_CREADO'
-  | 'ROLES_REEMPLAZADOS'
-  | 'INFANTES_CONSULTADOS'
-  | 'INFANTE_REGISTRADO'
-  | 'TUTOR_REGISTRADO'
-  | 'TUTOR_VINCULADO'
-  | 'TUTORES_CONSULTADOS'
-  | 'TELEFONO_CONSULTADO'
-  | 'CONSENTIMIENTO_REGISTRADO'
-  | 'CONSENTIMIENTO_REVOCADO'
-  | 'CONSENTIMIENTOS_CONSULTADOS'
-  | 'JORNADA_ABIERTA'
-  | 'JORNADA_CERRADA'
-  | 'ASISTENCIA_REGISTRADA'
-  | 'ASISTENCIA_MODIFICADA'
-  | 'LISTA_ASISTENCIA_CONSULTADA';
+/** Largo de la columna `auditoria.accion`: una acción más larga haría fallar la operación completa. */
+export const AUDIT_ACTION_MAX_LENGTH = 30;
+
+/** Acciones que se registran en la bitácora. */
+export const AUDIT_ACTIONS = [
+  'USUARIOS_CONSULTADOS',
+  'LOGIN',
+  'LOGIN_FALLIDO',
+  'CUENTA_BLOQUEADA',
+  'LOGOUT',
+  'CAMBIO_ESTANCIA',
+  'USUARIO_CREADO',
+  'ROLES_REEMPLAZADOS',
+  'INFANTES_CONSULTADOS',
+  'INFANTE_REGISTRADO',
+  'TUTOR_REGISTRADO',
+  'TUTOR_VINCULADO',
+  'TUTORES_CONSULTADOS',
+  'TELEFONO_CONSULTADO',
+  'CONSENTIMIENTO_REGISTRADO',
+  'CONSENTIMIENTO_REVOCADO',
+  'CONSENTIMIENTOS_CONSULTADOS',
+  'JORNADA_ABIERTA',
+  'JORNADA_CERRADA',
+  'ASISTENCIA_REGISTRADA',
+  'ASISTENCIA_MODIFICADA',
+  'LISTA_ASISTENCIA_CONSULTADA',
+  'SEGUIMIENTO_ABIERTO',
+  'SEGUIMIENTOS_CONSULTADOS',
+  'CONTACTO_REGISTRADO',
+  'NOTAS_SEGUIMIENTO_CONSULTADAS',
+  'ALTA_MEDICA_REGISTRADA',
+  'SEGUIMIENTO_CERRADO',
+  'REPORTE_EXPORTADO',
+  'EXPEDIENTE_EXPORTADO',
+  'EXPEDIENTE_VERIFICADO',
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export interface AuditEntry {
   readonly userId: number | null;

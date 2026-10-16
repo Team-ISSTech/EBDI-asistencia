@@ -81,4 +81,10 @@ describe('parseApiEnv', () => {
     expect(() => parseApiEnv({ ...minimal, PRIVACY_NOTICE_VERSION: '   ' })).toThrow(/PRIVACY_NOTICE_VERSION/);
     expect(() => parseApiEnv({ ...minimal, PRIVACY_NOTICE_VERSION: 'x'.repeat(31) })).toThrow(/PRIVACY_NOTICE_VERSION/);
   });
+
+  it('el proceso de tickets corre cada 60 segundos por omisión y se puede apagar con 0', () => {
+    expect(parseApiEnv(minimal).FOLLOW_UP_JOB_SECONDS).toBe(60);
+    expect(parseApiEnv({ ...minimal, FOLLOW_UP_JOB_SECONDS: '0' }).FOLLOW_UP_JOB_SECONDS).toBe(0);
+    expect(() => parseApiEnv({ ...minimal, FOLLOW_UP_JOB_SECONDS: '-5' })).toThrow(/FOLLOW_UP_JOB_SECONDS/);
+  });
 });

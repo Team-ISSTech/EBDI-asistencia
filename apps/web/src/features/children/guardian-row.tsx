@@ -14,7 +14,7 @@ interface PhoneCellProps {
 }
 
 /** El número se pide al servidor solo al pulsar, y cada consulta queda auditada allá. */
-function PhoneCell({ guardianId }: PhoneCellProps) {
+export function PhoneCell({ guardianId }: PhoneCellProps) {
   const reveal = useRevealPhone();
   if (reveal.data) {
     return (
