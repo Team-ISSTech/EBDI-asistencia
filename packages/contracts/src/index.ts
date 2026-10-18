@@ -121,3 +121,19 @@ export {
   updateEstanciaRequestSchema,
 } from './administration/estancia.js';
 export type { CreateEstanciaRequest, EstanciaAdmin, EstanciaAdminListResponse, UpdateEstanciaRequest } from './administration/estancia.js';
+export {
+  enrollmentMovementRequestSchema,
+  pendingTransferListResponseSchema,
+  pendingTransferSchema,
+  receiveTransferRequestSchema,
+  transferDestinationListResponseSchema,
+  transferDestinationSchema,
+} from './catalogs/movement.js';
+export type {
+  EnrollmentMovementRequest,
+  PendingTransfer,
+  PendingTransferListResponse,
+  ReceiveTransferRequest,
+  TransferDestination,
+  TransferDestinationListResponse,
+} from './catalogs/movement.js';

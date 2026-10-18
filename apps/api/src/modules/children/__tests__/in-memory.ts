@@ -5,18 +5,23 @@ import type {
   ChildGuardianRecord,
   ChildRecord,
   ConsentRecord,
+  EnrollmentRecord,
   GuardianChanges,
   GuardianRecord,
   LinkChanges,
+  MovementRecord,
   NewChild,
   NewChildGuardian,
   NewConsent,
   NewEnrollment,
   NewGuardian,
+  PendingTransferRecord,
   RoomRecord,
+  TransferDestinationRecord,
 } from '../children.types';
 import type { ChildrenRepository } from '../repositories/children.repository';
 import type { ConsentsRepository } from '../repositories/consents.repository';
+import type { EnrollmentsRepository } from '../repositories/enrollments.repository';
 import type { GuardiansRepository } from '../repositories/guardians.repository';
 
 export const room = (overrides: Partial<RoomRecord> = {}): RoomRecord => ({
@@ -230,6 +235,72 @@ export class InMemoryConsents implements ConsentsRepository {
   async revoke(id: number, at: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
     const row = this.rows.get(id);
     if (row) this.rows.set(id, { ...row, revokedAt: at });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+}
+
+/** Inscripciones y traslados en memoria, apoyados en el padrón de InMemoryChildren. */
+export class InMemoryEnrollments implements EnrollmentsRepository {
+  readonly movements: MovementRecord[] = [];
+  readonly estancias = new Map<number, { code: string; name: string; active: boolean }>();
+  readonly finished: { childId: number; status: string }[] = [];
+  readonly pending: PendingTransferRecord[] = [];
+  private readonly enrollmentIds = new Map<number, number>();
+
+  constructor(private readonly children: InMemoryChildren) {}
+
+  private idFor(childId: number): number {
+    if (!this.enrollmentIds.has(childId)) this.enrollmentIds.set(childId, 100 + childId);
+    return this.enrollmentIds.get(childId) as number;
+  }
+
+  findActive(childId: number, estanciaId: number): Promise<EnrollmentRecord | null> {
+    const child = this.children.children.get(childId);
+    if (!child || child.estanciaId !== estanciaId) return Promise.resolve(null);
+    return Promise.resolve({ id: this.idFor(childId), childId, estanciaId, roomId: child.roomId, schoolYearId: 1, status: 'ACTIVA' });
+  }
+
+  listTransferDestinations(exceptEstanciaId: number): Promise<TransferDestinationRecord[]> {
+    return Promise.resolve([...this.estancias.entries()].filter(([id, e]) => id !== exceptEstanciaId && e.active).map(([id, e]) => ({ id, code: e.code, name: e.name })));
+  }
+
+  isEstanciaActive(id: number): Promise<boolean> {
+    return Promise.resolve(this.estancias.get(id)?.active ?? false);
+  }
+
+  async changeRoom(enrollment: EnrollmentRecord, movement: MovementRecord, _userId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const child = this.children.children.get(enrollment.childId);
+    if (child) this.children.children.set(child.id, { ...child, roomId: movement.newRoomId as number, roomName: this.children.rooms.get(movement.newRoomId as number)?.name ?? '' });
+    this.movements.push(movement);
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
+  async finish(enrollment: EnrollmentRecord, status: 'BAJA' | 'TRASLADADA', movement: MovementRecord, _userId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    this.children.children.delete(enrollment.childId);
+    this.finished.push({ childId: enrollment.childId, status });
+    this.movements.push(movement);
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
+  listPendingTransfers(toEstanciaId: number): Promise<PendingTransferRecord[]> {
+    return Promise.resolve(this.pending.filter((t) => this.destinationOf.get(t.enrollmentId) === toEstanciaId));
+  }
+
+  readonly destinationOf = new Map<number, number>();
+
+  async findPendingTransfer(enrollmentId: number, toEstanciaId: number): Promise<PendingTransferRecord | null> {
+    return (await this.listPendingTransfers(toEstanciaId)).find((t) => t.enrollmentId === enrollmentId) ?? null;
+  }
+
+  async receiveTransfer(
+    transfer: PendingTransferRecord,
+    destination: { estanciaId: number; roomId: number; schoolYearId: number },
+    _userId: number,
+    _now: Date,
+    inSameTransaction?: TransactionHook<void>,
+  ): Promise<void> {
+    this.pending.splice(this.pending.indexOf(transfer), 1);
+    this.movements.push({ type: 'ALTA', previousEstanciaId: transfer.fromEstanciaId, newEstanciaId: destination.estanciaId, previousRoomId: null, newRoomId: destination.roomId, reason: transfer.reason });
     await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
   }
 }
