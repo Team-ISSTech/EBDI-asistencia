@@ -111,7 +111,7 @@ explícitos hasta obtener confirmación; varios coinciden con las preguntas de
 
 - S-01: "Supervisor Regional" del SRS es el rol `SUPERVISOR_CENTRAL` del catálogo; el alcance por región se resolverá con la pregunta P9 del modelo de datos.
 - S-02: "Capturista/Docente" es un solo rol (`DOCENTE`).
-- S-03: Trabajo Social y Enfermería son dos roles del catálogo con la misma fila de permisos.
+- S-03: Trabajo Social y Enfermería son el mismo perfil: la matriz de roles del documento del cliente (sección 5) les da una sola fila, «Trabajo Social / Enfermería». El catálogo conserva dos códigos de rol (`TRABAJO_SOCIAL` y `ENFERMERIA`, heredados del script SQL del equipo) solo para nombrar el puesto de cada persona; ambos apuntan a la misma lista de permisos y una prueba de `packages/auth` lo verifica.
 - S-04: El SRS etiqueta la matriz de permisos completa como Fase 2. Se asume que los roles de Fase 1 operan desde Fase 1 con los permisos mínimos que su fila les asigna; la matriz completa se verifica en Fase 2.
 - S-05: "Menos de 3 clics" se cuenta a partir de la pantalla del grupo ya cargada, con sesión iniciada.
 - S-06: El umbral de bloqueo (RF-05) no está definido; se asume 5 intentos fallidos y 15 minutos de bloqueo, configurables en `packages/config`.
