@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
-import { extractRequestContext, packIp, type RequestWithId } from '../http/request-context';
+import { extractRequestContext, packIp, type RequestWithId, unpackIp } from '../http/request-context';
 import { requestIdMiddleware } from '../http/request-id.middleware';
 
 describe('packIp', () => {
@@ -22,6 +22,20 @@ describe('packIp', () => {
   it('devuelve null para valores no IP', () => {
     expect(packIp('localhost')).toBeNull();
     expect(packIp(null)).toBeNull();
+  });
+});
+
+describe('unpackIp', () => {
+  it('devuelve el texto de una IPv4 y de una IPv6 empaquetadas', () => {
+    expect(unpackIp(packIp('10.0.0.255'))).toBe('10.0.0.255');
+    expect(unpackIp(packIp('2001:db8::1'))).toBe('2001:db8::1');
+    expect(unpackIp(packIp('::1'))).toBe('::1');
+  });
+
+  it('no inventa una IP: nulo, vacío o de largo raro devuelven null', () => {
+    expect(unpackIp(null)).toBeNull();
+    expect(unpackIp(Buffer.alloc(0))).toBeNull();
+    expect(unpackIp(Buffer.from([1, 2, 3]))).toBeNull();
   });
 });
 

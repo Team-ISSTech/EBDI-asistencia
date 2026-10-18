@@ -100,6 +100,7 @@ Flujo en la API:
 | `POST /auth/estancia` | sesión | cambia la estancia activa (solo a una asignada) |
 | `GET/POST /usuarios`, `PATCH /usuarios/:id/roles` | USUARIO_ADMINISTRAR | administración de usuarios; nadie puede quitarse su propio rol central. Un usuario nuevo nace con contraseña temporal que caduca en `TEMP_PASSWORD_DAYS` |
 | `POST /usuarios/:id/contrasena-temporal` | USUARIO_ADMINISTRAR | restablece la contraseña de otra persona: temporal nueva, cuenta desbloqueada y todas sus sesiones cerradas. No sirve para la propia contraseña |
+| `GET /auditoria`, `GET /auditoria/filtros` | AUDITORIA_CONSULTAR (Admin Central) | consulta de la bitácora (RF-11), más reciente primero, con filtros (fechas, persona, acción, tabla, registro) y paginación por cursor `beforeId`. Del cambio devuelve solo los nombres de los campos (`changedFields`), nunca los valores: el servidor descifra el diff únicamente para sacar los nombres. Cada consulta se audita como `AUDITORIA_CONSULTADA` |
 | `GET /salas` | INFANTE_CONSULTAR | salas activas de la estancia activa |
 | `GET /infantes` | INFANTE_CONSULTAR | padrón de la estancia activa; se audita como lectura |
 | `POST /infantes` | INFANTE_ADMINISTRAR | alta con inscripción inicial, movimiento ALTA y auditoría en una transacción; cifra el grupo de discapacidad |

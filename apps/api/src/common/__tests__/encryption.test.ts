@@ -12,6 +12,17 @@ describe('EncryptionService', () => {
     expect(service.decrypt(service.encrypt('teléfono 55-1234'))).toBe('teléfono 55-1234');
   });
 
+  it('descifra el JSON que cifró, y conserva el nulo', () => {
+    expect(service.decryptJson(service.encryptJson({ name: 'A', n: [1, 2] }))).toEqual({ name: 'A', n: [1, 2] });
+    expect(service.decryptJson(null)).toBeNull();
+    expect(service.decryptJson(service.encryptJson(null))).toBeNull();
+  });
+
+  it('un blob que no es JSON no tumba al llamador: devuelve nulo', () => {
+    expect(service.decryptJson(service.encrypt('esto no es json {'))).toBeNull();
+    expect(service.decryptJson(Buffer.from('basura'))).toBeNull();
+  });
+
   it('produce blobs distintos para el mismo texto (iv aleatorio)', () => {
     expect(service.encrypt('x').equals(service.encrypt('x'))).toBe(false);
   });
