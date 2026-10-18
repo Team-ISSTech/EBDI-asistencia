@@ -5,10 +5,10 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module';
 import { ApiError } from '../../../common/errors/api-error';
 import type { TransactionHook } from '../../identity/repositories/repositories';
-import type { ChildRecord, NewChild, NewEnrollment, RoomRecord } from '../children.types';
+import type { ChildChanges, ChildRecord, NewChild, NewEnrollment, RoomRecord } from '../children.types';
 import type { ChildrenRepository } from './children.repository';
 
-const { rooms, children, enrollments, enrollmentMovements, ciclosEscolares } = schema;
+const { rooms, children, enrollments, enrollmentMovements, ciclosEscolares, attendanceRecords } = schema;
 const DUPLICATE_ENTRY = 'ER_DUP_ENTRY';
 
 type RoomRow = typeof rooms.$inferSelect;
@@ -117,6 +117,37 @@ export class DrizzleChildrenRepository implements ChildrenRepository {
   async findChild(id: number, estanciaId: number): Promise<ChildRecord | null> {
     const [row] = await this.activeChildrenQuery(estanciaId, id).limit(1);
     return row ? toChild(row) : null;
+  }
+
+  async updateChild(id: number, changes: ChildChanges, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    try {
+      await this.db.transaction(async (tx) => {
+        await tx.update(children).set({ ...changes, updatedAt: now }).where(and(eq(children.id, id), isNull(children.deletedAt)));
+        await inSameTransaction?.(tx, undefined);
+      });
+    } catch (error) {
+      if (driverCode(error) === DUPLICATE_ENTRY) throw new ApiError('CONFLICTO', 'Ya existe un infante con esa matrícula o CURP.');
+      throw error;
+    }
+  }
+
+  async hasAttendance(childId: number): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: attendanceRecords.id })
+      .from(attendanceRecords)
+      .innerJoin(enrollments, eq(enrollments.id, attendanceRecords.enrollmentId))
+      .where(eq(enrollments.childId, childId))
+      .limit(1);
+    return row !== undefined;
+  }
+
+  async softDeleteChild(id: number, userId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      const mark = { deletedAt: now, deletedBy: userId, updatedAt: now };
+      await tx.update(enrollments).set(mark).where(and(eq(enrollments.childId, id), isNull(enrollments.deletedAt)));
+      await tx.update(children).set(mark).where(and(eq(children.id, id), isNull(children.deletedAt)));
+      await inSameTransaction?.(tx, undefined);
+    });
   }
 
   async registerChild(

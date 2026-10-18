@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Req } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
 import {
   type Child,
   type ChildListResponse,
   type EnrollChildRequest,
   enrollChildRequestSchema,
   type RoomListResponse,
+  type UpdateChildRequest,
+  updateChildRequestSchema,
 } from '@sirai/contracts';
 import type { AuthContext } from '../../../common/auth/auth-context';
 import { CurrentAuth, RequirePermission } from '../../../common/auth/decorators';
@@ -36,5 +38,23 @@ export class ChildrenController {
     @Req() request: RequestWithId,
   ): Promise<Child> {
     return this.children.enroll(auth, body, extractRequestContext(request));
+  }
+
+  @Patch('infantes/:id')
+  @RequirePermission('INFANTE_ADMINISTRAR')
+  update(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id', ParseIntPipe) id: number,
+    @ZodBody(updateChildRequestSchema) body: UpdateChildRequest,
+    @Req() request: RequestWithId,
+  ): Promise<Child> {
+    return this.children.update(auth, id, body, extractRequestContext(request));
+  }
+
+  @Delete('infantes/:id')
+  @HttpCode(204)
+  @RequirePermission('INFANTE_ADMINISTRAR')
+  remove(@CurrentAuth() auth: AuthContext, @Param('id', ParseIntPipe) id: number, @Req() request: RequestWithId): Promise<void> {
+    return this.children.remove(auth, id, extractRequestContext(request));
   }
 }

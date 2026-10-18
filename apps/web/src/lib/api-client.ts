@@ -15,7 +15,7 @@ export class ApiClientError extends Error {
 }
 
 export interface RequestOptions<T> {
-  readonly method?: 'GET' | 'POST' | 'PATCH';
+  readonly method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   readonly body?: unknown;
   /** Esquema de `@sirai/contracts` que valida la respuesta; `undefined` para 204. */
   readonly schema?: ZodType<T>;

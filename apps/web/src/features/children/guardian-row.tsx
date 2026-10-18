@@ -47,9 +47,12 @@ export interface GuardianRowProps {
   readonly canManageConsent: boolean;
   /** Historial de consentimientos del infante; solo se muestran los de este tutor. */
   readonly consents: readonly Consent[];
+  /** Sin estas funciones no hay editar ni desvincular (RF-34). */
+  readonly onEdit?: (guardian: ChildGuardian) => void;
+  readonly onUnlink?: (guardian: ChildGuardian) => void;
 }
 
-export function GuardianRow({ childId, guardian, canSeePhone, canManageConsent, consents }: GuardianRowProps) {
+export function GuardianRow({ childId, guardian, canSeePhone, canManageConsent, consents, onEdit, onUnlink }: GuardianRowProps) {
   return (
     <tr>
       <Td className="font-medium text-[var(--color-ink)]">{fullName(guardian)}</Td>
@@ -70,6 +73,16 @@ export function GuardianRow({ childId, guardian, canSeePhone, canManageConsent, 
           canManage={canManageConsent}
         />
       </Td>
+      {onEdit && onUnlink ? (
+        <Td className="whitespace-nowrap">
+          <Button variant="ghost" aria-label={`Editar a ${fullName(guardian)}`} onClick={() => onEdit(guardian)}>
+            Editar
+          </Button>
+          <Button variant="ghost" aria-label={`Desvincular a ${fullName(guardian)}`} onClick={() => onUnlink(guardian)}>
+            Desvincular
+          </Button>
+        </Td>
+      ) : null}
     </tr>
   );
 }

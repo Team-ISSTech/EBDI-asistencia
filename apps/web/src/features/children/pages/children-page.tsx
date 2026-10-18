@@ -2,21 +2,24 @@ import type { Child } from '@sirai/contracts';
 import { Button, Card, EmptyState, PageHeader } from '@sirai/ui';
 import { useState } from 'react';
 import { useSession } from '../../auth/use-session';
-import { ChildrenTable } from '../children-table';
+import { ChildrenTable, type ChildrenTableProps } from '../children-table';
+import { ChildPanel, type ChildPanelState } from '../child-panel';
 import { EnrollChildForm } from '../enroll-child-form';
 import { GuardiansCard } from '../guardians-card';
 import { useChildren, useEnrollChild, useRooms } from '../use-children';
 import { useDownloadDossier } from '../use-dossier';
 import { VerifyDossierCard } from '../verify-dossier-card';
 
+type RowActions = Pick<ChildrenTableProps, 'onExport' | 'onEdit' | 'onDelete'>;
+
 interface ChildrenContentProps {
   readonly query: ReturnType<typeof useChildren>;
   readonly onSelect: (child: Child) => void;
-  readonly onExport: ((child: Child) => void) | undefined;
+  readonly actions: RowActions;
 }
 
 /** Carga, error, vacío o tabla: un solo estado a la vez. */
-function ChildrenContent({ query, onSelect, onExport }: ChildrenContentProps) {
+function ChildrenContent({ query, onSelect, actions }: ChildrenContentProps) {
   if (query.isPending) return <p className="text-sm text-[var(--color-text-muted)]">Cargando infantes…</p>;
   if (query.isError) {
     return (
@@ -28,8 +31,14 @@ function ChildrenContent({ query, onSelect, onExport }: ChildrenContentProps) {
   if (query.data.children.length === 0) {
     return <EmptyState title="Sin infantes registrados" description="Cuando se den de alta infantes en la estancia, aparecerán aquí con su sala." />;
   }
-  return <ChildrenTable children={query.data.children} onSelect={onSelect} {...(onExport ? { onExport } : {})} />;
+  return <ChildrenTable children={query.data.children} onSelect={onSelect} {...actions} />;
 }
+
+/** Solo se ofrecen las acciones que los permisos de la sesión permiten. */
+const rowActions = (canAdmin: boolean, onExport: RowActions['onExport'], onPanel: (state: ChildPanelState) => void): RowActions => ({
+  ...(onExport ? { onExport } : {}),
+  ...(canAdmin ? { onEdit: (child: Child) => onPanel({ kind: 'edit', child }), onDelete: (child: Child) => onPanel({ kind: 'delete', child }) } : {}),
+});
 
 interface HeaderActionsProps {
   readonly canEnroll: boolean;
@@ -64,23 +73,35 @@ function DossierError({ failed }: { readonly failed: boolean }) {
   );
 }
 
+interface EnrollCardProps {
+  readonly onDone: () => void;
+}
+
+/** Lleva su propia mutación y la consulta de salas: al ocultarse, ambas se descartan. */
+function EnrollCard({ onDone }: EnrollCardProps) {
+  const enroll = useEnrollChild();
+  const rooms = useRooms(true);
+  return (
+    <Card className="mb-8">
+      <EnrollChildForm rooms={rooms.data?.rooms ?? []} pending={enroll.isPending} error={enroll.error} onSubmit={(body) => enroll.mutate(body, { onSuccess: onDone })} />
+    </Card>
+  );
+}
+
 /** Padrón de infantes de la estancia activa, con alta y expediente para quien puede. */
 export function ChildrenPage() {
   const { data: session } = useSession();
   const children = useChildren();
-  const enroll = useEnrollChild();
   const dossier = useDownloadDossier();
   const [showForm, setShowForm] = useState(false);
   const [showVerify, setShowVerify] = useState(false);
   const [selected, setSelected] = useState<Child | null>(null);
-  const rooms = useRooms(showForm);
+  const [panel, setPanel] = useState<ChildPanelState | null>(null);
   const permissions = session?.permissions ?? [];
   const canExport = permissions.includes('EXPEDIENTE_EXPORTAR');
 
-  const toggleForm = () => {
-    enroll.reset();
-    setShowForm((visible) => !visible);
-  };
+  const canAdmin = permissions.includes('INFANTE_ADMINISTRAR');
+  const closePanel = () => setPanel(null);
 
   return (
     <>
@@ -88,22 +109,14 @@ export function ChildrenPage() {
         eyebrow="Operación"
         title="Infantes"
         description="Padrón de infantes inscritos en la estancia, con su sala. Los datos de salud no se muestran aquí."
-        actions={<HeaderActions canEnroll={permissions.includes('INFANTE_ADMINISTRAR')} canExport={canExport} showForm={showForm} showVerify={showVerify} onToggleForm={toggleForm} onToggleVerify={() => setShowVerify((visible) => !visible)} />}
+        actions={<HeaderActions canEnroll={canAdmin} canExport={canExport} showForm={showForm} showVerify={showVerify} onToggleForm={() => setShowForm((visible) => !visible)} onToggleVerify={() => setShowVerify((visible) => !visible)} />}
       />
       {showVerify && canExport ? <VerifyDossierCard /> : null}
-      {showForm ? (
-        <Card className="mb-8">
-          <EnrollChildForm
-            rooms={rooms.data?.rooms ?? []}
-            pending={enroll.isPending}
-            error={enroll.error}
-            onSubmit={(body) => enroll.mutate(body, { onSuccess: () => setShowForm(false) })}
-          />
-        </Card>
-      ) : null}
+      {showForm ? <EnrollCard onDone={() => setShowForm(false)} /> : null}
+      {panel ? <ChildPanel state={panel} onDone={closePanel} onCancel={closePanel} /> : null}
       <DossierError failed={dossier.isError} />
       {selected ? <GuardiansCard key={selected.id} child={selected} onClose={() => setSelected(null)} /> : null}
-      <ChildrenContent query={children} onSelect={setSelected} onExport={canExport ? (child) => dossier.mutate(child.id) : undefined} />
+      <ChildrenContent query={children} onSelect={setSelected} actions={rowActions(canAdmin, canExport ? (child) => dossier.mutate(child.id) : undefined, setPanel)} />
     </>
   );
 }

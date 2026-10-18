@@ -1,6 +1,6 @@
 import { CHILD_STATUSES } from '@sirai/domain';
 import { z } from 'zod';
-import { isoDateSchema, positiveIdSchema } from './common.js';
+import { hasChange, isoDateSchema, NO_CHANGE, positiveIdSchema } from './common.js';
 
 const CURP_FORMAT = /^[A-Z]{4}\d{6}[HMX][A-Z]{2}[A-Z]{3}[A-Z\d]\d$/;
 const todayIso = (): string => new Date().toISOString().slice(0, 10);
@@ -52,7 +52,24 @@ export const enrollChildRequestSchema = z
   .object({ ...childFields, roomId: positiveIdSchema })
   .refine(disabilityRule.check, disabilityRule.options);
 
+/** Cambios parciales de un infante; la matrícula no se edita y el grupo de discapacidad viaja cifrado al guardarse. */
+export const updateChildRequestSchema = z
+  .object({
+    curp: childFields.curp.unwrap(),
+    name: nameSchema,
+    paternalSurname: nameSchema,
+    maternalSurname: nameSchema.nullable(),
+    birthDate: childFields.birthDate,
+    gender: childFields.gender.unwrap(),
+    hasDisability: z.boolean(),
+    disabilityGroup: childFields.disabilityGroup.unwrap(),
+  })
+  .partial()
+  .refine(hasChange, NO_CHANGE)
+  .refine(({ hasDisability, disabilityGroup }) => hasDisability !== false || (disabilityGroup ?? null) === null, disabilityRule.options);
+
 export type Child = z.infer<typeof childSchema>;
 export type ChildListResponse = z.infer<typeof childListResponseSchema>;
 export type CreateChildRequest = z.infer<typeof createChildRequestSchema>;
+export type UpdateChildRequest = z.infer<typeof updateChildRequestSchema>;
 export type EnrollChildRequest = z.infer<typeof enrollChildRequestSchema>;

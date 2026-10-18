@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isoDateSchema, positiveIdSchema } from './common.js';
+import { hasChange, isoDateSchema, NO_CHANGE, positiveIdSchema } from './common.js';
 
 const PHONE_DIGITS = 10;
 const nameSchema = z.string().trim().min(1).max(100);
@@ -60,9 +60,37 @@ export const linkGuardianRequestSchema = z
     path: ['validUntil'],
   });
 
+/** Cambios parciales de un tutor; si llega un teléfono nuevo se vuelve a cifrar. */
+export const updateGuardianRequestSchema = z
+  .object({
+    name: nameSchema,
+    paternalSurname: nameSchema,
+    maternalSurname: nameSchema.nullable(),
+    idType: createGuardianRequestSchema.shape.idType.unwrap(),
+    idFolio: createGuardianRequestSchema.shape.idFolio.unwrap(),
+    phone: phoneSchema,
+    email: createGuardianRequestSchema.shape.email.unwrap(),
+  })
+  .partial()
+  .refine(hasChange, NO_CHANGE);
+
+/** Permisos y vigencia del vínculo; el tutor y el infante del vínculo no cambian. */
+export const updateGuardianLinkRequestSchema = z
+  .object({
+    relationship: z.string().trim().min(1).max(50),
+    isPrimary: z.boolean(),
+    canPickUp: z.boolean(),
+    isEmergencyContact: z.boolean(),
+    validUntil: isoDateSchema.nullable(),
+  })
+  .partial()
+  .refine(hasChange, NO_CHANGE);
+
 export type Guardian = z.infer<typeof guardianSchema>;
 export type ChildGuardian = z.infer<typeof childGuardianSchema>;
 export type ChildGuardianListResponse = z.infer<typeof childGuardianListResponseSchema>;
 export type GuardianPhoneResponse = z.infer<typeof guardianPhoneResponseSchema>;
 export type CreateGuardianRequest = z.infer<typeof createGuardianRequestSchema>;
 export type LinkGuardianRequest = z.infer<typeof linkGuardianRequestSchema>;
+export type UpdateGuardianRequest = z.infer<typeof updateGuardianRequestSchema>;
+export type UpdateGuardianLinkRequest = z.infer<typeof updateGuardianLinkRequestSchema>;

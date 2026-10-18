@@ -1,6 +1,6 @@
-import type { CreateGuardianRequest, LinkGuardianRequest } from '@sirai/contracts';
+import type { CreateGuardianRequest, LinkGuardianRequest, UpdateGuardianLinkRequest, UpdateGuardianRequest } from '@sirai/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createGuardian, fetchChildGuardians, fetchGuardianPhone, linkGuardian } from './api';
+import { createGuardian, fetchChildGuardians, fetchGuardianPhone, linkGuardian, unlinkGuardian, updateGuardian, updateGuardianLink } from './api';
 
 const guardiansKey = (childId: number) => ['children', childId, 'guardians'] as const;
 
@@ -28,4 +28,30 @@ export function useAddGuardian(childId: number) {
 /** Mutación y no consulta: el teléfono no se guarda en caché ni se pide solo. */
 export function useRevealPhone() {
   return useMutation({ mutationFn: (guardianId: number) => fetchGuardianPhone(guardianId) });
+}
+
+export interface EditGuardianInput {
+  readonly guardianId: number;
+  readonly guardian: UpdateGuardianRequest;
+  readonly link: UpdateGuardianLinkRequest;
+}
+
+/** Guarda al tutor y luego su vínculo; si el segundo paso falla, reintentar repite el primero sin efecto. */
+export function useEditGuardian(childId: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ guardianId, guardian, link }: EditGuardianInput) => {
+      await updateGuardian(guardianId, guardian);
+      return updateGuardianLink(childId, guardianId, link);
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: guardiansKey(childId) }),
+  });
+}
+
+export function useUnlinkGuardian(childId: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (guardianId: number) => unlinkGuardian(childId, guardianId),
+    onSuccess: () => client.invalidateQueries({ queryKey: guardiansKey(childId) }),
+  });
 }

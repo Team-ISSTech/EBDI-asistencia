@@ -33,8 +33,8 @@ export type { ApiError } from './common/error.js';
 export { healthResponseSchema } from './common/health.js';
 export type { HealthResponse } from './common/health.js';
 export { positiveIdSchema, isoDateSchema } from './catalogs/common.js';
-export { childListResponseSchema, childSchema, createChildRequestSchema, enrollChildRequestSchema } from './catalogs/child.js';
-export type { Child, ChildListResponse, CreateChildRequest, EnrollChildRequest } from './catalogs/child.js';
+export { childListResponseSchema, childSchema, createChildRequestSchema, enrollChildRequestSchema, updateChildRequestSchema } from './catalogs/child.js';
+export type { Child, ChildListResponse, CreateChildRequest, EnrollChildRequest, UpdateChildRequest } from './catalogs/child.js';
 export {
   childGuardianListResponseSchema,
   childGuardianSchema,
@@ -42,6 +42,8 @@ export {
   guardianPhoneResponseSchema,
   guardianSchema,
   linkGuardianRequestSchema,
+  updateGuardianLinkRequestSchema,
+  updateGuardianRequestSchema,
 } from './catalogs/guardian.js';
 export type {
   ChildGuardian,
@@ -50,6 +52,8 @@ export type {
   Guardian,
   GuardianPhoneResponse,
   LinkGuardianRequest,
+  UpdateGuardianLinkRequest,
+  UpdateGuardianRequest,
 } from './catalogs/guardian.js';
 export {
   createRoomRequestSchema,

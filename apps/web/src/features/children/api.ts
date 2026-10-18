@@ -21,6 +21,9 @@ import {
   type RegisterConsentRequest,
   type RoomListResponse,
   roomListResponseSchema,
+  type UpdateChildRequest,
+  type UpdateGuardianLinkRequest,
+  type UpdateGuardianRequest,
   type VerifyDossierRequest,
   type VerifyDossierResponse,
   verifyDossierResponseSchema,
@@ -33,6 +36,20 @@ export const fetchRooms = (): Promise<RoomListResponse> => apiRequest('/salas', 
 
 export const enrollChild = (body: EnrollChildRequest): Promise<Child> =>
   apiRequest('/infantes', { method: 'POST', body, schema: childSchema });
+
+export const updateChild = (id: number, body: UpdateChildRequest): Promise<Child> =>
+  apiRequest(`/infantes/${id}`, { method: 'PATCH', body, schema: childSchema });
+
+export const deleteChild = (id: number): Promise<void> => apiRequest(`/infantes/${id}`, { method: 'DELETE' });
+
+export const updateGuardian = (id: number, body: UpdateGuardianRequest): Promise<Guardian> =>
+  apiRequest(`/tutores/${id}`, { method: 'PATCH', body, schema: guardianSchema });
+
+export const updateGuardianLink = (childId: number, guardianId: number, body: UpdateGuardianLinkRequest): Promise<ChildGuardian> =>
+  apiRequest(`/infantes/${childId}/tutores/${guardianId}`, { method: 'PATCH', body, schema: childGuardianSchema });
+
+export const unlinkGuardian = (childId: number, guardianId: number): Promise<void> =>
+  apiRequest(`/infantes/${childId}/tutores/${guardianId}`, { method: 'DELETE' });
 
 export const fetchChildGuardians = (childId: number): Promise<ChildGuardianListResponse> =>
   apiRequest(`/infantes/${childId}/tutores`, { schema: childGuardianListResponseSchema });

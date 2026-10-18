@@ -45,7 +45,7 @@ describe('esquema Drizzle de los catálogos', () => {
   });
 
   it('todo catálogo con borrado lógico registra quién borró', () => {
-    for (const table of [schema.rooms, schema.children, schema.guardians, schema.enrollments]) {
+    for (const table of [schema.rooms, schema.children, schema.guardians, schema.enrollments, schema.childGuardians]) {
       expect(getTableColumns(table)).toHaveProperty('deletedAt');
       expect(getTableColumns(table)).toHaveProperty('deletedBy');
     }

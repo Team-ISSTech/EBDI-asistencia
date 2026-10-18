@@ -1,6 +1,7 @@
 import { Button, Field } from '@sirai/ui';
 import { type FormEvent, useState } from 'react';
 import { ApiClientError } from '../../lib/api-client';
+import { Checkbox } from './checkbox';
 import type { AddGuardianInput } from './use-guardians';
 
 export interface AddGuardianFormProps {
@@ -15,21 +16,6 @@ const errorMessage = (error: unknown): string | undefined => {
 };
 
 const blankToNull = (value: string): string | null => (value.trim() === '' ? null : value.trim());
-
-interface CheckboxProps {
-  readonly label: string;
-  readonly checked: boolean;
-  readonly onChange: (checked: boolean) => void;
-}
-
-function Checkbox({ label, checked, onChange }: CheckboxProps) {
-  return (
-    <label className="flex items-center gap-2 text-sm text-[var(--color-ink)]">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      {label}
-    </label>
-  );
-}
 
 const today = (): string => new Date().toISOString().slice(0, 10);
 
