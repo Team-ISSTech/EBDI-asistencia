@@ -1,6 +1,6 @@
-import type { CreateUserRequest, ReplaceRolesRequest } from '@sirai/contracts';
+import type { CreateUserRequest, ReplaceRolesRequest, ResetPasswordRequest } from '@sirai/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createUser, fetchUsers, replaceRoles } from './api';
+import { createUser, fetchUsers, replaceRoles, resetPassword } from './api';
 
 const USERS_KEY = ['users'] as const;
 
@@ -18,4 +18,9 @@ export function useUserActions() {
       onSuccess: refresh,
     }),
   };
+}
+
+/** Restablecer no cambia la lista de usuarios: no hay nada que volver a pedir. */
+export function useResetPassword() {
+  return useMutation({ mutationFn: ({ userId, body }: { userId: number; body: ResetPasswordRequest }) => resetPassword(userId, body) });
 }

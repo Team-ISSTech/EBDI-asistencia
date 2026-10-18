@@ -1,9 +1,9 @@
 import { CENTRAL_ROLE_CODES } from '@sirai/auth';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@sirai/domain';
 import { z } from 'zod';
 import { roleCodeSchema } from '../auth/session.js';
 
 const positiveIdSchema = z.number().int().positive();
-const MIN_PASSWORD_LENGTH = 10;
 
 export const USER_STATUSES = ['ACTIVO', 'INACTIVO'] as const;
 export const userStatusSchema = z.enum(USER_STATUSES);
@@ -40,8 +40,13 @@ export const userListResponseSchema = z.object({ users: z.array(userSchema) });
 export const createUserRequestSchema = z.object({
   name: z.string().trim().min(1).max(150),
   email: z.string().trim().toLowerCase().pipe(z.email()).pipe(z.string().max(190)),
-  temporaryPassword: z.string().min(MIN_PASSWORD_LENGTH).max(200),
+  temporaryPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
   assignments: assignmentListSchema,
+});
+
+/** Restablecimiento por el administrador: una contraseña temporal nueva. */
+export const resetPasswordRequestSchema = z.object({
+  temporaryPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
 });
 
 export const replaceRolesRequestSchema = z.object({
@@ -52,5 +57,6 @@ export type AssignmentInput = z.infer<typeof assignmentInputSchema>;
 export type User = z.infer<typeof userSchema>;
 export type UserListResponse = z.infer<typeof userListResponseSchema>;
 export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 export type ReplaceRolesRequest = z.infer<typeof replaceRolesRequestSchema>;
 export type UserStatus = z.infer<typeof userStatusSchema>;

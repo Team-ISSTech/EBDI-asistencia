@@ -4,6 +4,7 @@ const DEFAULT_PORT = 3000;
 const DEFAULT_SESSION_TTL_HOURS = 12;
 const DEFAULT_SESSION_MAX_HOURS = 72;
 const DEFAULT_LOGIN_MAX_ATTEMPTS = 5;
+const DEFAULT_TEMP_PASSWORD_DAYS = 7;
 const DEFAULT_LOGIN_LOCK_MINUTES = 15;
 const DEFAULT_WEB_ORIGIN = 'http://localhost:5173';
 const DEFAULT_LOGIN_RATE_LIMIT_PER_MINUTE = 10;
@@ -32,6 +33,8 @@ export const apiEnvSchema = z.object({
   SESSION_MAX_HOURS: z.coerce.number().int().positive().default(DEFAULT_SESSION_MAX_HOURS),
   LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(DEFAULT_LOGIN_MAX_ATTEMPTS),
   LOGIN_LOCK_MINUTES: z.coerce.number().int().positive().default(DEFAULT_LOGIN_LOCK_MINUTES),
+  /** Días que dura una contraseña temporal antes de caducar (RF-38). */
+  TEMP_PASSWORD_DAYS: z.coerce.number().int().positive().default(DEFAULT_TEMP_PASSWORD_DAYS),
   /** Intentos de login por IP y minuto antes de responder 429. */
   LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(DEFAULT_LOGIN_RATE_LIMIT_PER_MINUTE),
   COOKIE_SECURE: booleanFromString.default(false),

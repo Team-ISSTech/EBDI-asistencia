@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { RequirePermission } from '../features/auth/require-permission';
 import { RequireSession } from '../features/auth/require-session';
+import { ChangePasswordPage } from '../features/auth/pages/change-password-page';
 import { LoginPage } from '../features/auth/pages/login-page';
 import { SelectEstanciaPage } from '../features/auth/pages/select-estancia-page';
 import { RollCallPage } from '../features/attendance/pages/roll-call-page';
@@ -24,6 +25,14 @@ const guarded = (permission: PermissionCode, element: ReactNode) => (
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app" replace /> },
   { path: '/iniciar-sesion', element: <LoginPage /> },
+  {
+    path: '/cambiar-contrasena',
+    element: (
+      <RequireSession>
+        <ChangePasswordPage />
+      </RequireSession>
+    ),
+  },
   {
     path: '/seleccionar-estancia',
     element: (

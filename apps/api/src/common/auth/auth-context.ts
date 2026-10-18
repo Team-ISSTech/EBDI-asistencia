@@ -7,6 +7,8 @@ export interface AuthContext {
   readonly userId: number;
   readonly principal: Principal;
   readonly activeEstanciaId: number | null;
+  /** Contraseña temporal sin cambiar: la sesión solo puede cambiarla o cerrarse (RF-38). */
+  readonly mustChangePassword?: boolean;
 }
 
 export interface AuthenticatedRequest extends Request {

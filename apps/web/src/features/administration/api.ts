@@ -1,6 +1,7 @@
 import {
   type CreateUserRequest,
   type ReplaceRolesRequest,
+  type ResetPasswordRequest,
   type User,
   type UserListResponse,
   userListResponseSchema,
@@ -15,3 +16,6 @@ export const createUser = (body: CreateUserRequest): Promise<User> =>
 
 export const replaceRoles = (userId: number, body: ReplaceRolesRequest): Promise<User> =>
   apiRequest(`/usuarios/${userId}/roles`, { method: 'PATCH', body, schema: userSchema });
+
+export const resetPassword = (userId: number, body: ResetPasswordRequest): Promise<User> =>
+  apiRequest(`/usuarios/${userId}/contrasena-temporal`, { method: 'POST', body, schema: userSchema });

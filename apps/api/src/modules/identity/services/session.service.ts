@@ -61,7 +61,7 @@ export class SessionService implements SessionResolver {
       },
       inSameTransaction,
     );
-    return { token, context: { sessionId, userId: user.id, principal: principalOf(user), activeEstanciaId } };
+    return { token, context: { sessionId, userId: user.id, principal: principalOf(user), activeEstanciaId, mustChangePassword: user.mustChangePassword } };
   }
 
   async resolve(token: string, now = new Date()): Promise<AuthContext | null> {
@@ -70,7 +70,7 @@ export class SessionService implements SessionResolver {
     const user = await this.users.findById(session.userId);
     if (!user || user.status !== 'ACTIVO') return null;
     await this.extendIfStale(session, now);
-    return { sessionId: session.id, userId: user.id, principal: principalOf(user), activeEstanciaId: session.activeEstanciaId };
+    return { sessionId: session.id, userId: user.id, principal: principalOf(user), activeEstanciaId: session.activeEstanciaId, mustChangePassword: user.mustChangePassword };
   }
 
   private async extendIfStale(session: SessionRecord, now: Date): Promise<void> {

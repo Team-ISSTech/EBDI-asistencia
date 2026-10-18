@@ -18,6 +18,7 @@ describe('parseApiEnv', () => {
       LOGIN_MAX_ATTEMPTS: 5,
       LOGIN_LOCK_MINUTES: 15,
       LOGIN_RATE_LIMIT_PER_MINUTE: 10,
+      TEMP_PASSWORD_DAYS: 7,
       COOKIE_SECURE: false,
       WEB_ORIGIN: 'http://localhost:5173',
     });
@@ -28,6 +29,11 @@ describe('parseApiEnv', () => {
     expect(env.PORT).toBe(4000);
     expect(env.SESSION_TTL_HOURS).toBe(2);
     expect(env.COOKIE_SECURE).toBe(true);
+  });
+
+  it('la contraseña temporal dura 7 días salvo que se configure otra cosa, y debe ser positiva', () => {
+    expect(parseApiEnv({ ...minimal, TEMP_PASSWORD_DAYS: '3' }).TEMP_PASSWORD_DAYS).toBe(3);
+    expect(() => parseApiEnv({ ...minimal, TEMP_PASSWORD_DAYS: '0' })).toThrow(/TEMP_PASSWORD_DAYS/);
   });
 
   it('falla nombrando la variable ausente', () => {

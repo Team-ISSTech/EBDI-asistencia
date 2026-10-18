@@ -1,5 +1,6 @@
 import {
   bigint,
+  boolean,
   datetime,
   index,
   mysqlTable,
@@ -19,6 +20,10 @@ export const usuarios = mysqlTable(
     name: varchar('nombre', { length: 150 }).notNull(),
     email: varchar('correo', { length: 190 }).notNull(),
     passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+    /** Contraseña temporal: debe cambiarse antes de usar el sistema (RF-38). */
+    mustChangePassword: boolean('debe_cambiar_password').notNull().default(false),
+    temporaryPasswordExpiresAt: datetime('password_temporal_expira_at', { fsp: 6 }),
+    passwordChangedAt: datetime('password_cambiado_at', { fsp: 6 }),
     status: varchar('estatus', { length: 20 }).notNull().default('ACTIVO'),
     failedAttempts: smallint('intentos_fallidos', { unsigned: true }).notNull().default(0),
     lockedUntil: datetime('bloqueado_hasta', { fsp: 6 }),

@@ -1,6 +1,7 @@
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ApiEnv } from '@sirai/config';
-import type { LoginRequest, SessionResponse } from '@sirai/contracts';
+import type { ChangePasswordRequest, LoginRequest, SessionResponse } from '@sirai/contracts';
+import { checkNewPassword, isTemporaryPasswordExpired } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { AuthContext } from '../../../common/auth/auth-context';
 import { API_ENV } from '../../../common/config/config.module';
@@ -15,6 +16,10 @@ import { SessionService } from './session.service';
 const USERS_TABLE = 'usuarios';
 const SESSIONS_TABLE = 'sesiones';
 const INVALID_CREDENTIALS = 'Correo o contraseña incorrectos.';
+const CHANGE_PASSWORD_MESSAGES = {
+  MUY_CORTA: 'La contraseña nueva es demasiado corta.',
+  IGUAL_A_LA_ACTUAL: 'La contraseña nueva debe ser distinta de la actual.',
+} as const;
 
 export interface LoginResult {
   readonly token: string;
@@ -48,7 +53,49 @@ export class AuthService implements OnModuleInit {
       throw isLocked ? new ApiError('CREDENCIALES_INVALIDAS', INVALID_CREDENTIALS) : await this.handleFailedAttempt(user, request, now);
     }
     if (isLocked) throw new ApiError('CUENTA_BLOQUEADA', 'Cuenta bloqueada por intentos fallidos. Intenta de nuevo más tarde.');
+    if (user.mustChangePassword && isTemporaryPasswordExpired(user.temporaryPasswordExpiresAt, now)) {
+      throw await this.rejectExpiredTemporary(user, request);
+    }
     return this.openSession(user, request, now);
+  }
+
+  /** La caducidad solo se dice a quien ya dio la contraseña temporal correcta. */
+  private async rejectExpiredTemporary(user: UserRecord, request: RequestContext): Promise<ApiError> {
+    await this.audit.record({
+      userId: user.id,
+      roleCode: rolesSummary(user.assignments),
+      action: 'LOGIN_FALLIDO',
+      tableName: USERS_TABLE,
+      recordId: String(user.id),
+      after: { motivo: 'TEMPORAL_CADUCADA' },
+      request,
+    });
+    return new ApiError('CONTRASENA_TEMPORAL_CADUCADA', 'La contraseña temporal caducó. Pide a un administrador que te asigne una nueva.');
+  }
+
+  /**
+   * Cambia la contraseña de quien ya tiene sesión. Verificar la actual cuenta
+   * como intento fallido igual que en el login: una sesión robada no sirve para
+   * adivinar la contraseña. Al cambiarla se cierran las demás sesiones.
+   */
+  async changePassword(auth: AuthContext, input: ChangePasswordRequest, request: RequestContext, now = new Date()): Promise<SessionResponse> {
+    const user = await this.requireUser(auth);
+    if (user.lockedUntil !== null && user.lockedUntil > now) {
+      throw new ApiError('CUENTA_BLOQUEADA', 'Cuenta bloqueada por intentos fallidos. Intenta de nuevo más tarde.');
+    }
+    if (!(await this.hasher.verify(user.passwordHash, input.currentPassword))) {
+      const failure = await this.handleFailedAttempt(user, request, now);
+      throw new ApiError(failure.code, 'La contraseña actual es incorrecta.');
+    }
+    const check = checkNewPassword(input.newPassword, input.currentPassword);
+    if (!check.ok) throw new ApiError('DATOS_INVALIDOS', CHANGE_PASSWORD_MESSAGES[check.reason]);
+    await this.users.changePassword(user.id, await this.hasher.hash(input.newPassword), now, auth.sessionId, (tx) =>
+      this.audit.record(
+        { ...this.actor(user, auth), action: 'CONTRASENA_CAMBIADA', tableName: USERS_TABLE, recordId: String(user.id), after: { eraTemporal: user.mustChangePassword }, request },
+        tx,
+      ),
+    );
+    return this.me({ ...auth, mustChangePassword: false });
   }
 
   /** Verifica contra un hash de relleno para que el tiempo de respuesta no revele si el correo existe. */

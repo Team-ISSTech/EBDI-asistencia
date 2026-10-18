@@ -125,7 +125,14 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
 
     const asNew = await login('nueva@sirai.test', 'Temporal-2026');
     expect(asNew.status).toBe(200);
-    expect(asNew.body.permissions).toContain('JORNADA_CERRAR');
+    // Una cuenta nueva entra con contraseña temporal: hasta cambiarla no recibe permisos (RF-38).
+    expect(asNew.body).toMatchObject({ mustChangePassword: true, permissions: [] });
+    const changed = await request(app.getHttpServer())
+      .post('/auth/contrasena')
+      .set('Cookie', cookieOf(asNew))
+      .send({ currentPassword: 'Temporal-2026', newPassword: 'Definitiva-2026-x' });
+    expect(changed.status).toBe(200);
+    expect(changed.body.permissions).toContain('JORNADA_CERRAR');
 
     const connection = connect(TEST_DATABASE_URL!);
     const rows = await connection.db.select({ action: schema.auditoria.action, ip: schema.auditoria.ipAddress }).from(schema.auditoria);

@@ -1,4 +1,4 @@
-import { type LoginRequest, type SessionResponse, sessionResponseSchema } from '@sirai/contracts';
+import { type ChangePasswordRequest, type LoginRequest, type SessionResponse, sessionResponseSchema } from '@sirai/contracts';
 import { apiRequest } from '../../lib/api-client';
 
 export const login = (body: LoginRequest): Promise<SessionResponse> =>
@@ -10,3 +10,6 @@ export const logout = (): Promise<undefined> => apiRequest('/auth/logout', { met
 
 export const switchEstancia = (estanciaId: number): Promise<SessionResponse> =>
   apiRequest('/auth/estancia', { method: 'POST', body: { estanciaId }, schema: sessionResponseSchema });
+
+export const changePassword = (body: ChangePasswordRequest): Promise<SessionResponse> =>
+  apiRequest('/auth/contrasena', { method: 'POST', body, schema: sessionResponseSchema });

@@ -24,6 +24,8 @@ export interface UserRecord {
   readonly failedAttempts: number;
   readonly lockedUntil: Date | null;
   readonly lastAccessAt: Date | null;
+  readonly mustChangePassword: boolean;
+  readonly temporaryPasswordExpiresAt: Date | null;
   readonly defaultEstanciaId: number | null;
   readonly assignments: readonly AssignmentRecord[];
 }
@@ -32,6 +34,8 @@ export interface NewUser {
   readonly name: string;
   readonly email: string;
   readonly passwordHash: string;
+  readonly mustChangePassword: boolean;
+  readonly temporaryPasswordExpiresAt: Date | null;
   readonly defaultEstanciaId: number | null;
 }
 

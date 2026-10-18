@@ -67,3 +67,11 @@ export {
 export type { SyncOperationType, SyncResultStatus } from './sync.js';
 export { canChangeRoomShift, canRetireEstancia, canRetireRoom, isValidTimeZone, roomCapacityAllows, roomHasSpace } from './catalog-rules.js';
 export type { EstanciaUsage, RetireEstanciaCheck } from './catalog-rules.js';
+export {
+  checkNewPassword,
+  isTemporaryPasswordExpired,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  temporaryPasswordExpiry,
+} from './password-policy.js';
+export type { PasswordCheck } from './password-policy.js';

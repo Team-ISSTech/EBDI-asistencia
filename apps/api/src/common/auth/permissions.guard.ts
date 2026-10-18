@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { can, type PermissionCode } from '@sirai/auth';
 import { ApiError } from '../errors/api-error';
 import type { AuthenticatedRequest } from './auth-context';
-import { IS_AUTHENTICATED, IS_PUBLIC, REQUIRED_PERMISSION } from './decorators';
+import { ALLOWS_PASSWORD_PENDING, IS_AUTHENTICATED, IS_PUBLIC, REQUIRED_PERMISSION } from './decorators';
 
 /**
  * Cerrado por defecto: una ruta sin `@Public`, `@Authenticated` ni
@@ -21,6 +21,9 @@ export class PermissionsGuard implements CanActivate {
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets)) return true;
     const { auth } = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!auth) throw new ApiError('NO_AUTENTICADO', 'Inicia sesión para continuar.');
+    if (auth.mustChangePassword && !this.reflector.getAllAndOverride<boolean>(ALLOWS_PASSWORD_PENDING, targets)) {
+      throw new ApiError('CAMBIO_CONTRASENA_REQUERIDO', 'Cambia tu contraseña temporal para continuar.');
+    }
     const required = this.reflector.getAllAndOverride<PermissionCode | undefined>(REQUIRED_PERMISSION, targets);
     if (required) {
       if (can(auth.principal, required, { estanciaId: auth.activeEstanciaId })) return true;

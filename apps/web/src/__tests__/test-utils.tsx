@@ -11,6 +11,7 @@ export const docenteSession: SessionResponse = {
   activeEstancia: { id: 1, name: 'Estancia de prueba 01' },
   availableEstancias: [{ id: 1, name: 'Estancia de prueba 01' }],
   permissions: ['ASISTENCIA_CONSULTAR', 'ASISTENCIA_REGISTRAR', 'INFANTE_CONSULTAR'],
+  mustChangePassword: false,
 };
 
 /**
@@ -43,6 +44,7 @@ export function renderWithSession(
           <Route path="/app/pase-de-lista" element={<p>Pantalla pase de lista</p>} />
           <Route path="/app/sin-permiso" element={<p>Pantalla sin permiso</p>} />
           <Route path="/iniciar-sesion" element={options.loginElement ?? <p>Pantalla de inicio de sesión</p>} />
+          <Route path="/cambiar-contrasena" element={<p>Pantalla de cambio de contraseña</p>} />
           <Route path="/seleccionar-estancia" element={<p>Pantalla de selección de estancia</p>} />
         </Routes>
       </MemoryRouter>

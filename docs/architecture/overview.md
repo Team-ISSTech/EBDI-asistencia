@@ -96,8 +96,10 @@ Flujo en la API:
 | `POST /auth/login` | pública, con límite por IP | argon2id; bloqueo tras `LOGIN_MAX_ATTEMPTS` fallos; cookie httpOnly SameSite=Strict |
 | `POST /auth/logout` | sesión | revoca la sesión |
 | `GET /auth/me` | sesión | usuario, asignaciones, estancia activa y permisos resueltos |
+| `POST /auth/contrasena` | sesión (también con contraseña temporal) | cambia la contraseña de quien la pide (RF-38). Verifica la actual (un fallo cuenta para el bloqueo igual que en el login), exige el largo mínimo y que sea distinta, cierra las demás sesiones y audita sin guardar la contraseña |
 | `POST /auth/estancia` | sesión | cambia la estancia activa (solo a una asignada) |
-| `GET/POST /usuarios`, `PATCH /usuarios/:id/roles` | USUARIO_ADMINISTRAR | administración de usuarios; nadie puede quitarse su propio rol central |
+| `GET/POST /usuarios`, `PATCH /usuarios/:id/roles` | USUARIO_ADMINISTRAR | administración de usuarios; nadie puede quitarse su propio rol central. Un usuario nuevo nace con contraseña temporal que caduca en `TEMP_PASSWORD_DAYS` |
+| `POST /usuarios/:id/contrasena-temporal` | USUARIO_ADMINISTRAR | restablece la contraseña de otra persona: temporal nueva, cuenta desbloqueada y todas sus sesiones cerradas. No sirve para la propia contraseña |
 | `GET /salas` | INFANTE_CONSULTAR | salas activas de la estancia activa |
 | `GET /infantes` | INFANTE_CONSULTAR | padrón de la estancia activa; se audita como lectura |
 | `POST /infantes` | INFANTE_ADMINISTRAR | alta con inscripción inicial, movimiento ALTA y auditoría en una transacción; cifra el grupo de discapacidad |

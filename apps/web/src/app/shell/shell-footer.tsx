@@ -1,6 +1,6 @@
 import type { SessionResponse } from '@sirai/contracts';
 import { Button } from '@sirai/ui';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useSessionActions } from '../../features/auth/use-session';
 import { ROLE_LABELS } from '../../lib/labels';
 
@@ -13,6 +13,9 @@ export function ShellFooter({ session }: { readonly session: SessionResponse }) 
     <div className="mt-auto flex flex-col gap-2 border-t border-white/15 pt-4">
       <p className="truncate text-sm font-medium">{session.user.name}</p>
       <p className="truncate text-xs text-white/70">{roles}</p>
+      <Link to="/cambiar-contrasena" className="text-xs text-white/70 underline-offset-4 hover:underline">
+        Cambiar contraseña
+      </Link>
       <Button
         variant="ghost"
         className="self-start text-white hover:bg-white/10"

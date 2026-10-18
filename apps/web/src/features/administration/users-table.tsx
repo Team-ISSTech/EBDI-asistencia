@@ -8,9 +8,10 @@ interface UserRowProps {
   readonly user: User;
   readonly estanciaNames: ReadonlyMap<number, string>;
   readonly onEdit: () => void;
+  readonly onResetPassword: () => void;
 }
 
-function UserRow({ user, estanciaNames, onEdit }: UserRowProps) {
+function UserRow({ user, estanciaNames, onEdit, onResetPassword }: UserRowProps) {
   const label = (role: User['assignments'][number]['role'], estanciaId: number | null): string =>
     estanciaId === null ? ROLE_LABELS[role] : `${ROLE_LABELS[role]} · ${estanciaNames.get(estanciaId) ?? `Estancia ${estanciaId}`}`;
   return (
@@ -37,6 +38,9 @@ function UserRow({ user, estanciaNames, onEdit }: UserRowProps) {
         <Button variant="ghost" onClick={onEdit}>
           Editar roles
         </Button>
+        <Button variant="ghost" aria-label={`Restablecer contraseña de ${user.name}`} onClick={onResetPassword}>
+          Restablecer contraseña
+        </Button>
       </Td>
     </tr>
   );
@@ -46,9 +50,10 @@ export interface UsersTableProps {
   readonly users: readonly User[];
   readonly estancias: readonly EstanciaSummary[];
   readonly onEdit: (user: User) => void;
+  readonly onResetPassword: (user: User) => void;
 }
 
-export function UsersTable({ users, estancias, onEdit }: UsersTableProps) {
+export function UsersTable({ users, estancias, onEdit, onResetPassword }: UsersTableProps) {
   const estanciaNames = new Map(estancias.map((e) => [e.id, e.name]));
   return (
     <Table>
@@ -65,7 +70,7 @@ export function UsersTable({ users, estancias, onEdit }: UsersTableProps) {
       </thead>
       <tbody>
         {users.map((user) => (
-          <UserRow key={user.id} user={user} estanciaNames={estanciaNames} onEdit={() => onEdit(user)} />
+          <UserRow key={user.id} user={user} estanciaNames={estanciaNames} onEdit={() => onEdit(user)} onResetPassword={() => onResetPassword(user)} />
         ))}
       </tbody>
     </Table>
