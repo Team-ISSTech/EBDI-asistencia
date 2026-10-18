@@ -27,7 +27,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-10 | Supervisor Central solo agregados | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/reports` | integración Vitest + MySQL | implementado en `main` (permisos, tablero y exportaciones solo agregados, con alcance por región) |
 | RF-11 | Admin Central: usuarios, roles y auditoría | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/administration` | integración Vitest + MySQL | parcial: usuarios y roles listos; falta la pantalla de consulta de la bitácora |
 | RF-12 | Pase de lista en menos de 3 clics | `apps/web/src/features/attendance` | e2e Playwright | implementado en `main` (pase de lista en dos clics; falta la prueba e2e en navegador) |
-| RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance`, `apps/api/src/modules/attendance` | e2e Playwright, integración Vitest + MySQL | pendiente |
+| RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance` | unitaria Vitest (pantalla con lector simulado y cámara simulada) | parcial: entrada de infantes por matrícula con lector, cámara o captura manual (supuesto S-22); faltan la salida y las credenciales de tutores, y no hay e2e Playwright |
 | RF-14 | Estados de asistencia | `packages/domain` (estados y reglas), `apps/api/src/modules/attendance` | unitaria Vitest | implementado en `main` |
 | RF-15 | Jornada por estancia, fecha y turno | `packages/domain`, `apps/api/src/modules/attendance`, `packages/db` (índice único) | unitaria Vitest, integración Vitest + MySQL | implementado en `main` |
 | RF-16 | Tablero semaforizado en tiempo real | `apps/api/src/modules/reports`, `apps/web/src/features/reports` | integración Vitest + MySQL, e2e Playwright | implementado en `main` (umbrales del semáforo por confirmar, S-15) |
@@ -85,5 +85,5 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
 | Implementados | 37 |
-| Parciales | 12 |
-| Pendientes | 6 |
+| Parciales | 13 |
+| Pendientes | 5 |

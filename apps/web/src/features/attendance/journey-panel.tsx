@@ -2,6 +2,7 @@ import type { AttendanceJourney } from '@sirai/contracts';
 import type { Shift } from '@sirai/domain';
 import { Button, EmptyState } from '@sirai/ui';
 import { useSession } from '../auth/use-session';
+import { ScanPanel, type ScanPanelProps } from './scan-panel';
 import { RosterTable } from './roster-table';
 import { useAttendanceDraft } from './use-attendance-draft';
 import { useCloseJourney, useMarkAttendance, useRoster } from './use-attendance';
@@ -38,6 +39,11 @@ function Actions({ canMark, canClose, pendingCount, saving, closing, onMarkAll, 
       ) : null}
     </div>
   );
+}
+
+/** Solo quien registra asistencia captura por matrícula. */
+function ScanTools({ canMark, onScan }: { readonly canMark: boolean; readonly onScan: ScanPanelProps['onScan'] }) {
+  return canMark ? <ScanPanel onScan={onScan} /> : null;
 }
 
 export interface JourneyPanelProps {
@@ -87,6 +93,7 @@ export function JourneyPanel({ journey, date, shift }: JourneyPanelProps) {
           No se pudo guardar la asistencia. Lo marcado sigue en pantalla; intenta de nuevo.
         </p>
       ) : null}
+      <ScanTools canMark={canMark} onScan={draft.scan} />
       <RosterTable entries={entries} statusOf={draft.statusOf} {...(canMark ? { onSelect: draft.setStatus } : {})} />
     </div>
   );
