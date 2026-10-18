@@ -1,6 +1,6 @@
 import { Button, Card } from '@sirai/ui';
 import type { ReactNode } from 'react';
-import { ApiClientError } from '../../lib/api-client';
+import { ApiClientError } from '../lib/api-client';
 
 export interface ConfirmCardProps {
   readonly message: ReactNode;

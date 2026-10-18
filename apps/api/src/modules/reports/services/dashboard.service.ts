@@ -74,7 +74,12 @@ export class DashboardService {
   constructor(@Inject(REPORTS_REPOSITORY) private readonly reports: ReportsRepository) {}
 
   async dashboard(auth: AuthContext, query: DashboardQuery): Promise<DashboardResponse> {
-    const facts = await this.reports.dashboardFacts(query.date, resolveReportScope(auth.principal));
+    return this.dashboardFor(resolveReportScope(auth.principal), query);
+  }
+
+  /** El mismo tablero para un alcance ya resuelto; lo usa también un sistema externo (RF-37), que no tiene roles. */
+  async dashboardFor(scope: ReportScope, query: DashboardQuery): Promise<DashboardResponse> {
+    const facts = await this.reports.dashboardFacts(query.date, scope);
     const estancias = facts.map(toRow).sort((a, b) => LIGHT_PRIORITY[a.light] - LIGHT_PRIORITY[b.light] || (a.rate ?? 1) - (b.rate ?? 1) || a.name.localeCompare(b.name, 'es'));
     return { date: query.date, totals: toTotals(estancias), estancias };
   }

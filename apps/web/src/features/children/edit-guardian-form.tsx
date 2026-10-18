@@ -2,7 +2,7 @@ import type { ChildGuardian, UpdateGuardianLinkRequest, UpdateGuardianRequest } 
 import { Button, Field } from '@sirai/ui';
 import { type FormEvent, useState } from 'react';
 import { ApiClientError } from '../../lib/api-client';
-import { Checkbox } from './checkbox';
+import { Checkbox } from '../../components/checkbox';
 
 export interface EditGuardianFormProps {
   readonly guardian: ChildGuardian;

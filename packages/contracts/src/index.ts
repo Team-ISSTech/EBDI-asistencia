@@ -143,3 +143,21 @@ export type {
 } from './catalogs/movement.js';
 export { auditEntrySchema, auditFiltersResponseSchema, auditListResponseSchema, auditQuerySchema } from './audit/audit.js';
 export type { AuditEntryView, AuditFiltersResponse, AuditListResponse, AuditQuery } from './audit/audit.js';
+export {
+  SYSTEM_STATUSES,
+  createSystemRequestSchema,
+  createdSystemResponseSchema,
+  integrationScopeSchema,
+  integrationTokenRequestSchema,
+  integrationTokenResponseSchema,
+  systemListResponseSchema,
+  systemSchema,
+} from './integration/system.js';
+export type {
+  CreateSystemRequest,
+  CreatedSystemResponse,
+  IntegrationTokenRequest,
+  IntegrationTokenResponse,
+  SystemListResponse,
+  SystemView,
+} from './integration/system.js';

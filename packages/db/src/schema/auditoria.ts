@@ -1,4 +1,5 @@
 import { bigint, char, datetime, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
+import { integrationSystems } from './sistemas.js';
 import { longblob, varbinaryBytes } from './types.js';
 import { usuarios } from './usuarios.js';
 
@@ -8,6 +9,8 @@ export const auditoria = mysqlTable(
   {
     id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
     userId: bigint('usuario_id', { mode: 'number', unsigned: true }).references(() => usuarios.id),
+    /** Sistema externo que hizo la operación (RF-37); nulo cuando la hizo una persona. */
+    systemId: bigint('sistema_id', { mode: 'number', unsigned: true }).references(() => integrationSystems.id),
     roleCode: varchar('rol_codigo', { length: 50 }),
     action: varchar('accion', { length: 30 }).notNull(),
     tableName: varchar('tabla_afectada', { length: 80 }).notNull(),

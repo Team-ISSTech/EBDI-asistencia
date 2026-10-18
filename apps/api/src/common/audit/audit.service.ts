@@ -18,6 +18,11 @@ export const AUDIT_ACTIONS = [
   'USUARIO_CREADO',
   'ROLES_REEMPLAZADOS',
   'AUDITORIA_CONSULTADA',
+  'SISTEMA_REGISTRADO',
+  'SISTEMA_REVOCADO',
+  'SISTEMA_TOKEN_EMITIDO',
+  'SISTEMA_TOKEN_FALLIDO',
+  'SISTEMA_CONSULTA',
   'CONTRASENA_CAMBIADA',
   'CONTRASENA_RESTABLECIDA',
   'INFANTES_CONSULTADOS',
@@ -65,6 +70,8 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 export interface AuditEntry {
   readonly userId: number | null;
+  /** Sistema externo que hizo la operación (RF-37); excluyente con `userId`. */
+  readonly systemId?: number | null;
   readonly roleCode: string | null;
   readonly action: AuditAction;
   readonly tableName: string;
@@ -92,6 +99,7 @@ export class AuditService {
   async record(entry: AuditEntry, executor: AuditExecutor = this.db): Promise<void> {
     await executor.insert(schema.auditoria).values({
       userId: entry.userId,
+      systemId: entry.systemId ?? null,
       roleCode: entry.roleCode,
       action: entry.action,
       tableName: entry.tableName,

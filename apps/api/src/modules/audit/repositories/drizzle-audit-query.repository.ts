@@ -5,7 +5,7 @@ import { DB } from '../../../common/database/database.module';
 import type { AuditFacets, AuditFilters, AuditRow } from '../audit-query.types';
 import type { AuditQueryRepository } from './audit-query.repository';
 
-const { auditoria, usuarios } = schema;
+const { auditoria, usuarios, integrationSystems } = schema;
 
 const conditions = (filters: AuditFilters) => [
   filters.from === undefined ? undefined : gte(auditoria.occurredAt, filters.from),
@@ -28,6 +28,7 @@ export class DrizzleAuditQueryRepository implements AuditQueryRepository {
         occurredAt: auditoria.occurredAt,
         userId: auditoria.userId,
         userName: usuarios.name,
+        systemName: integrationSystems.name,
         roleCode: auditoria.roleCode,
         action: auditoria.action,
         tableName: auditoria.tableName,
@@ -39,6 +40,7 @@ export class DrizzleAuditQueryRepository implements AuditQueryRepository {
       })
       .from(auditoria)
       .leftJoin(usuarios, eq(usuarios.id, auditoria.userId))
+      .leftJoin(integrationSystems, eq(integrationSystems.id, auditoria.systemId))
       .where(and(...conditions(filters)))
       .orderBy(desc(auditoria.id))
       .limit(limit);

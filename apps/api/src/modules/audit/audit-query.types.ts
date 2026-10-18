@@ -15,6 +15,7 @@ export interface AuditRow {
   readonly occurredAt: Date;
   readonly userId: number | null;
   readonly userName: string | null;
+  readonly systemName: string | null;
   readonly roleCode: string | null;
   readonly action: string;
   readonly tableName: string;

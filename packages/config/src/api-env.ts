@@ -9,6 +9,9 @@ const DEFAULT_LOGIN_LOCK_MINUTES = 15;
 const DEFAULT_WEB_ORIGIN = 'http://localhost:5173';
 const DEFAULT_LOGIN_RATE_LIMIT_PER_MINUTE = 10;
 const MAX_NOTICE_VERSION_LENGTH = 30;
+const DEFAULT_INTEGRATION_TOKEN_MINUTES = 15;
+const DEFAULT_INTEGRATION_RATE_LIMIT_PER_MINUTE = 60;
+const MIN_TOKEN_SECRET_LENGTH = 32;
 const DEFAULT_FOLLOW_UP_JOB_SECONDS = 60;
 /** Llave pública de .env.example y CI; válida solo fuera de producción. */
 export const EXAMPLE_DATA_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
@@ -52,6 +55,16 @@ export const apiEnvSchema = z.object({
    * evidencia en cada consentimiento; el cliente nunca la elige. La confirma
    * el área jurídica, por eso en producción es obligatoria.
    */
+  /**
+   * Llave con la que se firman los tokens de los sistemas externos (RF-37).
+   * Fuera de producción, si falta, se deriva de DATA_ENCRYPTION_KEY; en
+   * producción es obligatoria y distinta de ella, para que una no sirva de la otra.
+   */
+  API_TOKEN_SECRET: z.preprocess((value) => (value === '' ? undefined : value), z.string().min(MIN_TOKEN_SECRET_LENGTH).optional()),
+  /** Minutos que dura un token de sistema antes de pedir otro. */
+  INTEGRATION_TOKEN_MINUTES: z.coerce.number().int().positive().default(DEFAULT_INTEGRATION_TOKEN_MINUTES),
+  /** Peticiones por minuto que puede hacer cada sistema antes de recibir 429. */
+  INTEGRATION_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(DEFAULT_INTEGRATION_RATE_LIMIT_PER_MINUTE),
   PRIVACY_NOTICE_VERSION: z.preprocess(
     // Una variable vacía (`VAR=` en .env o `${VAR:-}` en compose) significa "sin definir".
     (value) => (value === '' ? undefined : value),
@@ -69,6 +82,14 @@ export const apiEnvSchema = z.object({
   .refine((env) => env.NODE_ENV !== 'production' || env.PRIVACY_NOTICE_VERSION !== undefined, {
     path: ['PRIVACY_NOTICE_VERSION'],
     message: 'En producción debe definirse la versión vigente del aviso de privacidad',
+  })
+  .refine((env) => env.NODE_ENV !== 'production' || env.API_TOKEN_SECRET !== undefined, {
+    path: ['API_TOKEN_SECRET'],
+    message: 'En producción debe definirse API_TOKEN_SECRET (openssl rand -hex 32), distinta de DATA_ENCRYPTION_KEY',
+  })
+  .refine((env) => env.API_TOKEN_SECRET === undefined || env.API_TOKEN_SECRET.toLowerCase() !== env.DATA_ENCRYPTION_KEY.toLowerCase(), {
+    path: ['API_TOKEN_SECRET'],
+    message: 'API_TOKEN_SECRET no puede ser igual a DATA_ENCRYPTION_KEY',
   })
   .refine((env) => env.SESSION_MAX_HOURS >= env.SESSION_TTL_HOURS, {
     path: ['SESSION_MAX_HOURS'],

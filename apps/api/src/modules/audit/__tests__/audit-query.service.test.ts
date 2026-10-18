@@ -41,6 +41,7 @@ describe('AuditQueryService (RF-11)', () => {
     occurredAt: new Date('2026-10-18T12:00:00Z'),
     userId: 3,
     userName: 'Directora Prueba',
+    systemName: null,
     roleCode: 'DIRECTORA',
     action: 'INFANTE_ACTUALIZADO',
     tableName: 'infantes',
@@ -66,6 +67,7 @@ describe('AuditQueryService (RF-11)', () => {
       occurredAt: '2026-10-18T12:00:00.000Z',
       userId: 3,
       userName: 'Directora Prueba',
+      systemName: null,
       roleCode: 'DIRECTORA',
       action: 'INFANTE_ACTUALIZADO',
       tableName: 'infantes',
@@ -87,6 +89,12 @@ describe('AuditQueryService (RF-11)', () => {
     const text = JSON.stringify(response);
     expect(text).not.toMatch(/5512345678|5598765432|Motriz|ejemplo\.test/);
     expect(response.entries[0]?.changedFields).toEqual(['disabilityGroup', 'email', 'phone']);
+  });
+
+  it('un renglón hecho por un sistema externo trae su nombre en vez de una persona', async () => {
+    repo.rows = [row(1, { userId: null, userName: null, systemName: 'Tablero institucional', roleCode: null })];
+    const { entries } = await service.list(admin, { limit: 50 }, request);
+    expect(entries[0]).toMatchObject({ userId: null, userName: null, systemName: 'Tablero institucional' });
   });
 
   it('un renglón sin cambio o con el cifrado dañado se muestra igual, sin campos', async () => {

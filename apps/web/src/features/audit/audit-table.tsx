@@ -19,6 +19,14 @@ function ActionCell({ entry }: { readonly entry: AuditEntryView }) {
 }
 
 function PersonCell({ entry }: { readonly entry: AuditEntryView }) {
+  if (entry.systemName !== null) {
+    return (
+      <>
+        <p className="font-medium text-[var(--color-ink)]">{entry.systemName}</p>
+        <p className="text-xs text-[var(--color-text-muted)]">Sistema externo</p>
+      </>
+    );
+  }
   if (entry.userId === null) return <span className="text-xs text-[var(--color-text-muted)]">Sin persona</span>;
   return (
     <>

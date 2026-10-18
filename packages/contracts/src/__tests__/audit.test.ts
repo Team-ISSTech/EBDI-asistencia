@@ -29,6 +29,7 @@ describe('respuestas de auditoría', () => {
     occurredAt: '2026-10-18T12:00:00.000Z',
     userId: 3,
     userName: 'Directora Prueba',
+    systemName: null,
     roleCode: 'DIRECTORA',
     action: 'INFANTE_ACTUALIZADO',
     tableName: 'infantes',
@@ -44,7 +45,7 @@ describe('respuestas de auditoría', () => {
   });
 
   it('acepta registros sin persona (login fallido de un correo inexistente) y sin IP', () => {
-    expect(auditEntrySchema.safeParse({ ...entry, userId: null, userName: null, roleCode: null, recordId: null, ipAddress: null, userAgent: null, changedFields: [] }).success).toBe(true);
+    expect(auditEntrySchema.safeParse({ ...entry, userId: null, userName: null, systemName: 'Tablero institucional', roleCode: null, recordId: null, ipAddress: null, userAgent: null, changedFields: [] }).success).toBe(true);
   });
 
   it('la lista lleva el cursor de la página siguiente, o nulo al terminar', () => {

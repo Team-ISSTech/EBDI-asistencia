@@ -16,6 +16,7 @@ const entry = (id: number, overrides: Record<string, unknown> = {}) => ({
   occurredAt: '2026-10-18T15:30:00.000Z',
   userId: 3,
   userName: 'Directora Prueba',
+  systemName: null,
   roleCode: 'DIRECTORA',
   action: 'INFANTE_ACTUALIZADO',
   tableName: 'infantes',
@@ -76,6 +77,14 @@ describe('pantalla de auditoría (RF-11)', () => {
     renderWithSession(<AuditPage />, adminSession, '/app/auditoria');
     expect(await screen.findByText('LOGIN_FALLIDO')).toBeInTheDocument();
     expect(screen.getByText('Sin persona')).toBeInTheDocument();
+  });
+
+  it('un registro hecho por un sistema externo muestra su nombre y que es un sistema', async () => {
+    vi.stubGlobal('fetch', withAudit([{ entries: [entry(2, { userId: null, userName: null, systemName: 'Tablero institucional', roleCode: null, action: 'SISTEMA_CONSULTA', tableName: 'reportes', recordId: null })], nextBeforeId: null }]));
+    renderWithSession(<AuditPage />, adminSession, '/app/auditoria');
+    expect(await screen.findByText('Tablero institucional')).toBeInTheDocument();
+    expect(screen.getByText('Sistema externo')).toBeInTheDocument();
+    expect(screen.queryByText('Sin persona')).toBeNull();
   });
 
   it('sin registros dice que no hay resultados, y si falla lo avisa', async () => {
