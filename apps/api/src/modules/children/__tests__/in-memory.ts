@@ -43,6 +43,10 @@ export class InMemoryChildren implements ChildrenRepository {
     return Promise.resolve(this.rooms.get(id) ?? null);
   }
 
+  countActiveInRoom(roomId: number): Promise<number> {
+    return Promise.resolve([...this.children.values()].filter((child) => child.roomId === roomId).length);
+  }
+
   findActiveSchoolYearId(): Promise<number | null> {
     return Promise.resolve(this.schoolYearId);
   }

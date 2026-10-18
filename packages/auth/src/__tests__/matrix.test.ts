@@ -55,6 +55,7 @@ describe('ROLE_PERMISSIONS', () => {
         'INFANTE_ADMINISTRAR',
         'CONSENTIMIENTO_REGISTRAR',
         'EXPEDIENTE_EXPORTAR',
+        'SALA_ADMINISTRAR',
         'SEGUIMIENTO_CONSULTAR',
         'SEGUIMIENTO_REGISTRAR',
         'NOTA_SENSIBLE_CONSULTAR',
@@ -68,9 +69,9 @@ describe('ROLE_PERMISSIONS', () => {
     expect(ROLE_PERMISSIONS.SUPERVISOR_CENTRAL).toEqual(['REPORTE_AGREGADO_CONSULTAR']);
   });
 
-  it('ADMIN_CENTRAL administra usuarios, auditoría y reportes, sin datos de infantes', () => {
+  it('ADMIN_CENTRAL administra usuarios, estancias, auditoría y reportes, sin datos de infantes', () => {
     expect(sorted(ROLE_PERMISSIONS.ADMIN_CENTRAL)).toEqual(
-      sorted(['USUARIO_ADMINISTRAR', 'AUDITORIA_CONSULTAR', 'REPORTE_AGREGADO_CONSULTAR']),
+      sorted(['USUARIO_ADMINISTRAR', 'ESTANCIA_ADMINISTRAR', 'AUDITORIA_CONSULTAR', 'REPORTE_AGREGADO_CONSULTAR']),
     );
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('ASISTENCIA_CONSULTAR');
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('NOTA_SENSIBLE_CONSULTAR');
@@ -92,6 +93,13 @@ describe('ROLE_PERMISSIONS', () => {
   it('solo la directora exporta el expediente de un infante para traslados (RF-19)', () => {
     for (const role of ROLE_CODES) {
       expect(ROLE_PERMISSIONS[role].includes('EXPEDIENTE_EXPORTAR')).toBe(role === 'DIRECTORA');
+    }
+  });
+
+  it('el catálogo de estancias es solo del administrador central y el de salas, solo de la directora (RF-31 y RF-32)', () => {
+    for (const role of ROLE_CODES) {
+      expect(ROLE_PERMISSIONS[role].includes('ESTANCIA_ADMINISTRAR')).toBe(role === 'ADMIN_CENTRAL');
+      expect(ROLE_PERMISSIONS[role].includes('SALA_ADMINISTRAR')).toBe(role === 'DIRECTORA');
     }
   });
 });

@@ -4,6 +4,8 @@ import type { ChildRecord, NewChild, NewEnrollment, RoomRecord } from '../childr
 export interface ChildrenRepository {
   listActiveRooms(estanciaId: number): Promise<RoomRecord[]>;
   findRoom(id: number): Promise<RoomRecord | null>;
+  /** Infantes con inscripción activa en la sala; sirve para respetar su capacidad. */
+  countActiveInRoom(roomId: number): Promise<number>;
   /** Id del ciclo escolar con estado ACTIVO, o null si no hay. */
   findActiveSchoolYearId(): Promise<number | null>;
   /** Infantes con inscripción activa en la estancia. */

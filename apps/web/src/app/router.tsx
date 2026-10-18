@@ -9,6 +9,8 @@ import { RollCallPage } from '../features/attendance/pages/roll-call-page';
 import { ChildrenPage } from '../features/children/pages/children-page';
 import { FollowUpsPage } from '../features/follow-ups/pages/follow-ups-page';
 import { ReportsPage } from '../features/reports/pages/reports-page';
+import { EstanciasPage } from '../features/administration/pages/estancias-page';
+import { RoomsPage } from '../features/administration/pages/rooms-page';
 import { UsersPage } from '../features/administration/pages/users-page';
 import { AuditPage } from '../features/audit/pages/audit-page';
 import { ForbiddenPage } from './pages/forbidden-page';
@@ -44,6 +46,8 @@ export const router = createBrowserRouter([
       { path: 'seguimientos', element: guarded('SEGUIMIENTO_CONSULTAR', <FollowUpsPage />) },
       { path: 'reportes', element: guarded('REPORTE_AGREGADO_CONSULTAR', <ReportsPage />) },
       { path: 'administracion/usuarios', element: guarded('USUARIO_ADMINISTRAR', <UsersPage />) },
+      { path: 'administracion/estancias', element: guarded('ESTANCIA_ADMINISTRAR', <EstanciasPage />) },
+      { path: 'administracion/salas', element: guarded('SALA_ADMINISTRAR', <RoomsPage />) },
       { path: 'auditoria', element: guarded('AUDITORIA_CONSULTAR', <AuditPage />) },
       { path: 'sin-permiso', element: <ForbiddenPage /> },
     ],

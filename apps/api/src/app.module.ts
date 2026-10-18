@@ -12,6 +12,7 @@ import { ChildrenModule } from './modules/children/children.module';
 import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
 import { DossiersModule } from './modules/dossiers/dossiers.module';
 import { SyncModule } from './modules/sync/sync.module';
+import { AdministrationModule } from './modules/administration/administration.module';
 import { HealthModule } from './modules/health/health.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { IdentityModule } from './modules/identity/identity.module';
@@ -40,6 +41,7 @@ const THROTTLE_WINDOW_MS = 60_000;
     ReportsModule,
     DossiersModule,
     SyncModule,
+    AdministrationModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
