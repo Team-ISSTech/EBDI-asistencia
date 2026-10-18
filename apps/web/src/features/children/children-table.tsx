@@ -12,10 +12,12 @@ export interface ChildrenTableProps {
   /** Sin estas funciones no hay editar ni eliminar (RF-33). */
   readonly onEdit?: (child: Child) => void;
   readonly onDelete?: (child: Child) => void;
+  /** Cambio de sala, traslado o baja (RF-35). */
+  readonly onMove?: (child: Child) => void;
 }
 
 /** Padrón de la estancia: nombre, matrícula y sala; sin datos de salud. */
-export function ChildrenTable({ children, onSelect, onExport, onEdit, onDelete }: ChildrenTableProps) {
+export function ChildrenTable({ children, onSelect, onExport, onEdit, onDelete, onMove }: ChildrenTableProps) {
   return (
     <Table>
       <thead>
@@ -47,6 +49,11 @@ export function ChildrenTable({ children, onSelect, onExport, onEdit, onDelete }
               {onEdit ? (
                 <Button variant="ghost" aria-label={`Editar a ${child.name} ${child.paternalSurname}`} onClick={() => onEdit(child)}>
                   Editar
+                </Button>
+              ) : null}
+              {onMove ? (
+                <Button variant="ghost" aria-label={`Movimientos de ${child.name} ${child.paternalSurname}`} onClick={() => onMove(child)}>
+                  Movimientos
                 </Button>
               ) : null}
               {onDelete ? (

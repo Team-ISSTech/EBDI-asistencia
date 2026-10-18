@@ -1,4 +1,4 @@
-import type { ChildStatus, ConsentType, RoomStatus, Shift } from '@sirai/domain';
+import type { ChildStatus, ConsentType, EnrollmentMovement, EnrollmentStatus, RoomStatus, Shift } from '@sirai/domain';
 
 export interface RoomRecord {
   readonly id: number;
@@ -123,4 +123,42 @@ export interface ConsentRecord extends NewConsent {
   readonly acceptedAt: Date;
   readonly revokedAt: Date | null;
   readonly registeredBy: number;
+}
+
+/** Inscripción tal como la necesitan los movimientos. */
+export interface EnrollmentRecord {
+  readonly id: number;
+  readonly childId: number;
+  readonly estanciaId: number;
+  readonly roomId: number;
+  readonly schoolYearId: number;
+  readonly status: EnrollmentStatus;
+}
+
+export interface MovementRecord {
+  readonly type: EnrollmentMovement;
+  readonly previousEstanciaId: number | null;
+  readonly newEstanciaId: number | null;
+  readonly previousRoomId: number | null;
+  readonly newRoomId: number | null;
+  readonly reason: string | null;
+}
+
+/** Traslado que la estancia de destino aún no recibe. */
+export interface PendingTransferRecord {
+  readonly enrollmentId: number;
+  readonly childId: number;
+  readonly childName: string;
+  readonly enrollmentNumber: string;
+  readonly birthDate: string;
+  readonly fromEstanciaId: number;
+  readonly fromEstanciaName: string;
+  readonly movedAt: Date;
+  readonly reason: string | null;
+}
+
+export interface TransferDestinationRecord {
+  readonly id: number;
+  readonly code: string;
+  readonly name: string;
 }

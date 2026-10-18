@@ -6,11 +6,12 @@ import { ChildrenTable, type ChildrenTableProps } from '../children-table';
 import { ChildPanel, type ChildPanelState } from '../child-panel';
 import { EnrollChildForm } from '../enroll-child-form';
 import { GuardiansCard } from '../guardians-card';
+import { PendingTransfersCard } from '../pending-transfers-card';
 import { useChildren, useEnrollChild, useRooms } from '../use-children';
 import { useDownloadDossier } from '../use-dossier';
 import { VerifyDossierCard } from '../verify-dossier-card';
 
-type RowActions = Pick<ChildrenTableProps, 'onExport' | 'onEdit' | 'onDelete'>;
+type RowActions = Pick<ChildrenTableProps, 'onExport' | 'onEdit' | 'onDelete' | 'onMove'>;
 
 interface ChildrenContentProps {
   readonly query: ReturnType<typeof useChildren>;
@@ -37,7 +38,7 @@ function ChildrenContent({ query, onSelect, actions }: ChildrenContentProps) {
 /** Solo se ofrecen las acciones que los permisos de la sesión permiten. */
 const rowActions = (canAdmin: boolean, onExport: RowActions['onExport'], onPanel: (state: ChildPanelState) => void): RowActions => ({
   ...(onExport ? { onExport } : {}),
-  ...(canAdmin ? { onEdit: (child: Child) => onPanel({ kind: 'edit', child }), onDelete: (child: Child) => onPanel({ kind: 'delete', child }) } : {}),
+  ...(canAdmin ? { onEdit: (child: Child) => onPanel({ kind: 'edit', child }), onDelete: (child: Child) => onPanel({ kind: 'delete', child }), onMove: (child: Child) => onPanel({ kind: 'move', child }) } : {}),
 });
 
 interface HeaderActionsProps {
@@ -45,12 +46,14 @@ interface HeaderActionsProps {
   readonly canExport: boolean;
   readonly showForm: boolean;
   readonly showVerify: boolean;
+  readonly showTransfers: boolean;
   readonly onToggleForm: () => void;
   readonly onToggleVerify: () => void;
+  readonly onToggleTransfers: () => void;
 }
 
 /** Los botones del encabezado dependen de los permisos de la sesión. */
-function HeaderActions({ canEnroll, canExport, showForm, showVerify, onToggleForm, onToggleVerify }: HeaderActionsProps) {
+function HeaderActions({ canEnroll, canExport, showForm, showVerify, showTransfers, onToggleForm, onToggleVerify, onToggleTransfers }: HeaderActionsProps) {
   if (!canEnroll && !canExport) return null;
   return (
     <div className="flex gap-2">
@@ -59,8 +62,23 @@ function HeaderActions({ canEnroll, canExport, showForm, showVerify, onToggleFor
           {showVerify ? 'Ocultar verificación' : 'Verificar expediente'}
         </Button>
       ) : null}
+      {canEnroll ? (
+        <Button variant="ghost" onClick={onToggleTransfers}>
+          {showTransfers ? 'Ocultar traslados' : 'Traslados pendientes'}
+        </Button>
+      ) : null}
       {canEnroll ? <Button onClick={onToggleForm}>{showForm ? 'Cancelar' : 'Nuevo infante'}</Button> : null}
     </div>
+  );
+}
+
+/** Herramientas que se abren desde el encabezado; las consultas solo corren mientras están visibles. */
+function ToolPanels({ showVerify, showTransfers }: { readonly showVerify: boolean; readonly showTransfers: boolean }) {
+  return (
+    <>
+      {showVerify ? <VerifyDossierCard /> : null}
+      {showTransfers ? <PendingTransfersCard /> : null}
+    </>
   );
 }
 
@@ -95,6 +113,7 @@ export function ChildrenPage() {
   const dossier = useDownloadDossier();
   const [showForm, setShowForm] = useState(false);
   const [showVerify, setShowVerify] = useState(false);
+  const [showTransfers, setShowTransfers] = useState(false);
   const [selected, setSelected] = useState<Child | null>(null);
   const [panel, setPanel] = useState<ChildPanelState | null>(null);
   const permissions = session?.permissions ?? [];
@@ -109,9 +128,9 @@ export function ChildrenPage() {
         eyebrow="Operación"
         title="Infantes"
         description="Padrón de infantes inscritos en la estancia, con su sala. Los datos de salud no se muestran aquí."
-        actions={<HeaderActions canEnroll={canAdmin} canExport={canExport} showForm={showForm} showVerify={showVerify} onToggleForm={() => setShowForm((visible) => !visible)} onToggleVerify={() => setShowVerify((visible) => !visible)} />}
+        actions={<HeaderActions canEnroll={canAdmin} canExport={canExport} showForm={showForm} showVerify={showVerify} showTransfers={showTransfers} onToggleTransfers={() => setShowTransfers((visible) => !visible)} onToggleForm={() => setShowForm((visible) => !visible)} onToggleVerify={() => setShowVerify((visible) => !visible)} />}
       />
-      {showVerify && canExport ? <VerifyDossierCard /> : null}
+      <ToolPanels showVerify={showVerify && canExport} showTransfers={showTransfers && canAdmin} />
       {showForm ? <EnrollCard onDone={() => setShowForm(false)} /> : null}
       {panel ? <ChildPanel state={panel} onDone={closePanel} onCancel={closePanel} /> : null}
       <DossierError failed={dossier.isError} />

@@ -13,13 +13,19 @@ import {
   consentListResponseSchema,
   consentSchema,
   type EnrollChildRequest,
+  type EnrollmentMovementRequest,
   type Guardian,
   type GuardianPhoneResponse,
   guardianPhoneResponseSchema,
   guardianSchema,
   type LinkGuardianRequest,
+  type PendingTransferListResponse,
+  pendingTransferListResponseSchema,
+  type ReceiveTransferRequest,
   type RegisterConsentRequest,
   type RoomListResponse,
+  type TransferDestinationListResponse,
+  transferDestinationListResponseSchema,
   roomListResponseSchema,
   type UpdateChildRequest,
   type UpdateGuardianLinkRequest,
@@ -50,6 +56,18 @@ export const updateGuardianLink = (childId: number, guardianId: number, body: Up
 
 export const unlinkGuardian = (childId: number, guardianId: number): Promise<void> =>
   apiRequest(`/infantes/${childId}/tutores/${guardianId}`, { method: 'DELETE' });
+
+export const moveChild = (id: number, body: EnrollmentMovementRequest): Promise<void> =>
+  apiRequest(`/infantes/${id}/movimientos`, { method: 'POST', body });
+
+export const fetchTransferDestinations = (): Promise<TransferDestinationListResponse> =>
+  apiRequest('/traslados/destinos', { schema: transferDestinationListResponseSchema });
+
+export const fetchPendingTransfers = (): Promise<PendingTransferListResponse> =>
+  apiRequest('/traslados/pendientes', { schema: pendingTransferListResponseSchema });
+
+export const receiveTransfer = (enrollmentId: number, body: ReceiveTransferRequest): Promise<void> =>
+  apiRequest(`/traslados/${enrollmentId}/recepcion`, { method: 'POST', body });
 
 export const fetchChildGuardians = (childId: number): Promise<ChildGuardianListResponse> =>
   apiRequest(`/infantes/${childId}/tutores`, { schema: childGuardianListResponseSchema });

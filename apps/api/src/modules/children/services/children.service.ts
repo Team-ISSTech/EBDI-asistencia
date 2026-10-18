@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Child, EnrollChildRequest, Room, UpdateChildRequest } from '@sirai/contracts';
-import { ageInMonths, fitsRoomAge, roomHasSpace } from '@sirai/domain';
+import { ageInMonths, fitsRoomAge } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { AuthContext } from '../../../common/auth/auth-context';
 import { EncryptionService } from '../../../common/crypto/encryption.service';
@@ -9,6 +9,7 @@ import type { RequestContext } from '../../../common/http/request-context';
 import { rolesSummary } from '../../identity/services/session-response';
 import type { ChildChanges, ChildRecord, RoomRecord } from '../children.types';
 import { CHILDREN_REPOSITORY, type ChildrenRepository } from '../repositories/children.repository';
+import { requireRoomThatAccepts } from './room-admission';
 
 const CHILDREN_TABLE = 'infantes';
 const DATE_LENGTH = 10;
@@ -156,16 +157,8 @@ export class ChildrenService {
     return child;
   }
 
-  private async requireRoomFor(estanciaId: number, input: EnrollChildRequest): Promise<RoomRecord> {
-    const room = await this.children.findRoom(input.roomId);
-    if (room?.estanciaId !== estanciaId) throw new ApiError('NO_ENCONTRADO', 'Sala no encontrada.');
-    if (room.status !== 'ACTIVO') throw new ApiError('CONFLICTO', 'La sala no está activa.');
-    if (!roomHasSpace(room.capacity, await this.children.countActiveInRoom(room.id))) throw new ApiError('CONFLICTO', 'La sala está llena.');
-    const months = ageInMonths(input.birthDate, this.clock().toISOString());
-    if (!fitsRoomAge(months, { minMonths: room.minAgeMonths, maxMonths: room.maxAgeMonths })) {
-      throw new ApiError('DATOS_INVALIDOS', 'La edad del infante está fuera del rango de la sala.');
-    }
-    return room;
+  private requireRoomFor(estanciaId: number, input: EnrollChildRequest): Promise<RoomRecord> {
+    return requireRoomThatAccepts(this.children, { estanciaId, roomId: input.roomId, birthDate: input.birthDate, on: this.clock() });
   }
 
   private requireEstancia(auth: AuthContext): number {
