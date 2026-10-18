@@ -1,17 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ChildGuardian, CreateGuardianRequest, Guardian, GuardianPhoneResponse, LinkGuardianRequest } from '@sirai/contracts';
+import type {
+  ChildGuardian,
+  CreateGuardianRequest,
+  Guardian,
+  GuardianPhoneResponse,
+  LinkGuardianRequest,
+  UpdateGuardianLinkRequest,
+  UpdateGuardianRequest,
+} from '@sirai/contracts';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { AuthContext } from '../../../common/auth/auth-context';
 import { EncryptionService } from '../../../common/crypto/encryption.service';
 import { ApiError } from '../../../common/errors/api-error';
 import type { RequestContext } from '../../../common/http/request-context';
+import type { TransactionHook } from '../../identity/repositories/repositories';
 import { rolesSummary } from '../../identity/services/session-response';
-import type { ChildGuardianRecord, GuardianRecord } from '../children.types';
+import type { ChildGuardianRecord, GuardianChanges, GuardianRecord } from '../children.types';
 import { CHILDREN_REPOSITORY, type ChildrenRepository } from '../repositories/children.repository';
 import { GUARDIANS_REPOSITORY, type GuardiansRepository } from '../repositories/guardians.repository';
 
 const GUARDIANS_TABLE = 'tutores';
 const CHILDREN_TABLE = 'infantes';
+const DATE_LENGTH = 10;
+const MS_PER_DAY = 86_400_000;
 
 const toGuardianView = (guardian: GuardianRecord): Guardian => ({
   id: guardian.id,
@@ -85,6 +96,48 @@ export class GuardiansService {
     return toChildGuardianView(linked);
   }
 
+  /** Edita al tutor. Un teléfono nuevo se cifra de nuevo; la bitácora guarda solo los nombres de los campos. */
+  async update(auth: AuthContext, id: number, input: UpdateGuardianRequest, request: RequestContext): Promise<Guardian> {
+    if (!(await this.guardians.isLinkedInEstancia(id, this.requireEstancia(auth)))) throw new ApiError('NO_ENCONTRADO', 'Tutor no encontrado.');
+    const { phone, ...plain } = input;
+    const changes: GuardianChanges = phone === undefined ? plain : { ...plain, phoneEncrypted: this.encryption.encrypt(phone), phoneHash: this.encryption.blindHash(phone) };
+    await this.guardians.update(id, changes, new Date(), (tx) =>
+      this.audit.record({ ...this.actor(auth), action: 'TUTOR_ACTUALIZADO', tableName: GUARDIANS_TABLE, recordId: String(id), after: { fields: Object.keys(input) }, request }, tx),
+    );
+    return toGuardianView(await this.requireGuardian(id));
+  }
+
+  async updateLink(auth: AuthContext, childId: number, guardianId: number, input: UpdateGuardianLinkRequest, request: RequestContext): Promise<ChildGuardian> {
+    await this.requireChild(auth, childId);
+    const current = await this.requireLink(childId, guardianId);
+    if (input.isPrimary && !current.isPrimary) await this.assertNoPrimary(childId);
+    if (input.validUntil && input.validUntil < current.validFrom) {
+      throw new ApiError('DATOS_INVALIDOS', 'La vigencia no puede terminar antes de empezar.');
+    }
+    await this.guardians.updateLink(childId, guardianId, input, new Date(), (tx) =>
+      this.audit.record({ ...this.actor(auth), action: 'TUTOR_VINC_ACTUALIZADO', tableName: CHILDREN_TABLE, recordId: String(childId), after: { guardianId, ...input }, request }, tx),
+    );
+    return toChildGuardianView(await this.requireLink(childId, guardianId));
+  }
+
+  /**
+   * Baja del tutor para este infante. Si ya tuvo vigencia, ésta termina ayer y el
+   * vínculo queda como historial; si empezó hoy no hay historia y se da de baja con borrado lógico.
+   */
+  async unlink(auth: AuthContext, childId: number, guardianId: number, request: RequestContext): Promise<void> {
+    await this.requireChild(auth, childId);
+    const current = await this.requireLink(childId, guardianId);
+    const now = new Date();
+    const audit = (tx: Parameters<TransactionHook<void>>[0]) =>
+      this.audit.record({ ...this.actor(auth), action: 'TUTOR_DESVINCULADO', tableName: CHILDREN_TABLE, recordId: String(childId), after: { guardianId }, request }, tx);
+    if (current.validFrom >= now.toISOString().slice(0, DATE_LENGTH)) {
+      await this.guardians.softDeleteLink(childId, guardianId, auth.userId, now, audit);
+      return;
+    }
+    const yesterday = new Date(now.getTime() - MS_PER_DAY).toISOString().slice(0, DATE_LENGTH);
+    await this.guardians.updateLink(childId, guardianId, { validUntil: yesterday, isPrimary: false }, now, audit);
+  }
+
   /**
    * Teléfono completo de un tutor. La bitácora se escribe antes de entregar
    * el dato: si no queda rastro, no hay respuesta.
@@ -98,6 +151,12 @@ export class GuardiansService {
     if (!encrypted) throw new ApiError('NO_ENCONTRADO', 'El tutor no tiene teléfono registrado.');
     await this.audit.record({ ...this.actor(auth), action: 'TELEFONO_CONSULTADO', tableName: GUARDIANS_TABLE, recordId: String(guardianId), request });
     return { phone: this.encryption.decrypt(encrypted) };
+  }
+
+  private async requireLink(childId: number, guardianId: number): Promise<ChildGuardianRecord> {
+    const link = (await this.guardians.listForChild(childId)).find((record) => record.id === guardianId);
+    if (!link) throw new ApiError('NO_ENCONTRADO', 'Vínculo no encontrado.');
+    return link;
   }
 
   private async assertNoPrimary(childId: number): Promise<void> {

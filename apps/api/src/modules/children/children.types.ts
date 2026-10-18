@@ -38,6 +38,37 @@ export interface NewChild {
   readonly disabilityGroupEncrypted: Buffer | null;
 }
 
+/** Cambios ya listos para guardar: lo sensible llega cifrado y lo que no viene no se toca. */
+export interface ChildChanges {
+  readonly curp?: string | null;
+  readonly name?: string;
+  readonly paternalSurname?: string;
+  readonly maternalSurname?: string | null;
+  readonly birthDate?: string;
+  readonly gender?: string | null;
+  readonly hasDisability?: boolean;
+  readonly disabilityGroupEncrypted?: Buffer | null;
+}
+
+export interface GuardianChanges {
+  readonly name?: string;
+  readonly paternalSurname?: string;
+  readonly maternalSurname?: string | null;
+  readonly idType?: string | null;
+  readonly idFolio?: string | null;
+  readonly email?: string | null;
+  readonly phoneEncrypted?: Buffer;
+  readonly phoneHash?: Buffer;
+}
+
+export interface LinkChanges {
+  readonly relationship?: string;
+  readonly isPrimary?: boolean;
+  readonly canPickUp?: boolean;
+  readonly isEmergencyContact?: boolean;
+  readonly validUntil?: string | null;
+}
+
 export interface NewEnrollment {
   readonly estanciaId: number;
   readonly roomId: number;

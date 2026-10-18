@@ -114,7 +114,7 @@ export class DrizzleDossiersRepository implements DossiersRepository {
       })
       .from(childGuardians)
       .innerJoin(guardians, eq(guardians.id, childGuardians.guardianId))
-      .where(and(eq(childGuardians.childId, childId), isNull(guardians.deletedAt)))
+      .where(and(eq(childGuardians.childId, childId), isNull(guardians.deletedAt), isNull(childGuardians.deletedAt)))
       .orderBy(asc(guardians.paternalSurname), asc(guardians.name));
   }
 

@@ -49,6 +49,8 @@ export const childGuardians = mysqlTable(
     validUntil: date('vigencia_hasta', { mode: 'string' }),
     createdAt: datetime('created_at', { fsp: 6 }).notNull(),
     updatedAt: datetime('updated_at', { fsp: 6 }).notNull(),
+    deletedAt: datetime('deleted_at', { fsp: 6 }),
+    deletedBy: bigint('deleted_by', { mode: 'number', unsigned: true }).references(() => usuarios.id),
   },
   (table) => [
     primaryKey({ columns: [table.childId, table.guardianId] }),

@@ -126,7 +126,7 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
       .select({ phone: guardians.phoneEncrypted })
       .from(childGuardians)
       .innerJoin(guardians, eq(guardians.id, childGuardians.guardianId))
-      .where(and(eq(childGuardians.childId, childId), eq(childGuardians.guardianId, guardianId), isNull(guardians.deletedAt)));
+      .where(and(eq(childGuardians.childId, childId), eq(childGuardians.guardianId, guardianId), isNull(guardians.deletedAt), isNull(childGuardians.deletedAt)));
     return row ? { phoneEncrypted: row.phone } : null;
   }
 

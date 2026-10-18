@@ -4,7 +4,7 @@ import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module';
 import { ApiError } from '../../../common/errors/api-error';
 import type { TransactionHook } from '../../identity/repositories/repositories';
-import type { ChildGuardianRecord, GuardianRecord, NewChildGuardian, NewGuardian } from '../children.types';
+import type { ChildGuardianRecord, GuardianChanges, GuardianRecord, LinkChanges, NewChildGuardian, NewGuardian } from '../children.types';
 import type { GuardiansRepository } from './guardians.repository';
 
 const { guardians, childGuardians, enrollments } = schema;
@@ -60,6 +60,7 @@ export class DrizzleGuardiansRepository implements GuardiansRepository {
         and(
           eq(childGuardians.childId, childId),
           isNull(guardians.deletedAt),
+          isNull(childGuardians.deletedAt),
           or(isNull(childGuardians.validUntil), sql`${childGuardians.validUntil} >= CURRENT_DATE`),
         ),
       )
@@ -69,7 +70,12 @@ export class DrizzleGuardiansRepository implements GuardiansRepository {
   async link(childId: number, link: NewChildGuardian, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
     try {
       await this.db.transaction(async (tx) => {
-        await tx.insert(childGuardians).values({ ...link, childId, createdAt: now, updatedAt: now });
+        const [existing] = await tx
+          .select({ validUntil: childGuardians.validUntil, deletedAt: childGuardians.deletedAt })
+          .from(childGuardians)
+          .where(and(eq(childGuardians.childId, childId), eq(childGuardians.guardianId, link.guardianId)));
+        if (existing) await this.reactivate(tx, childId, link, existing, now);
+        else await tx.insert(childGuardians).values({ ...link, childId, createdAt: now, updatedAt: now });
         await inSameTransaction?.(tx, undefined);
       });
     } catch (error) {
@@ -80,6 +86,41 @@ export class DrizzleGuardiansRepository implements GuardiansRepository {
     }
   }
 
+  /** Un vínculo terminado o dado de baja se reutiliza (la llave es infante + tutor); uno vigente es un duplicado. */
+  private async reactivate(tx: Parameters<Parameters<Db['transaction']>[0]>[0], childId: number, link: NewChildGuardian, existing: { validUntil: string | null; deletedAt: Date | null }, now: Date): Promise<void> {
+    const today = now.toISOString().slice(0, 10);
+    const ended = existing.deletedAt !== null || (existing.validUntil !== null && existing.validUntil < today);
+    if (!ended) throw new ApiError('CONFLICTO', 'El tutor ya está vinculado a este infante.');
+    await tx
+      .update(childGuardians)
+      .set({ ...link, deletedAt: null, deletedBy: null, updatedAt: now })
+      .where(and(eq(childGuardians.childId, childId), eq(childGuardians.guardianId, link.guardianId)));
+  }
+
+  async update(id: number, changes: GuardianChanges, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(guardians).set({ ...changes, updatedAt: now }).where(and(eq(guardians.id, id), isNull(guardians.deletedAt)));
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
+  async updateLink(childId: number, guardianId: number, changes: LinkChanges, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(childGuardians).set({ ...changes, updatedAt: now }).where(and(eq(childGuardians.childId, childId), eq(childGuardians.guardianId, guardianId)));
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
+  async softDeleteLink(childId: number, guardianId: number, userId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(childGuardians)
+        .set({ deletedAt: now, deletedBy: userId, isPrimary: false, updatedAt: now })
+        .where(and(eq(childGuardians.childId, childId), eq(childGuardians.guardianId, guardianId), isNull(childGuardians.deletedAt)));
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
   async isLinkedInEstancia(guardianId: number, estanciaId: number): Promise<boolean> {
     const [row] = await this.db
       .select({ childId: childGuardians.childId })
@@ -88,6 +129,7 @@ export class DrizzleGuardiansRepository implements GuardiansRepository {
       .where(
         and(
           eq(childGuardians.guardianId, guardianId),
+          isNull(childGuardians.deletedAt),
           eq(enrollments.estanciaId, estanciaId),
           eq(enrollments.status, 'ACTIVA'),
           isNull(enrollments.deletedAt),

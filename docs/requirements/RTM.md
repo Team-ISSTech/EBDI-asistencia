@@ -47,8 +47,8 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-30 | Alta médica por Médico | `apps/api/src/modules/follow-ups`, `packages/auth` | integración Vitest + MySQL | implementado en `main` |
 | RF-31 | Catálogo de estancias | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | implementado (alta, edición y baja lógica auditadas; la baja se bloquea con inscritos o jornadas abiertas) |
 | RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | implementado (alta, edición, desactivación y baja lógica; capacidad, turno y sala llena en la inscripción) |
-| RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | parcial: alta y listado; faltan edición y baja |
-| RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | parcial: alta, vínculo y teléfono cifrado; falta editar y quitar |
+| RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | implementado (alta, edición y eliminación lógica; la baja de la inscripción es el movimiento de RF-35) |
+| RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | implementado (alta, edición con teléfono recifrado, permisos del vínculo y desvinculación con historial) |
 | RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | parcial: alta inicial con movimiento ALTA; faltan cambio de sala, traslado y baja |
 | RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | implementado en `main` (la versión del aviso la fija el servidor; falta confirmar la versión real) |
 | RF-37 | API con Bearer tokens para sistemas institucionales (A21A, #52) | `apps/api/src/modules/integration` (por crear), `packages/db` (tabla de tokens), `packages/auth` | integración Vitest + MySQL | pendiente |
@@ -61,7 +61,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RNF-01 | AES-256 en reposo | `apps/api/src/common` (encryption service), `packages/db` (columnas `*_cifrado`) | unitaria Vitest, integración Vitest + MySQL | implementado en `main` (teléfono, discapacidad, notas, observaciones médicas y bitácora) |
 | RNF-02 | Auditoría inmutable con diff | `apps/api/src/common` (audit interceptor), `packages/db` (tabla `auditoria`, solo INSERT) | integración Vitest + MySQL, revisión de código | implementado en `main` (triggers de la migración 0002) |
 | RNF-03 | Auditoría de lecturas confidenciales | `apps/api/src/common` (audit interceptor), `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | implementado en `main` (padrón, tutores, teléfono, notas, seguimientos, expedientes y exportaciones) |
-| RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | parcial: `deleted_at` y `deleted_by` en las tablas; ninguna operación de baja los usa todavía |
+| RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | parcial: estancias, salas, infantes, inscripciones y vínculos infante-tutor ya se dan de baja con `deleted_at`/`deleted_by`; falta una operación de baja de tutores y de usuarios |
 | RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/db`, `apps/api/src/modules/administration` | integración Vitest + MySQL, revisión de código | parcial: tabla `ciclos_escolares` y jornadas ligadas a su ciclo; falta archivar y depurar |
 | RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth` | integración Vitest + MySQL, revisión de código | parcial: guard cerrado por defecto y permiso declarado en cada ruta; falta la revisión de seguridad (A23) |
 | RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | implementado en `main` (semillas sintéticas; sin infantes ni tutores reales) |
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 34 |
-| Parciales | 15 |
+| Implementados | 36 |
+| Parciales | 13 |
 | Pendientes | 6 |

@@ -1,10 +1,13 @@
 import { ApiError } from '../../../common/errors/api-error';
 import type { TransactionHook } from '../../identity/repositories/repositories';
 import type {
+  ChildChanges,
   ChildGuardianRecord,
   ChildRecord,
   ConsentRecord,
+  GuardianChanges,
   GuardianRecord,
+  LinkChanges,
   NewChild,
   NewChildGuardian,
   NewConsent,
@@ -58,6 +61,35 @@ export class InMemoryChildren implements ChildrenRepository {
   findChild(id: number, estanciaId: number): Promise<ChildRecord | null> {
     const found = this.children.get(id);
     return Promise.resolve(found && found.estanciaId === estanciaId ? found : null);
+  }
+
+  /** Infantes con asistencia registrada, para probar que no se pueden eliminar. */
+  readonly withAttendance = new Set<number>();
+  readonly deleted: { id: number; userId: number }[] = [];
+
+  async updateChild(id: number, changes: ChildChanges, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const current = this.children.get(id);
+    if (!current) return;
+    if (changes.curp && [...this.children.values()].some((c) => c.id !== id && c.curp === changes.curp)) {
+      throw new ApiError('CONFLICTO', 'Ya existe un infante con esa matrícula o CURP.');
+    }
+    const { disabilityGroupEncrypted, ...rest } = changes;
+    this.children.set(id, {
+      ...current,
+      ...rest,
+      ...(disabilityGroupEncrypted === undefined ? {} : { disabilityGroupEncrypted }),
+    });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
+  hasAttendance(childId: number): Promise<boolean> {
+    return Promise.resolve(this.withAttendance.has(childId));
+  }
+
+  async softDeleteChild(id: number, userId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    this.children.delete(id);
+    this.deleted.push({ id, userId });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
   }
 
   async registerChild(
@@ -123,10 +155,32 @@ export class InMemoryGuardians implements GuardiansRepository {
     return Promise.resolve(this.rows.get(id) ?? null);
   }
 
+  async update(id: number, changes: GuardianChanges, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const current = this.rows.get(id);
+    if (current) this.rows.set(id, { ...current, ...changes, hasPhone: true });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
+  async updateLink(childId: number, guardianId: number, changes: LinkChanges, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const entry = this.links.find((item) => item.childId === childId && item.link.guardianId === guardianId);
+    if (entry) entry.link = { ...entry.link, ...changes };
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
+  readonly deletedLinks: { childId: number; guardianId: number; userId: number }[] = [];
+
+  async softDeleteLink(childId: number, guardianId: number, userId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const index = this.links.findIndex((item) => item.childId === childId && item.link.guardianId === guardianId);
+    if (index >= 0) this.links.splice(index, 1);
+    this.deletedLinks.push({ childId, guardianId, userId });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
+
   listForChild(childId: number): Promise<ChildGuardianRecord[]> {
+    const today = new Date().toISOString().slice(0, 10);
     return Promise.resolve(
       this.links
-        .filter((entry) => entry.childId === childId)
+        .filter((entry) => entry.childId === childId && (entry.link.validUntil === null || entry.link.validUntil >= today))
         .map(({ link }) => {
           const guardian = this.rows.get(link.guardianId) as StoredGuardian;
           const { phoneEncrypted: _phone, phoneHash: _hash, ...view } = guardian;
