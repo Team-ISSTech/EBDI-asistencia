@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { CreateUserRequest, ReplaceRolesRequest, User } from '@sirai/contracts';
+import type { ApiEnv } from '@sirai/config';
+import type { CreateUserRequest, ReplaceRolesRequest, ResetPasswordRequest, User } from '@sirai/contracts';
+import { temporaryPasswordExpiry } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { AuthContext } from '../../../common/auth/auth-context';
+import { API_ENV } from '../../../common/config/config.module';
 import { ApiError } from '../../../common/errors/api-error';
 import type { RequestContext } from '../../../common/http/request-context';
 import type { UserRecord } from '../identity.types';
@@ -31,6 +34,7 @@ export class UsersService {
     @Inject(USERS_REPOSITORY) private readonly users: UsersRepository,
     private readonly hasher: PasswordHasher,
     private readonly audit: AuditService,
+    @Inject(API_ENV) private readonly env: ApiEnv,
   ) {}
 
   /** Consultar el padrón de personal es una lectura de datos personales: se audita. */
@@ -43,19 +47,41 @@ export class UsersService {
   /** Alta, asignaciones y auditoría en una sola transacción. */
   async create(auth: AuthContext, input: CreateUserRequest, request: RequestContext): Promise<User> {
     const after = { name: input.name, email: input.email, assignments: input.assignments };
+    const now = new Date();
     const id = await this.users.createWithAssignments(
       {
         name: input.name,
         email: input.email,
         passwordHash: await this.hasher.hash(input.temporaryPassword),
+        mustChangePassword: true,
+        temporaryPasswordExpiresAt: temporaryPasswordExpiry(now, this.env.TEMP_PASSWORD_DAYS),
         defaultEstanciaId: input.assignments.find((a) => a.estanciaId !== null)?.estanciaId ?? null,
       },
       input.assignments,
-      new Date(),
+      now,
       (tx, newId) =>
         this.audit.record({ ...this.actor(auth), action: 'USUARIO_CREADO', tableName: USERS_TABLE, recordId: String(newId), after, request }, tx),
     );
     return toUserView(await this.requireUser(id));
+  }
+
+  /**
+   * Restablece la contraseña de otra persona: una temporal nueva que debe cambiar
+   * al entrar, con la cuenta desbloqueada y sus sesiones cerradas. La propia
+   * contraseña se cambia desde la cuenta, no por aquí.
+   */
+  async resetPassword(auth: AuthContext, userId: number, input: ResetPasswordRequest, request: RequestContext): Promise<User> {
+    await this.requireUser(userId);
+    if (userId === auth.userId) throw new ApiError('FUERA_DE_ALCANCE', 'Para cambiar tu propia contraseña usa la opción de tu cuenta.');
+    const now = new Date();
+    await this.users.setTemporaryPassword(
+      userId,
+      await this.hasher.hash(input.temporaryPassword),
+      temporaryPasswordExpiry(now, this.env.TEMP_PASSWORD_DAYS),
+      now,
+      (tx) => this.audit.record({ ...this.actor(auth), action: 'CONTRASENA_RESTABLECIDA', tableName: USERS_TABLE, recordId: String(userId), request }, tx),
+    );
+    return toUserView(await this.requireUser(userId));
   }
 
   async replaceRoles(auth: AuthContext, userId: number, input: ReplaceRolesRequest, request: RequestContext): Promise<User> {

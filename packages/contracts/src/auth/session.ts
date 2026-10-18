@@ -26,6 +26,8 @@ export const sessionResponseSchema = z.object({
   /** Estancias que la sesión puede activar: las asignadas o todas para roles centrales. */
   availableEstancias: z.array(estanciaSummarySchema),
   permissions: z.array(permissionCodeSchema),
+  /** Contraseña temporal: hasta cambiarla, la sesión solo puede cambiarla o cerrarse (RF-38). */
+  mustChangePassword: z.boolean(),
 });
 
 export type AssignmentView = z.infer<typeof assignmentViewSchema>;

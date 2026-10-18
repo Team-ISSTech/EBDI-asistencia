@@ -1,7 +1,7 @@
 import type { SessionResponse } from '@sirai/contracts';
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchSession, login, logout, switchEstancia } from './api';
+import { changePassword, fetchSession, login, logout, switchEstancia } from './api';
 
 export const SESSION_QUERY_KEY = ['session'] as const;
 
@@ -34,6 +34,8 @@ export function useSessionActions() {
   return {
     login: useMutation({ mutationFn: login, onSuccess: (session) => replaceSession(client, session) }),
     logout: useMutation({ mutationFn: logout, onSuccess: () => replaceSession(client, null) }),
+    /** La sesión sigue siendo la misma: solo cambia la marca de contraseña temporal, así que el resto de la caché se conserva. */
+    changePassword: useMutation({ mutationFn: changePassword, onSuccess: (session) => client.setQueryData(SESSION_QUERY_KEY, session) }),
     switchEstancia: useMutation({ mutationFn: switchEstancia, onSuccess: (session) => replaceSession(client, session) }),
   };
 }

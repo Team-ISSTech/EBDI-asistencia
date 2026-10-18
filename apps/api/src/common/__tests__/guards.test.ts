@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { describe, expect, it } from 'vitest';
 import type { AuthContext, AuthenticatedRequest, SessionResolver } from '../auth/auth-context';
 import { AuthGuard } from '../auth/auth.guard';
-import { Authenticated, Public, RequirePermission } from '../auth/decorators';
+import { AllowWhilePasswordPending, Authenticated, Public, RequirePermission } from '../auth/decorators';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { SESSION_COOKIE } from '../auth/session-cookie';
 import { ApiError } from '../errors/api-error';
@@ -23,6 +23,10 @@ class Handlers {
   privateRoute(): void {}
 
   forgottenRoute(): void {}
+
+  @Authenticated()
+  @AllowWhilePasswordPending()
+  changePasswordRoute(): void {}
 
   @RequirePermission('USUARIO_ADMINISTRAR')
   adminRoute(): void {}
@@ -94,6 +98,24 @@ describe('PermissionsGuard', () => {
   it('rechaza cuando la estancia activa no es la asignada', () => {
     const otherEstancia = { ...docenteAuth, activeEstanciaId: 2 };
     expect(() => guard.canActivate(contextFor('attendanceRoute', { auth: otherEstancia }))).toThrow(ApiError);
+  });
+
+  describe('contraseña temporal sin cambiar (RF-38)', () => {
+    const pending = { ...docenteAuth, mustChangePassword: true };
+
+    it('solo deja pasar lo marcado @AllowWhilePasswordPending', () => {
+      expect(guard.canActivate(contextFor('changePasswordRoute', { auth: pending }))).toBe(true);
+    });
+
+    it('niega con CAMBIO_CONTRASENA_REQUERIDO el resto, incluso rutas @Authenticated y las que el rol sí permite', () => {
+      for (const route of ['privateRoute', 'attendanceRoute'] as const) {
+        expect(() => guard.canActivate(contextFor(route, { auth: pending }))).toThrow(expect.objectContaining({ code: 'CAMBIO_CONTRASENA_REQUERIDO' }));
+      }
+    });
+
+    it('una sesión normal no se ve afectada', () => {
+      expect(guard.canActivate(contextFor('privateRoute', { auth: { ...docenteAuth, mustChangePassword: false } }))).toBe(true);
+    });
   });
 
   it('rechaza con NO_AUTENTICADO si no hay contexto (guard mal ordenado)', () => {

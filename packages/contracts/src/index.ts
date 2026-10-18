@@ -1,3 +1,5 @@
+export { changePasswordRequestSchema } from './auth/change-password.js';
+export type { ChangePasswordRequest } from './auth/change-password.js';
 export { loginRequestSchema } from './auth/login.js';
 export type { LoginRequest } from './auth/login.js';
 export {
@@ -16,6 +18,7 @@ export {
   assignmentListSchema,
   createUserRequestSchema,
   replaceRolesRequestSchema,
+  resetPasswordRequestSchema,
   userListResponseSchema,
   userSchema,
   userStatusSchema,
@@ -24,6 +27,7 @@ export type {
   AssignmentInput,
   CreateUserRequest,
   ReplaceRolesRequest,
+  ResetPasswordRequest,
   User,
   UserListResponse,
   UserStatus,

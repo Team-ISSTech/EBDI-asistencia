@@ -36,6 +36,14 @@ export interface UsersRepository {
     now: Date,
     inSameTransaction?: TransactionHook<void>,
   ): Promise<void>;
+  /**
+   * Guarda la contraseña nueva, quita la marca de temporal, limpia los intentos
+   * fallidos y revoca todas las sesiones salvo `keepSessionId`, todo en una
+   * transacción junto con lo que haga `inSameTransaction` (la auditoría).
+   */
+  changePassword(userId: number, passwordHash: string, now: Date, keepSessionId: number | null, inSameTransaction?: TransactionHook<void>): Promise<void>;
+  /** Restablecimiento por un administrador: contraseña temporal nueva, cuenta desbloqueada y todas las sesiones revocadas. */
+  setTemporaryPassword(userId: number, passwordHash: string, expiresAt: Date, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void>;
   registerFailedLogin(userId: number, policy: LockoutPolicy, now: Date): Promise<{ locked: boolean }>;
   /** Reinicia el contador de fallos; acepta el ejecutor de una transacción en curso. */
   registerSuccessfulLogin(userId: number, now: Date, executor?: AuditExecutor): Promise<void>;

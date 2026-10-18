@@ -2,13 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { isRoleCode } from '@sirai/auth';
 import { USER_STATUSES, type UserStatus } from '@sirai/contracts';
 import { schema, type Db } from '@sirai/db';
-import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module';
 import { ApiError } from '../../../common/errors/api-error';
 import type { AssignmentInput, AssignmentRecord, LockoutPolicy, NewUser, QueryScope, UserRecord } from '../identity.types';
 import type { TransactionHook, UsersRepository } from './repositories';
 
-const { usuarios, usuarioRol, roles, estancias } = schema;
+const { usuarios, usuarioRol, roles, estancias, sesiones } = schema;
 const MS_PER_MINUTE = 60_000;
 const DUPLICATE_ENTRY = 'ER_DUP_ENTRY';
 const MISSING_REFERENCE = 'ER_NO_REFERENCED_ROW_2';
@@ -28,6 +28,8 @@ const toRecord = (row: UserRow, assignments: readonly AssignmentRecord[]): UserR
   failedAttempts: row.failedAttempts,
   lockedUntil: row.lockedUntil,
   lastAccessAt: row.lastAccessAt,
+  mustChangePassword: row.mustChangePassword,
+  temporaryPasswordExpiresAt: row.temporaryPasswordExpiresAt,
   defaultEstanciaId: row.defaultEstanciaId,
   assignments,
 });
@@ -133,6 +135,34 @@ export class DrizzleUsersRepository implements UsersRepository {
       .where(eq(usuarios.id, userId));
     const [row] = await this.db.select({ lockedUntil: usuarios.lockedUntil }).from(usuarios).where(eq(usuarios.id, userId));
     return { locked: row?.lockedUntil !== null && row?.lockedUntil !== undefined && row.lockedUntil > now };
+  }
+
+  async changePassword(userId: number, passwordHash: string, now: Date, keepSessionId: number | null, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(usuarios)
+        .set({ passwordHash, mustChangePassword: false, temporaryPasswordExpiresAt: null, passwordChangedAt: now, failedAttempts: 0, lockedUntil: null, updatedAt: now })
+        .where(eq(usuarios.id, userId));
+      await this.revokeSessions(tx, userId, now, keepSessionId);
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
+  async setTemporaryPassword(userId: number, passwordHash: string, expiresAt: Date, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(usuarios)
+        .set({ passwordHash, mustChangePassword: true, temporaryPasswordExpiresAt: expiresAt, failedAttempts: 0, lockedUntil: null, updatedAt: now })
+        .where(eq(usuarios.id, userId));
+      await this.revokeSessions(tx, userId, now, null);
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
+  /** Cierra las sesiones vigentes del usuario; una contraseña nueva no debe dejar abiertas las que ya no la conocen. */
+  private async revokeSessions(executor: Executor, userId: number, now: Date, keepSessionId: number | null): Promise<void> {
+    const keep = keepSessionId === null ? undefined : ne(sesiones.id, keepSessionId);
+    await executor.update(sesiones).set({ revokedAt: now }).where(and(eq(sesiones.userId, userId), isNull(sesiones.revokedAt), keep));
   }
 
   async registerSuccessfulLogin(userId: number, now: Date, executor: Executor = this.db): Promise<void> {

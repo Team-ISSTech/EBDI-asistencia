@@ -30,6 +30,7 @@ describe('sessionResponseSchema', () => {
     activeEstancia: { id: 1, name: 'EBDI-TEST-01' },
     availableEstancias: [{ id: 1, name: 'EBDI-TEST-01' }],
     permissions: ['ASISTENCIA_CONSULTAR'],
+    mustChangePassword: false,
   };
 
   it('acepta una sesión completa', () => {

@@ -34,6 +34,8 @@ export function buildSessionResponse(
     assignments: user.assignments.map(({ role, estanciaId, estanciaName }) => ({ role, estanciaId, estanciaName })),
     activeEstancia,
     availableEstancias: [...availableEstancias],
-    permissions: permissionsFor(principal, { estanciaId: activeEstancia?.id ?? null }),
+    // Hasta cambiar la contraseña temporal no se ofrece nada: la API tampoco lo permitiría.
+    permissions: user.mustChangePassword ? [] : permissionsFor(principal, { estanciaId: activeEstancia?.id ?? null }),
+    mustChangePassword: user.mustChangePassword,
   };
 }

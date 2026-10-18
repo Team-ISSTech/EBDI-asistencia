@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AuthContext } from '../../../common/auth/auth-context';
 import { UsersService } from '../services/users.service';
-import { docenteRecord, FakeHasher, InMemoryUsers, RecordingAudit, request } from './in-memory';
+import { docenteRecord, FakeHasher, InMemoryUsers, RecordingAudit, request, testEnv } from './in-memory';
 
 const adminAuth: AuthContext = {
   sessionId: 1,
@@ -25,7 +25,7 @@ describe('UsersService', () => {
   beforeEach(() => {
     users = new InMemoryUsers();
     audit = new RecordingAudit();
-    service = new UsersService(users, new FakeHasher(), audit.asService());
+    service = new UsersService(users, new FakeHasher(), audit.asService(), testEnv);
   });
 
   it('crea un usuario con contraseña hasheada, asignaciones y auditoría con el rol del actor', async () => {

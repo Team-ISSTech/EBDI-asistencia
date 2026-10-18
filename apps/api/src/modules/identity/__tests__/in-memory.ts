@@ -75,6 +75,29 @@ export class InMemoryUsers implements UsersRepository {
     await inSameTransaction?.(this.executor, undefined);
   }
 
+  /** Qué cambios de contraseña se pidieron, para comprobar que se revocan las demás sesiones. */
+  readonly passwordChanges: { userId: number; keepSessionId: number | null }[] = [];
+
+  async changePassword(userId: number, passwordHash: string, now: Date, keepSessionId: number | null, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const user = this.rows.get(userId);
+    if (user) {
+      this.rows.set(userId, { ...user, passwordHash, mustChangePassword: false, temporaryPasswordExpiresAt: null, failedAttempts: 0, lockedUntil: null });
+    }
+    this.passwordChanges.push({ userId, keepSessionId });
+    void now;
+    await inSameTransaction?.(this.executor, undefined);
+  }
+
+  async setTemporaryPassword(userId: number, passwordHash: string, expiresAt: Date, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    const user = this.rows.get(userId);
+    if (user) {
+      this.rows.set(userId, { ...user, passwordHash, mustChangePassword: true, temporaryPasswordExpiresAt: expiresAt, failedAttempts: 0, lockedUntil: null });
+    }
+    this.passwordChanges.push({ userId, keepSessionId: null });
+    void now;
+    await inSameTransaction?.(this.executor, undefined);
+  }
+
   registerFailedLogin(userId: number, policy: LockoutPolicy, now: Date): Promise<{ locked: boolean }> {
     const user = this.rows.get(userId);
     if (!user) return Promise.resolve({ locked: false });
@@ -182,6 +205,7 @@ export const testEnv: ApiEnv = {
   LOGIN_MAX_ATTEMPTS: 3,
   LOGIN_LOCK_MINUTES: 15,
   LOGIN_RATE_LIMIT_PER_MINUTE: 10,
+  TEMP_PASSWORD_DAYS: 7,
   COOKIE_SECURE: false,
   TRUST_PROXY: false,
   WEB_ORIGIN: 'http://localhost:5173',
@@ -199,6 +223,8 @@ export const docenteRecord = (overrides: Partial<UserRecord> = {}): Omit<UserRec
   failedAttempts: 0,
   lockedUntil: null,
   lastAccessAt: null,
+  mustChangePassword: false,
+  temporaryPasswordExpiresAt: null,
   defaultEstanciaId: 1,
   assignments: [{ role: 'DOCENTE', estanciaId: 1, estanciaName: 'Estancia 1' }],
   ...overrides,

@@ -30,10 +30,10 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql', '0012_permisos_catalogo.sql', '0013_borrado_logico_vinculos.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql', '0012_permisos_catalogo.sql', '0013_borrado_logico_vinculos.sql', '0014_cambio_contrasena.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(14);
+    expect(second.skipped).toHaveLength(15);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
@@ -106,6 +106,18 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     await expect(room('NOCTURNO', 'ACTIVO')).rejects.toThrow();
     await expect(room('MATUTINO', 'CERRADO')).rejects.toThrow();
     await expect(room('MATUTINO', 'ACTIVO')).resolves.toBeDefined();
+  });
+
+  it('solo una contraseña temporal puede tener fecha de caducidad (RF-38)', async () => {
+    const user = (email: string, mustChange: number, expiresAt: string | null) =>
+      connection.db.execute(
+        sql`INSERT INTO usuarios (correo, nombre, password_hash, debe_cambiar_password, password_temporal_expira_at, created_at, updated_at) VALUES (${email}, 'Prueba', 'hash', ${mustChange}, ${expiresAt}, NOW(6), NOW(6))`,
+      );
+    await expect(user('caduca-sin-temporal@sirai.test', 0, '2030-01-01 00:00:00')).rejects.toThrow();
+    await expect(user('temporal@sirai.test', 1, '2030-01-01 00:00:00')).resolves.toBeDefined();
+    await expect(user('normal@sirai.test', 0, null)).resolves.toBeDefined();
+    // Se limpian para no alterar el conteo de usuarios que verifica la prueba de la semilla.
+    await connection.db.execute(sql`DELETE FROM usuarios WHERE correo IN ('temporal@sirai.test', 'normal@sirai.test')`);
   });
 
   it('el esquema Drizzle de infantes y tutores coincide con las tablas reales', async () => {

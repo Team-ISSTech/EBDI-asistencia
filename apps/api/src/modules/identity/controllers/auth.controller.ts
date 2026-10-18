@@ -2,6 +2,8 @@ import { Controller, Get, HttpCode, HttpStatus, Inject, Post, Req, Res, UseGuard
 import { ThrottlerGuard } from '@nestjs/throttler';
 import type { ApiEnv } from '@sirai/config';
 import {
+  type ChangePasswordRequest,
+  changePasswordRequestSchema,
   type LoginRequest,
   loginRequestSchema,
   type SessionResponse,
@@ -10,7 +12,7 @@ import {
 } from '@sirai/contracts';
 import type { Response } from 'express';
 import type { AuthContext } from '../../../common/auth/auth-context';
-import { Authenticated, CurrentAuth, Public } from '../../../common/auth/decorators';
+import { AllowWhilePasswordPending, Authenticated, CurrentAuth, Public } from '../../../common/auth/decorators';
 import { clearSessionCookie, setSessionCookie } from '../../../common/auth/session-cookie';
 import { API_ENV } from '../../../common/config/config.module';
 import { extractRequestContext, type RequestWithId } from '../../../common/http/request-context';
@@ -40,6 +42,7 @@ export class AuthController {
   }
 
   @Authenticated()
+  @AllowWhilePasswordPending()
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   async logout(
@@ -52,9 +55,23 @@ export class AuthController {
   }
 
   @Authenticated()
+  @AllowWhilePasswordPending()
   @Get('me')
   me(@CurrentAuth() auth: AuthContext): Promise<SessionResponse> {
     return this.auth.me(auth);
+  }
+
+  /** Cambiar la contraseña es lo único que una contraseña temporal puede hacer además de ver su sesión y salir. */
+  @Authenticated()
+  @AllowWhilePasswordPending()
+  @Post('contrasena')
+  @HttpCode(HttpStatus.OK)
+  changePassword(
+    @CurrentAuth() auth: AuthContext,
+    @ZodBody(changePasswordRequestSchema) body: ChangePasswordRequest,
+    @Req() request: RequestWithId,
+  ): Promise<SessionResponse> {
+    return this.auth.changePassword(auth, body, extractRequestContext(request));
   }
 
   @Authenticated()

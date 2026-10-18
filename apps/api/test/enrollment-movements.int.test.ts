@@ -34,7 +34,7 @@ describe.skipIf(!TEST_DATABASE_URL)('movimientos de inscripción (integración)'
 
   /** La cookie se resuelve antes de crear la petición: supertest no admite dos a la vez sobre el mismo servidor. */
   const call = async (method: 'get' | 'post' | 'patch', path: string, email: string, body?: object): Promise<request.Response> => {
-    const cookie = await cookieFor(email, email === DESTINO ? 'Temporal-2026' : SEED_PASSWORD);
+    const cookie = await cookieFor(email, email === DESTINO ? 'Definitiva-2026-x' : SEED_PASSWORD);
     const pending = request(app.getHttpServer())[method](path).set('Cookie', cookie);
     return body ? pending.send(body) : pending;
   };
@@ -65,6 +65,12 @@ describe.skipIf(!TEST_DATABASE_URL)('movimientos de inscripción (integración)'
       temporaryPassword: 'Temporal-2026',
       assignments: [{ role: 'DIRECTORA', estanciaId: 2 }],
     });
+    // La contraseña temporal solo sirve para cambiarla: sin esto la directora de destino no podría operar.
+    const first = await request(app.getHttpServer()).post('/auth/login').send({ email: DESTINO, password: 'Temporal-2026' });
+    await request(app.getHttpServer())
+      .post('/auth/contrasena')
+      .set('Cookie', (first.get('set-cookie')?.[0] ?? '').split(';')[0] ?? '')
+      .send({ currentPassword: 'Temporal-2026', newPassword: 'Definitiva-2026-x' });
     const room = await call('post', '/administracion/salas', DESTINO, { name: 'Sala destino', shift: 'MATUTINO', minAgeMonths: 0, maxAgeMonths: 48, capacity: 10 });
     destinationRoom = room.body.id;
   });

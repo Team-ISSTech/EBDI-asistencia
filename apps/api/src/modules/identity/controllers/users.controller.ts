@@ -4,6 +4,8 @@ import {
   createUserRequestSchema,
   type ReplaceRolesRequest,
   replaceRolesRequestSchema,
+  type ResetPasswordRequest,
+  resetPasswordRequestSchema,
   type User,
   type UserListResponse,
 } from '@sirai/contracts';
@@ -30,6 +32,16 @@ export class UsersController {
     @Req() request: RequestWithId,
   ): Promise<User> {
     return this.users.create(auth, body, extractRequestContext(request));
+  }
+
+  @Post(':id/contrasena-temporal')
+  resetPassword(
+    @CurrentAuth() auth: AuthContext,
+    @Param('id', ParseIntPipe) id: number,
+    @ZodBody(resetPasswordRequestSchema) body: ResetPasswordRequest,
+    @Req() request: RequestWithId,
+  ): Promise<User> {
+    return this.users.resetPassword(auth, id, body, extractRequestContext(request));
   }
 
   @Patch(':id/roles')
