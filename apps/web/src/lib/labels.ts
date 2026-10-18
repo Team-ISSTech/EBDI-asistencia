@@ -1,4 +1,4 @@
-import type { RoleCode } from '@sirai/auth';
+import type { IntegrationScope, RoleCode } from '@sirai/auth';
 import type { UserStatus } from '@sirai/contracts';
 
 /** Nombres para personas; los códigos son para programas. */
@@ -15,4 +15,8 @@ export const ROLE_LABELS: Readonly<Record<RoleCode, string>> = {
 export const STATUS_LABELS: Readonly<Record<UserStatus, string>> = {
   ACTIVO: 'Activo',
   INACTIVO: 'Inactivo',
+};
+
+export const INTEGRATION_SCOPE_LABELS: Readonly<Record<IntegrationScope, string>> = {
+  REPORTE_AGREGADO_LEER: 'Lectura de reportes agregados',
 };

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { INTEGRATION_SCOPES, isIntegrationScope } from '../integration.js';
 import { isPermissionCode } from '../permissions.js';
 import { CENTRAL_ROLE_CODES, isRoleCode } from '../roles.js';
 
@@ -23,7 +24,21 @@ describe('isPermissionCode', () => {
     expect(isPermissionCode('EXPEDIENTE_EXPORTAR')).toBe(true);
     expect(isPermissionCode('ESTANCIA_ADMINISTRAR')).toBe(true);
     expect(isPermissionCode('SALA_ADMINISTRAR')).toBe(true);
+    expect(isPermissionCode('SISTEMA_ADMINISTRAR')).toBe(true);
     expect(isPermissionCode('BORRAR_TODO')).toBe(false);
     expect(isPermissionCode(null)).toBe(false);
+  });
+});
+
+describe('alcances de los sistemas externos (RF-37)', () => {
+  it('son un catálogo cerrado, distinto de los permisos de las personas', () => {
+    expect(INTEGRATION_SCOPES).toEqual(['REPORTE_AGREGADO_LEER']);
+    for (const scope of INTEGRATION_SCOPES) expect(isPermissionCode(scope)).toBe(false);
+  });
+
+  it('acepta un alcance conocido y rechaza desconocidos o no cadenas', () => {
+    expect(isIntegrationScope('REPORTE_AGREGADO_LEER')).toBe(true);
+    expect(isIntegrationScope('REPORTE_AGREGADO_CONSULTAR')).toBe(false);
+    expect(isIntegrationScope(null)).toBe(false);
   });
 });

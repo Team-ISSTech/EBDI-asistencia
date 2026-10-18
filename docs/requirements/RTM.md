@@ -51,7 +51,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | implementado (alta, edición con teléfono recifrado, permisos del vínculo y desvinculación con historial) |
 | RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | implementado (alta, cambio de sala, baja y traslado con recepción en la estancia de destino; supuesto S-21) |
 | RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | implementado en `main` (la versión del aviso la fija el servidor; falta confirmar la versión real) |
-| RF-37 | API con Bearer tokens para sistemas institucionales (A21A, #52) | `apps/api/src/modules/integration` (por crear), `packages/db` (tabla de tokens), `packages/auth` | integración Vitest + MySQL | pendiente |
+| RF-37 | API con Bearer tokens para sistemas institucionales (A21A, #52) | `apps/api/src/modules/integration`, `packages/db` (`sistemas_integracion`, migración 0015), `packages/auth` (alcances) | integración Vitest + MySQL, unitaria Vitest | implementado (credenciales de cliente, JWT de 15 min, alcances, revocación inmediata, límite y auditoría; un solo endpoint de lectura agregada, supuesto S-18) |
 | RF-38 | Cambio de contraseña temporal y voluntario | `apps/api/src/modules/identity`, `apps/web/src/features/auth`, `packages/contracts` | integración Vitest + MySQL, unitaria Vitest | implementado (cambio obligatorio con temporal, voluntario, caducidad y restablecimiento por administrador; supuesto S-19) |
 
 ## Requisitos no funcionales
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 39 |
+| Implementados | 40 |
 | Parciales | 12 |
-| Pendientes | 4 |
+| Pendientes | 3 |

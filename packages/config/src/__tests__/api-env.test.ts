@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseApiEnv } from '../api-env.js';
 
+const SECRET = 'k'.repeat(40);
+
 const minimal = {
   DATABASE_URL: 'mysql://sirai:sirai@localhost:3306/sirai',
   DATA_ENCRYPTION_KEY: '0'.repeat(64),
@@ -19,6 +21,8 @@ describe('parseApiEnv', () => {
       LOGIN_LOCK_MINUTES: 15,
       LOGIN_RATE_LIMIT_PER_MINUTE: 10,
       TEMP_PASSWORD_DAYS: 7,
+      INTEGRATION_TOKEN_MINUTES: 15,
+      INTEGRATION_RATE_LIMIT_PER_MINUTE: 60,
       COOKIE_SECURE: false,
       WEB_ORIGIN: 'http://localhost:5173',
     });
@@ -36,6 +40,31 @@ describe('parseApiEnv', () => {
     expect(() => parseApiEnv({ ...minimal, TEMP_PASSWORD_DAYS: '0' })).toThrow(/TEMP_PASSWORD_DAYS/);
   });
 
+  describe('tokens de sistemas externos (RF-37)', () => {
+    it('la llave de firma es opcional fuera de producción, y si se da debe tener al menos 32 caracteres', () => {
+      expect(parseApiEnv(minimal).API_TOKEN_SECRET).toBeUndefined();
+      expect(parseApiEnv({ ...minimal, API_TOKEN_SECRET: SECRET }).API_TOKEN_SECRET).toBe(SECRET);
+      expect(() => parseApiEnv({ ...minimal, API_TOKEN_SECRET: 'corta' })).toThrow(/API_TOKEN_SECRET/);
+    });
+
+    it('una variable vacía cuenta como no definida', () => {
+      expect(parseApiEnv({ ...minimal, API_TOKEN_SECRET: '' }).API_TOKEN_SECRET).toBeUndefined();
+    });
+
+    it('en producción es obligatoria y no puede ser la llave de cifrado', () => {
+      const prod = { ...minimal, DATA_ENCRYPTION_KEY: 'f'.repeat(64), NODE_ENV: 'production', COOKIE_SECURE: 'true', PRIVACY_NOTICE_VERSION: 'AP-2026-1' };
+      expect(() => parseApiEnv(prod)).toThrow(/API_TOKEN_SECRET/);
+      expect(() => parseApiEnv({ ...prod, API_TOKEN_SECRET: 'f'.repeat(64) })).toThrow(/API_TOKEN_SECRET/);
+      expect(parseApiEnv({ ...prod, API_TOKEN_SECRET: SECRET }).API_TOKEN_SECRET).toBe(SECRET);
+    });
+
+    it('la duración del token y el límite por sistema son positivos y configurables', () => {
+      const env = parseApiEnv({ ...minimal, INTEGRATION_TOKEN_MINUTES: '5', INTEGRATION_RATE_LIMIT_PER_MINUTE: '120' });
+      expect(env).toMatchObject({ INTEGRATION_TOKEN_MINUTES: 5, INTEGRATION_RATE_LIMIT_PER_MINUTE: 120 });
+      expect(() => parseApiEnv({ ...minimal, INTEGRATION_TOKEN_MINUTES: '0' })).toThrow(/INTEGRATION_TOKEN_MINUTES/);
+    });
+  });
+
   it('falla nombrando la variable ausente', () => {
     expect(() => parseApiEnv({})).toThrow(/DATABASE_URL/);
   });
@@ -50,12 +79,12 @@ describe('parseApiEnv', () => {
 
   it('exige cookies Secure en producción', () => {
     expect(() => parseApiEnv({ ...minimal, NODE_ENV: 'production' })).toThrow(/COOKIE_SECURE/);
-    expect(parseApiEnv({ ...minimal, NODE_ENV: 'production', COOKIE_SECURE: 'true', PRIVACY_NOTICE_VERSION: 'AP-2026-1' }).COOKIE_SECURE).toBe(true);
+    expect(parseApiEnv({ ...minimal, NODE_ENV: 'production', COOKIE_SECURE: 'true', PRIVACY_NOTICE_VERSION: 'AP-2026-1', API_TOKEN_SECRET: SECRET }).COOKIE_SECURE).toBe(true);
   });
 
   it('rechaza la llave de ejemplo en producción', () => {
     const example = '0123456789abcdef'.repeat(4);
-    const prod = { ...minimal, NODE_ENV: 'production', COOKIE_SECURE: 'true', PRIVACY_NOTICE_VERSION: 'AP-2026-1' };
+    const prod = { ...minimal, NODE_ENV: 'production', COOKIE_SECURE: 'true', PRIVACY_NOTICE_VERSION: 'AP-2026-1', API_TOKEN_SECRET: SECRET };
     expect(() => parseApiEnv({ ...prod, DATA_ENCRYPTION_KEY: example })).toThrow(/llave de ejemplo/);
     expect(parseApiEnv({ ...minimal, DATA_ENCRYPTION_KEY: example }).NODE_ENV).toBe('development');
   });
@@ -80,7 +109,7 @@ describe('parseApiEnv', () => {
   it('en producción exige la versión del aviso, porque queda como evidencia legal', () => {
     const prod = { ...minimal, NODE_ENV: 'production', COOKIE_SECURE: 'true', DATA_ENCRYPTION_KEY: 'f'.repeat(64) };
     expect(() => parseApiEnv(prod)).toThrow(/PRIVACY_NOTICE_VERSION/);
-    expect(parseApiEnv({ ...prod, PRIVACY_NOTICE_VERSION: 'AP-2026-1' }).PRIVACY_NOTICE_VERSION).toBe('AP-2026-1');
+    expect(parseApiEnv({ ...prod, PRIVACY_NOTICE_VERSION: 'AP-2026-1', API_TOKEN_SECRET: SECRET }).PRIVACY_NOTICE_VERSION).toBe('AP-2026-1');
   });
 
   it('rechaza una versión de aviso vacía o demasiado larga', () => {

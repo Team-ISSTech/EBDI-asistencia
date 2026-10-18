@@ -13,5 +13,6 @@ import { REPORTS_CLOCK, ReportExportService } from './services/export.service.js
     DashboardService,
     ReportExportService,
   ],
+  exports: [DashboardService],
 })
 export class ReportsModule {}

@@ -1,6 +1,6 @@
 import type { Child, ChildGuardian } from '@sirai/contracts';
 import { AddGuardianForm } from './add-guardian-form';
-import { ConfirmCard } from './confirm-card';
+import { ConfirmCard } from '../../components/confirm-card';
 import { EditGuardianForm } from './edit-guardian-form';
 import { useAddGuardian, useEditGuardian, useUnlinkGuardian } from './use-guardians';
 

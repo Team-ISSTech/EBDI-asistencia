@@ -34,6 +34,8 @@ export const auditEntrySchema = z.object({
   occurredAt: z.iso.datetime(),
   userId: z.number().int().positive().nullable(),
   userName: z.string().nullable(),
+  /** Sistema externo que hizo la operación (RF-37); nulo cuando la hizo una persona. */
+  systemName: z.string().nullable(),
   roleCode: z.string().nullable(),
   action: z.string(),
   tableName: z.string(),

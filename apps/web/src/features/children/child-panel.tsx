@@ -1,6 +1,6 @@
 import type { Child } from '@sirai/contracts';
 import { Card } from '@sirai/ui';
-import { ConfirmCard } from './confirm-card';
+import { ConfirmCard } from '../../components/confirm-card';
 import { EditChildForm } from './edit-child-form';
 import { MovementForm } from './movement-form';
 import { useDeleteChild, useRooms, useUpdateChild } from './use-children';

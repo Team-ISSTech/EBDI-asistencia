@@ -1,7 +1,7 @@
 import { Button, Field } from '@sirai/ui';
 import { type FormEvent, useState } from 'react';
 import { ApiClientError } from '../../lib/api-client';
-import { Checkbox } from './checkbox';
+import { Checkbox } from '../../components/checkbox';
 import type { AddGuardianInput } from './use-guardians';
 
 export interface AddGuardianFormProps {

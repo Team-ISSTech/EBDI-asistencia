@@ -60,6 +60,7 @@ export class AuditQueryService {
       occurredAt: row.occurredAt.toISOString(),
       userId: row.userId,
       userName: row.userName,
+      systemName: row.systemName,
       roleCode: row.roleCode,
       action: row.action,
       tableName: row.tableName,

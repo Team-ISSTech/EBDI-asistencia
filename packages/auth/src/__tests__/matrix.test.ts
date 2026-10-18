@@ -69,12 +69,16 @@ describe('ROLE_PERMISSIONS', () => {
     expect(ROLE_PERMISSIONS.SUPERVISOR_CENTRAL).toEqual(['REPORTE_AGREGADO_CONSULTAR']);
   });
 
-  it('ADMIN_CENTRAL administra usuarios, estancias, auditoría y reportes, sin datos de infantes', () => {
+  it('ADMIN_CENTRAL administra usuarios, estancias, sistemas externos, auditoría y reportes, sin datos de infantes', () => {
     expect(sorted(ROLE_PERMISSIONS.ADMIN_CENTRAL)).toEqual(
-      sorted(['USUARIO_ADMINISTRAR', 'ESTANCIA_ADMINISTRAR', 'AUDITORIA_CONSULTAR', 'REPORTE_AGREGADO_CONSULTAR']),
+      sorted(['USUARIO_ADMINISTRAR', 'ESTANCIA_ADMINISTRAR', 'SISTEMA_ADMINISTRAR', 'AUDITORIA_CONSULTAR', 'REPORTE_AGREGADO_CONSULTAR']),
     );
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('ASISTENCIA_CONSULTAR');
     expect(ROLE_PERMISSIONS.ADMIN_CENTRAL).not.toContain('NOTA_SENSIBLE_CONSULTAR');
+  });
+
+  it('solo el administrador central administra los sistemas externos', () => {
+    for (const role of ROLE_CODES) expect(ROLE_PERMISSIONS[role].includes('SISTEMA_ADMINISTRAR')).toBe(role === 'ADMIN_CENTRAL');
   });
 
   it('solo la directora administra el padrón y registra consentimientos', () => {

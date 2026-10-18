@@ -19,6 +19,7 @@ export const PERMISSION_CODES = [
   'EXPEDIENTE_EXPORTAR',
   'ESTANCIA_ADMINISTRAR',
   'SALA_ADMINISTRAR',
+  'SISTEMA_ADMINISTRAR',
 ] as const;
 
 export type PermissionCode = (typeof PERMISSION_CODES)[number];

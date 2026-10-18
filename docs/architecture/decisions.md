@@ -84,3 +84,31 @@ Decisiones sobre el esquema del equipo (preguntas P1..P11 de
 
 Las migraciones de P2, P5, P8 y P9 se abren con el módulo de catálogos; el SQL
 original del equipo (`0000`) no se modifica.
+
+## Bearer tokens para sistemas externos (RF-37)
+
+- **JWT solo para máquinas.** Las personas siguen con sesiones en servidor y
+  cookie `httpOnly` (P7): se revocan al instante, se auditan y cambian de
+  estancia sin emitir otro token. Un JWT sin estado no daría nada de eso.
+- **Flujo de credenciales de cliente.** El administrador central registra un
+  sistema (nombre y alcances); recibe un `clientId` y un `clientSecret` que se
+  muestran una vez y se guardan con hash (argon2id). El sistema los cambia en
+  `POST /integracion/token` por un JWT HS256 de 15 minutos (`INTEGRATION_TOKEN_MINUTES`).
+- **Revocación inmediata.** El JWT solo trae el sistema y los alcances que pidió;
+  en cada petición la API vuelve a leer el sistema y exige que siga activo y que
+  conserve cada alcance. Revocar o recortar surte efecto sin esperar a que el
+  token venza.
+- **Algoritmo, emisor, destinatario y versión de llave fijos.** Se rechaza
+  `alg: none` y cualquier otro algoritmo. La llave es `API_TOKEN_SECRET`
+  (obligatoria en producción y distinta de `DATA_ENCRYPTION_KEY`); fuera de
+  producción se deriva de la de cifrado.
+- **Dos mundos separados.** Una ruta con `@RequireScope` solo acepta el Bearer
+  de un sistema; el resto solo acepta la cookie de una persona. Un token de
+  sistema no obtiene permisos de un rol ni una sesión abre la API de integración.
+- **Alcances aparte de los permisos.** `INTEGRATION_SCOPES` en `packages/auth`
+  es un catálogo cerrado e independiente de `PERMISSION_CODES`.
+- **Auditoría.** `auditoria.sistema_id` nombra al sistema como actor (migración
+  0015): alta, revocación, cada token emitido o rechazado y cada consulta.
+- **Límite de peticiones** por sistema y minuto en la memoria de cada réplica de la
+  API (`INTEGRATION_RATE_LIMIT_PER_MINUTE`); con varias réplicas el tope real es
+  el límite por el número de réplicas.
