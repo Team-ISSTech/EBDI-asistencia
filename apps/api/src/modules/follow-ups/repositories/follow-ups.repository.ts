@@ -13,6 +13,8 @@ export interface FollowUpsRepository {
   listOpen(estanciaId: number): Promise<FollowUpRow[]>;
   findOne(id: number, estanciaId: number): Promise<FollowUpRow | null>;
   findDetail(id: number, estanciaId: number): Promise<FollowUpDetail | null>;
+  /** Ticket al que pertenece una operación sin conexión ya aplicada; null si no se ha aplicado. */
+  findContactOperation(operationId: string): Promise<number | null>;
   /** Teléfono cifrado del tutor si está vinculado al infante; null si no lo está. */
   findGuardianPhone(childId: number, guardianId: number): Promise<{ readonly phoneEncrypted: Buffer | null } | null>;
   /** Inserta el intento, actualiza el ticket y ejecuta `hook`, en una sola transacción. Lanza CONFLICTO si el intento ya existe. */

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { MarkAttendanceRequest, MarkAttendanceResponse, RosterEntry } from '@sirai/contracts';
+import type { MarkAttendanceRequest, MarkAttendanceResponse, RosterEntry, SyncRejection } from '@sirai/contracts';
 import { planMark } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service.js';
 import type { AuthContext } from '../../../common/auth/auth-context.js';
@@ -14,6 +14,19 @@ const RECORDS_TABLE = 'asistencias';
 const JOURNEYS_TABLE = 'jornadas_asistencia';
 
 export const ATTENDANCE_CLOCK = Symbol('ATTENDANCE_CLOCK');
+
+/** Resultado de una captura sin conexión: se aplicó lo válido y cada rechazo lleva su infante y su motivo. */
+export interface PartialMarkResult {
+  readonly saved: number;
+  readonly unchanged: number;
+  readonly rejections: readonly SyncRejection[];
+}
+
+const REJECTION_MESSAGES = {
+  INSCRIPCION_INVALIDA: 'El infante no está inscrito en esta estancia.',
+  TURNO_DISTINTO: 'El infante es de una sala de otro turno.',
+  CANDADO_MEDICO: 'El infante requiere alta médica para ingresar; no se puede marcar presente.',
+} as const;
 
 /**
  * Pase de lista: la lista de la jornada y el registro de asistencia por lote.
@@ -64,6 +77,61 @@ export class AttendanceRecordsService {
       );
     }
     return { saved: changes.length, unchanged: input.marks.length - changes.length };
+  }
+
+  /**
+   * Captura hecha sin conexión: aplica lo que sea válido y devuelve cada
+   * rechazo, en vez de tumbar todo el lote. Se registra con la hora en que se
+   * capturó (nunca en el futuro). Una jornada que se cerró después de la
+   * captura todavía la acepta, para no perder datos; si se cerró antes, la
+   * rechaza completa y quien capturó debe reconciliarla.
+   */
+  async markPartial(auth: AuthContext, journeyId: number, input: MarkAttendanceRequest, capturedAt: Date, request: RequestContext): Promise<PartialMarkResult> {
+    const journey = await this.requireJourney(auth, journeyId);
+    if (journey.status === 'CERRADA' && (journey.closedAt === null || capturedAt > journey.closedAt)) {
+      throw new ApiError('CONFLICTO', 'La jornada ya estaba cerrada cuando se capturó.');
+    }
+    const at = new Date(Math.min(capturedAt.getTime(), this.clock().getTime()));
+    const { valid, rejections } = await this.splitValid(journey, input);
+    const changes = valid.marks.length === 0 ? [] : await this.planChanges(journey.id, valid);
+    if (changes.length > 0) {
+      await this.records.applyChanges(journey.id, auth.userId, at, changes, (tx, change, recordId) =>
+        this.audit.record(
+          {
+            ...this.actor(auth),
+            action: change.plan === 'CREATE' ? 'ASISTENCIA_REGISTRADA' : 'ASISTENCIA_MODIFICADA',
+            tableName: RECORDS_TABLE,
+            recordId: String(recordId),
+            ...(change.before === null ? {} : { before: { status: change.before } }),
+            after: { journeyId: journey.id, enrollmentId: change.enrollmentId, status: change.status, method: change.method, capturedAt: at.toISOString() },
+            request,
+          },
+          tx,
+        ),
+      );
+    }
+    return { saved: changes.length, unchanged: valid.marks.length - changes.length, rejections };
+  }
+
+  /** Separa las marcas que se pueden aplicar de las que no, con el motivo de cada una. */
+  private async splitValid(journey: AttendanceJourneyRecord, input: MarkAttendanceRequest): Promise<{ valid: MarkAttendanceRequest; rejections: SyncRejection[] }> {
+    const ids = input.marks.map((mark) => mark.enrollmentId);
+    const enrollments = new Map((await this.records.findEnrollments(journey.estanciaId, ids)).map((enrollment) => [enrollment.enrollmentId, enrollment]));
+    const presentIds = input.marks.filter((mark) => mark.status === 'PRESENTE' && enrollments.has(mark.enrollmentId)).map((mark) => mark.enrollmentId);
+    const locked = presentIds.length === 0 ? new Set<number>() : await this.records.findLockedEnrollmentIds(journey.estanciaId, presentIds);
+    const rejections: SyncRejection[] = [];
+    const marks = input.marks.filter((mark) => {
+      const code = this.rejectionCode(journey, enrollments.get(mark.enrollmentId), mark.status === 'PRESENTE' && locked.has(mark.enrollmentId));
+      if (code) rejections.push({ ref: mark.enrollmentId, code, message: REJECTION_MESSAGES[code] });
+      return code === null;
+    });
+    return { valid: { marks }, rejections };
+  }
+
+  private rejectionCode(journey: AttendanceJourneyRecord, enrollment: EnrollmentForMarking | undefined, locked: boolean): keyof typeof REJECTION_MESSAGES | null {
+    if (!enrollment) return 'INSCRIPCION_INVALIDA';
+    if (enrollment.roomShift !== journey.shift) return 'TURNO_DISTINTO';
+    return locked ? 'CANDADO_MEDICO' : null;
   }
 
   private async planChanges(journeyId: number, input: MarkAttendanceRequest): Promise<MarkChange[]> {

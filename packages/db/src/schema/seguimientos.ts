@@ -1,4 +1,4 @@
-import { bigint, boolean, date, datetime, index, mysqlTable, smallint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
+import { bigint, boolean, char, date, datetime, index, mysqlTable, smallint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
 import { attendanceRecords } from './asistencia.js';
 import { guardians } from './tutores.js';
 import { longblob, varbinaryBytes } from './types.js';
@@ -48,6 +48,8 @@ export const followUpContacts = mysqlTable(
     phoneEncrypted: varbinaryBytes(PHONE_CIPHER_BYTES)('telefono_destino_cifrado'),
     notesEncrypted: longblob('notas_asesoria_cifradas'),
     nextAttemptAt: datetime('proximo_intento_at', { fsp: 6 }),
+    /** UUID de la operación sin conexión que lo creó; evita duplicarlo al reintentar. */
+    operationId: char('uuid_operacion', { length: 36 }),
     registeredBy: bigint('registrado_por', { mode: 'number', unsigned: true }).notNull().references(() => usuarios.id),
     createdAt: datetime('created_at', { fsp: 6 }).notNull(),
     updatedAt: datetime('updated_at', { fsp: 6 }).notNull(),
@@ -56,6 +58,7 @@ export const followUpContacts = mysqlTable(
   },
   (table) => [
     uniqueIndex('uq_contacto_seguimiento_intento').on(table.followUpId, table.attemptNumber),
+    uniqueIndex('uq_contacto_uuid_operacion').on(table.operationId),
     index('idx_contactos_fecha').on(table.followUpId, table.occurredAt),
     index('idx_contactos_proximo_intento').on(table.nextAttemptAt),
   ],
