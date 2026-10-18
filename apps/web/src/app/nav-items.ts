@@ -15,6 +15,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { path: '/app/seguimientos', label: 'Seguimientos', permission: 'SEGUIMIENTO_CONSULTAR', group: 'Seguimiento' },
   { path: '/app/reportes', label: 'Reportes', permission: 'REPORTE_AGREGADO_CONSULTAR', group: 'Dirección' },
   { path: '/app/administracion/usuarios', label: 'Usuarios', permission: 'USUARIO_ADMINISTRAR', group: 'Administración' },
+  { path: '/app/administracion/estancias', label: 'Estancias', permission: 'ESTANCIA_ADMINISTRAR', group: 'Administración' },
+  { path: '/app/administracion/salas', label: 'Salas', permission: 'SALA_ADMINISTRAR', group: 'Administración' },
   { path: '/app/auditoria', label: 'Auditoría', permission: 'AUDITORIA_CONSULTAR', group: 'Administración' },
 ];
 

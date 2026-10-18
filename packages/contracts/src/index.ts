@@ -51,8 +51,16 @@ export type {
   GuardianPhoneResponse,
   LinkGuardianRequest,
 } from './catalogs/guardian.js';
-export { createRoomRequestSchema, roomListResponseSchema, roomSchema, shiftSchema } from './catalogs/room.js';
-export type { CreateRoomRequest, Room, RoomListResponse } from './catalogs/room.js';
+export {
+  createRoomRequestSchema,
+  roomAdminListResponseSchema,
+  roomAdminSchema,
+  roomListResponseSchema,
+  roomSchema,
+  shiftSchema,
+  updateRoomRequestSchema,
+} from './catalogs/room.js';
+export type { CreateRoomRequest, Room, RoomAdmin, RoomAdminListResponse, RoomListResponse, UpdateRoomRequest } from './catalogs/room.js';
 export {
   consentListResponseSchema,
   consentSchema,
@@ -101,3 +109,11 @@ export { verifyDossierRequestSchema, verifyDossierResponseSchema } from './dossi
 export type { VerifyDossierRequest, VerifyDossierResponse } from './dossier/dossier.js';
 export { SYNC_MAX_OPERATIONS, syncOperationSchema, syncRejectionSchema, syncRequestSchema, syncResponseSchema, syncResultSchema } from './sync/sync.js';
 export type { SyncOperation, SyncRejection, SyncRequest, SyncResponse, SyncResult } from './sync/sync.js';
+export {
+  createEstanciaRequestSchema,
+  estanciaAdminListResponseSchema,
+  estanciaAdminSchema,
+  estanciaStatusSchema,
+  updateEstanciaRequestSchema,
+} from './administration/estancia.js';
+export type { CreateEstanciaRequest, EstanciaAdmin, EstanciaAdminListResponse, UpdateEstanciaRequest } from './administration/estancia.js';

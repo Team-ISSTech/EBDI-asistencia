@@ -5,6 +5,9 @@ import { RecordingAudit, request, testEnv } from '../../identity/__tests__/in-me
 import { ChildrenService } from '../services/children.service';
 import { InMemoryChildren, room } from './in-memory';
 
+/** Coincide con un mensaje que contenga el texto, sin propagar `any` a las aserciones. */
+const containing = (text: string): string => expect.stringContaining(text) as string;
+
 const directora: AuthContext = {
   sessionId: 1,
   userId: 10,
@@ -74,6 +77,14 @@ describe('ChildrenService', () => {
   it('rechaza un infante fuera del rango de edad de la sala', async () => {
     repo.rooms.set(1, room({ minAgeMonths: 24, maxAgeMonths: 36 }));
     await expect(service.enroll(directora, input, request)).rejects.toMatchObject({ code: 'DATOS_INVALIDOS' });
+  });
+
+  it('no inscribe en una sala llena (RF-32), pero sí cuando todavía hay lugar o no hay límite', async () => {
+    repo.rooms.set(1, room({ capacity: 1 }));
+    await service.enroll(directora, input, request);
+    await expect(service.enroll(directora, { ...input, enrollmentNumber: 'M-0002' }, request)).rejects.toMatchObject({ code: 'CONFLICTO', message: containing('llena') });
+    repo.rooms.set(1, room({ capacity: null }));
+    await expect(service.enroll(directora, { ...input, enrollmentNumber: 'M-0003' }, request)).resolves.toBeDefined();
   });
 
   it('exige un ciclo escolar activo', async () => {

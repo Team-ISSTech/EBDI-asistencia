@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Child, EnrollChildRequest, Room } from '@sirai/contracts';
-import { ageInMonths, fitsRoomAge } from '@sirai/domain';
+import { ageInMonths, fitsRoomAge, roomHasSpace } from '@sirai/domain';
 import { AuditService } from '../../../common/audit/audit.service';
 import type { AuthContext } from '../../../common/auth/auth-context';
 import { EncryptionService } from '../../../common/crypto/encryption.service';
@@ -109,6 +109,7 @@ export class ChildrenService {
     const room = await this.children.findRoom(input.roomId);
     if (room?.estanciaId !== estanciaId) throw new ApiError('NO_ENCONTRADO', 'Sala no encontrada.');
     if (room.status !== 'ACTIVO') throw new ApiError('CONFLICTO', 'La sala no está activa.');
+    if (!roomHasSpace(room.capacity, await this.children.countActiveInRoom(room.id))) throw new ApiError('CONFLICTO', 'La sala está llena.');
     const months = ageInMonths(input.birthDate, this.clock().toISOString());
     if (!fitsRoomAge(months, { minMonths: room.minAgeMonths, maxMonths: room.maxAgeMonths })) {
       throw new ApiError('DATOS_INVALIDOS', 'La edad del infante está fuera del rango de la sala.');

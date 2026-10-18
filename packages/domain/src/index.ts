@@ -65,3 +65,5 @@ export {
   nextRetryDelayMs,
 } from './sync.js';
 export type { SyncOperationType, SyncResultStatus } from './sync.js';
+export { canChangeRoomShift, canRetireEstancia, canRetireRoom, isValidTimeZone, roomCapacityAllows, roomHasSpace } from './catalog-rules.js';
+export type { EstanciaUsage, RetireEstanciaCheck } from './catalog-rules.js';

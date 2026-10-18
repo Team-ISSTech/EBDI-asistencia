@@ -45,8 +45,8 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-28 | Fecha estimada de retorno | `apps/api/src/modules/follow-ups`, `apps/web/src/features/follow-ups` | integración Vitest + MySQL | implementado en `main` |
 | RF-29 | Candado médico | `packages/domain`, `apps/api/src/modules/follow-ups`, `apps/api/src/modules/attendance` | unitaria Vitest, integración Vitest + MySQL | implementado en `main` |
 | RF-30 | Alta médica por Médico | `apps/api/src/modules/follow-ups`, `packages/auth` | integración Vitest + MySQL | implementado en `main` |
-| RF-31 | Catálogo de estancias | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | pendiente |
-| RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | parcial: listado de salas; falta el CRUD |
+| RF-31 | Catálogo de estancias | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | implementado (alta, edición y baja lógica auditadas; la baja se bloquea con inscritos o jornadas abiertas) |
+| RF-32 | Catálogo de salas/grupos | `apps/api/src/modules/administration`, `apps/web/src/features/administration` | integración Vitest + MySQL | implementado (alta, edición, desactivación y baja lógica; capacidad, turno y sala llena en la inscripción) |
 | RF-33 | Catálogo de infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | parcial: alta y listado; faltan edición y baja |
 | RF-34 | Catálogo de tutores y relación con infantes | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | parcial: alta, vínculo y teléfono cifrado; falta editar y quitar |
 | RF-35 | Inscripciones y movimientos | `apps/api/src/modules/children`, `packages/domain` | integración Vitest + MySQL | parcial: alta inicial con movimiento ALTA; faltan cambio de sala, traslado y baja |
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 32 |
-| Parciales | 16 |
-| Pendientes | 7 |
+| Implementados | 34 |
+| Parciales | 15 |
+| Pendientes | 6 |

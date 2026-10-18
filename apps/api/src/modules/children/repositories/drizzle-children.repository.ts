@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CHILD_STATUSES, ROOM_STATUSES, SHIFTS, type ChildStatus, type RoomStatus, type Shift } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module';
 import { ApiError } from '../../../common/errors/api-error';
 import type { TransactionHook } from '../../identity/repositories/repositories';
@@ -67,6 +67,14 @@ export class DrizzleChildrenRepository implements ChildrenRepository {
   async findRoom(id: number): Promise<RoomRecord | null> {
     const [row] = await this.db.select().from(rooms).where(and(eq(rooms.id, id), isNull(rooms.deletedAt)));
     return row ? toRoom(row) : null;
+  }
+
+  async countActiveInRoom(roomId: number): Promise<number> {
+    const [row] = await this.db
+      .select({ total: sql<number>`COUNT(*)` })
+      .from(enrollments)
+      .where(and(eq(enrollments.roomId, roomId), eq(enrollments.status, 'ACTIVA'), isNull(enrollments.deletedAt)));
+    return Number(row?.total ?? 0);
   }
 
   async findActiveSchoolYearId(): Promise<number | null> {

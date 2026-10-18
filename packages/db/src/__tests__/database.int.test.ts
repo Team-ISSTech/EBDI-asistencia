@@ -30,17 +30,17 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql', '0012_permisos_catalogo.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(12);
+    expect(second.skipped).toHaveLength(13);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
     const roleRows = await connection.db.select().from(roles);
     const permissionRows = await connection.db.select().from(permisos);
     expect(roleRows).toHaveLength(7);
-    expect(permissionRows).toHaveLength(14);
+    expect(permissionRows).toHaveLength(16);
   });
 
   it('sincroniza rol_permiso con la matriz y es idempotente', async () => {
