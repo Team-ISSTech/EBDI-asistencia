@@ -75,3 +75,4 @@ export {
   temporaryPasswordExpiry,
 } from './password-policy.js';
 export type { PasswordCheck } from './password-policy.js';
+export { changedFieldNames } from './audit-fields.js';

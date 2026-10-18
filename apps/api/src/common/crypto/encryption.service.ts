@@ -67,4 +67,18 @@ export class EncryptionService {
   encryptJson(value: unknown): Buffer | null {
     return value === null || value === undefined ? null : this.encrypt(JSON.stringify(value));
   }
+
+  /**
+   * Inverso de `encryptJson`. `null` es `null`. Un blob que no descifra o no es
+   * JSON también da `null`: quien lo lee (la consulta de auditoría) no debe caerse
+   * por un renglón dañado ni por una llave rotada.
+   */
+  decryptJson(blob: Buffer | null): unknown {
+    if (blob === null) return null;
+    try {
+      return JSON.parse(this.decrypt(blob)) as unknown;
+    } catch {
+      return null;
+    }
+  }
 }

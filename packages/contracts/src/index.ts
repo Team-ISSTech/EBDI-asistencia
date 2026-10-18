@@ -141,3 +141,5 @@ export type {
   TransferDestination,
   TransferDestinationListResponse,
 } from './catalogs/movement.js';
+export { auditEntrySchema, auditFiltersResponseSchema, auditListResponseSchema, auditQuerySchema } from './audit/audit.js';
+export type { AuditEntryView, AuditFiltersResponse, AuditListResponse, AuditQuery } from './audit/audit.js';

@@ -45,6 +45,30 @@ export function packIp(ip: string | null): Buffer | null {
   return null;
 }
 
+const hex = (group: number): string => group.toString(16);
+
+/** Compacta el tramo más largo de ceros de una IPv6 (`::`), como la escribe la gente. */
+const compressIpv6 = (groups: readonly number[]): string => {
+  let best = { start: -1, length: 0 };
+  for (let start = 0; start < groups.length; start += 1) {
+    let length = 0;
+    while (groups[start + length] === 0) length += 1;
+    if (length > best.length) best = { start, length };
+  }
+  if (best.length < 2) return groups.map(hex).join(':');
+  const head = groups.slice(0, best.start).map(hex).join(':');
+  const tail = groups.slice(best.start + best.length).map(hex).join(':');
+  return `${head}::${tail}`;
+};
+
+/** Inverso de `packIp`: el texto de una IP guardada como VARBINARY(16). Lo que no sea 4 o 16 bytes es nulo. */
+export function unpackIp(packed: Buffer | null): string | null {
+  if (packed === null) return null;
+  if (packed.length === 4) return [...packed].join('.');
+  if (packed.length !== IPV6_GROUPS * 2) return null;
+  return compressIpv6(Array.from({ length: IPV6_GROUPS }, (_, index) => packed.readUInt16BE(index * 2)));
+}
+
 export const extractRequestContext = (request: RequestWithId): RequestContext => ({
   ip: request.ip ? normalizeIp(request.ip) : null,
   userAgent: request.get('user-agent') ?? null,
