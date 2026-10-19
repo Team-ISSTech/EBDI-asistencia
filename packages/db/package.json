@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit --pretty false",
     "test": "vitest run --coverage",
     "migrate": "tsx src/cli/migrate.ts",
-    "seed": "tsx src/cli/seed.ts"
+    "seed": "tsx src/cli/seed.ts",
+    "create-admin": "tsx src/cli/create-admin.ts"
   },
   "dependencies": {
     "@sirai/auth": "workspace:*",

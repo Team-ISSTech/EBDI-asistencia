@@ -179,3 +179,11 @@ original del equipo (`0000`) no se modifica.
   cada uno. `AuditService.recordMany` es la forma de auditar lotes.
 - **Pool configurable** (`DB_POOL_SIZE`, 25). La API es un solo proceso de Node; escalar es añadir instancias, cuidando `max_connections`.
 - **La bitácora de lecturas sensibles se queda síncrona**: cada una se confirma antes de responder (RNF-02).
+
+## Primer administrador de un despliegue (RNF-16)
+
+- **Un comando de un solo uso.** La semilla de desarrollo no corre en producción, así que un despliegue nuevo no tenía cómo crear su primer
+  usuario. `create-admin` crea al Administrador Central con contraseña temporal (generada y mostrada una sola vez, o fijada con
+  `ADMIN_PASSWORD`), que debe cambiarse al entrar y caduca como cualquier temporal.
+- **No es una puerta trasera:** se niega si ya existe un administrador, rechaza los correos `@sirai.test` de la semilla y deja su rastro en la bitácora
+  como el sistema (`cli:crear-admin`). Los demás usuarios los crea ese administrador desde la aplicación.
