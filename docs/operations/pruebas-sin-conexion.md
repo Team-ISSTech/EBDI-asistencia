@@ -3,8 +3,8 @@
 Las pruebas de Vitest cubren la cola, el cifrado, el envío y las pantallas. Esta prueba de
 Playwright (`apps/web/e2e/offline-capture.spec.ts`) comprueba lo que solo un navegador real
 puede: que el Service Worker abre la aplicación sin red, que IndexedDB conserva las capturas
-cifradas y que se envían solas al volver la conexión. **No corre en CI** (necesita la pila
-completa); se corre a mano antes de entregar cambios en `apps/web/src/offline`.
+cifradas y que se envían solas al volver la conexión. **Corre en CI** en el trabajo «e2e»
+(`.github/workflows/ci.yml`), que levanta MySQL, la API y la web compilada; los pasos de abajo son para repetirla en tu máquina.
 
 ## Requisitos
 

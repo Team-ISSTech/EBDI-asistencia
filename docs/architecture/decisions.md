@@ -153,7 +153,7 @@ original del equipo (`0000`) no se modifica.
   código, los estilos y las tipografías. Las respuestas de la API nunca pasan por él. Con `registerType:
   'prompt'` una versión nueva espera a que se cierren las pestañas, para no recargar a media captura.
 - **Verificación en navegador real** con Playwright (`docs/operations/pruebas-sin-conexion.md`);
-  no corre en CI porque necesita la pila completa.
+  corre en CI en un trabajo aparte («e2e») que levanta MySQL, la API y la web compilada, sin reintentos (las pruebas crean datos únicos).
 
 ## Avisos a contactos de emergencia por WhatsApp (RF-27)
 

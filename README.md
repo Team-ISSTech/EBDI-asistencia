@@ -107,7 +107,7 @@ pnpm dev
 
 Pruebas de extremo a extremo (Playwright) con API y base arriba:
 `pnpm --filter @sirai/web exec playwright install chromium` una vez y después
-`pnpm --filter @sirai/web test:e2e`. Todavía no corren en CI.
+`pnpm --filter @sirai/web test:e2e`. Corren en CI en el trabajo «e2e», contra la aplicación compilada.
 
 Usuarios de desarrollo: `docente@sirai.test`, `directora@sirai.test`,
 `trabajo_social@sirai.test`, `enfermeria@sirai.test`, `medico@sirai.test`,

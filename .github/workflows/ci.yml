@@ -70,3 +70,72 @@ jobs:
             packages/auth/coverage/
             apps/api/coverage/
           if-no-files-found: ignore
+
+  e2e:
+    name: Pruebas de extremo a extremo (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sirai
+          MYSQL_USER: sirai
+          MYSQL_PASSWORD: sirai
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -usirai -psirai"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: mysql://sirai:sirai@127.0.0.1:3306/sirai
+      SEED_PASSWORD: ci-seed-password
+      # Llave de pruebas; no protege nada real.
+      DATA_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      # Direcciones de la API y de la web compilada que levantan los pasos de abajo.
+      E2E_API_URL: http://localhost:3100
+      E2E_WEB_URL: http://localhost:4173
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Preparar MySQL
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "SET GLOBAL log_bin_trust_function_creators = 1;"
+      - run: pnpm install --frozen-lockfile
+      # La web se compila apuntando a la API de este trabajo; el Service Worker solo existe en el build.
+      - run: pnpm build
+        env:
+          VITE_API_URL: http://localhost:3100
+      - name: Migrar y sembrar la base
+        run: |
+          pnpm --filter @sirai/db migrate
+          pnpm --filter @sirai/db seed
+      - name: Levantar la API y la web
+        run: |
+          PORT=3100 WEB_ORIGIN=http://localhost:4173 LOGIN_RATE_LIMIT_PER_MINUTE=1000 FOLLOW_UP_JOB_SECONDS=0 \
+            EMERGENCY_NOTICE_JOB_SECONDS=0 nohup node apps/api/dist/main.js > api.log 2>&1 &
+          pnpm --filter @sirai/web exec vite preview --port 4173 --strictPort > web.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:3100/health && curl -fs http://localhost:4173/ > /dev/null && exit 0
+            sleep 2
+          done
+          echo "La API o la web no levantaron"; cat api.log web.log; exit 1
+      - run: pnpm --filter @sirai/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @sirai/web test:e2e
+      - name: Guardar el reporte de Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+            api.log
+          if-no-files-found: ignore
