@@ -1,5 +1,7 @@
 import type { RegisterContactRequest, RegisterMedicalReleaseRequest } from '@sirai/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useOfflineOptional } from '../../offline/offline-api';
+import { saveOrQueue } from '../../offline/save-or-queue';
 import { closeFollowUp, fetchContacts, fetchFollowUps, registerContact, registerRelease } from './api';
 
 const FOLLOW_UPS_KEY = ['follow-ups'] as const;
@@ -14,11 +16,17 @@ export function useContacts(followUpId: number, enabled: boolean) {
   return useQuery({ queryKey: contactsKey(followUpId), queryFn: () => fetchContacts(followUpId), enabled });
 }
 
-/** Registrar un intento cambia el ticket (causa, candado, alerta) y el historial: se refrescan ambos. */
+/**
+ * Registrar un intento cambia el ticket (causa, candado, alerta) y el historial: se refrescan ambos.
+ * Sin conexión, la llamada se guarda en la tablet con la hora en que se hizo y se envía sola
+ * (RF-20 a RF-23): el resultado dice cuál de las dos cosas pasó.
+ */
 export function useRegisterContact(followUpId: number) {
   const client = useQueryClient();
+  const offline = useOfflineOptional();
   return useMutation({
-    mutationFn: (body: RegisterContactRequest) => registerContact(followUpId, body),
+    mutationFn: (body: RegisterContactRequest) =>
+      saveOrQueue(() => registerContact(followUpId, body), offline ? () => offline.enqueue({ type: 'FOLLOW_UP_CONTACT', payload: { followUpId, contact: body } }) : null),
     onSuccess: () => Promise.all([client.invalidateQueries({ queryKey: FOLLOW_UPS_KEY }), client.invalidateQueries({ queryKey: contactsKey(followUpId) })]),
   });
 }

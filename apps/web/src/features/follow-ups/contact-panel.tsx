@@ -85,6 +85,26 @@ function PanelHeader({ title, canClose, closing, closeError, onCloseFollowUp, on
   );
 }
 
+/** Formulario de la llamada y, debajo, el aviso de que quedó guardada en la tablet si no hubo conexión. */
+function ContactSection({ guardians, register }: { readonly guardians: readonly ChildGuardian[]; readonly register: ReturnType<typeof useRegisterContact> }) {
+  return (
+    <>
+      <ContactForm guardians={guardians} pending={register.isPending} error={register.error} onSubmit={(body) => register.mutate(body)} />
+      <QueuedNotice queued={register.data?.queued === true} />
+    </>
+  );
+}
+
+/** La llamada quedó guardada en la tablet por falta de conexión. */
+function QueuedNotice({ queued }: { readonly queued: boolean }) {
+  if (!queued) return null;
+  return (
+    <p role="status" className="text-sm font-medium text-[var(--color-ink)]">
+      Sin conexión: la llamada se guardó en esta tablet y se enviará sola.
+    </p>
+  );
+}
+
 export interface ContactPanelProps {
   readonly followUp: FollowUp;
   readonly onClose: () => void;
@@ -113,7 +133,7 @@ export function ContactPanel({ followUp, onClose }: ContactPanelProps) {
       <ReleaseSection followUp={followUp} canRegister={permissions.includes('ALTA_MEDICA_REGISTRAR')} />
       {followUp.emergencyAlert ? <EmergencyContacts guardians={guardians.data?.guardians ?? []} canSeePhone={canReadNotes} /> : null}
       {canReadNotes && contacts.data ? <ContactHistory contacts={contacts.data.contacts} /> : null}
-      <ContactForm guardians={guardians.data?.guardians ?? []} pending={register.isPending} error={register.error} onSubmit={(body) => register.mutate(body)} />
+      <ContactSection guardians={guardians.data?.guardians ?? []} register={register} />
     </Card>
   );
 }

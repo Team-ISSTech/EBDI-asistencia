@@ -5,7 +5,7 @@ import { useSession } from '../auth/use-session';
 import { ScanPanel, type ScanPanelProps } from './scan-panel';
 import { RosterTable } from './roster-table';
 import { useAttendanceDraft } from './use-attendance-draft';
-import { useCloseJourney, useMarkAttendance, useRoster } from './use-attendance';
+import { useCloseJourney, usePendingMarks, useRoster, useSaveAttendance } from './use-attendance';
 
 interface ActionsProps {
   readonly canMark: boolean;
@@ -46,6 +46,28 @@ function ScanTools({ canMark, onScan }: { readonly canMark: boolean; readonly on
   return canMark ? <ScanPanel onScan={onScan} /> : null;
 }
 
+interface SaveStatusProps {
+  readonly failed: boolean;
+  readonly queued: boolean;
+}
+
+/** Resultado del último guardado: error del servidor, o aviso de que quedó en la tablet por falta de conexión. */
+function SaveStatus({ failed, queued }: SaveStatusProps) {
+  if (failed) {
+    return (
+      <p role="alert" className="text-sm text-[var(--color-danger)]">
+        No se pudo guardar la asistencia. Lo marcado sigue en pantalla; intenta de nuevo.
+      </p>
+    );
+  }
+  if (!queued) return null;
+  return (
+    <p role="status" className="text-sm font-medium text-[var(--color-ink)]">
+      Sin conexión: la asistencia se guardó en esta tablet y se enviará sola.
+    </p>
+  );
+}
+
 export interface JourneyPanelProps {
   readonly journey: AttendanceJourney;
   readonly date: string;
@@ -57,8 +79,8 @@ export function JourneyPanel({ journey, date, shift }: JourneyPanelProps) {
   const { data: session } = useSession();
   const roster = useRoster(journey.id);
   const entries = roster.data?.entries ?? [];
-  const draft = useAttendanceDraft(entries);
-  const save = useMarkAttendance(journey.id);
+  const draft = useAttendanceDraft(entries, usePendingMarks(journey.id));
+  const save = useSaveAttendance(journey.id);
   const close = useCloseJourney(date, shift);
   const permissions = session?.permissions ?? [];
   const canMark = permissions.includes('ASISTENCIA_REGISTRAR');
@@ -88,11 +110,7 @@ export function JourneyPanel({ journey, date, shift }: JourneyPanelProps) {
         onSave={() => save.mutate({ marks: pending }, { onSuccess: draft.clear })}
         onClose={() => close.mutate(journey.id)}
       />
-      {save.isError ? (
-        <p role="alert" className="text-sm text-[var(--color-danger)]">
-          No se pudo guardar la asistencia. Lo marcado sigue en pantalla; intenta de nuevo.
-        </p>
-      ) : null}
+      <SaveStatus failed={save.isError} queued={save.data?.queued === true} />
       <ScanTools canMark={canMark} onScan={draft.scan} />
       <RosterTable entries={entries} statusOf={draft.statusOf} {...(canMark ? { onSelect: draft.setStatus } : {})} />
     </div>

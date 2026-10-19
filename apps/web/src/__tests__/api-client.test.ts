@@ -19,6 +19,42 @@ describe('apiRequest', () => {
     expect(init.body).toBe('{"a":1}');
   });
 
+  describe('tiempo máximo (conexiones débiles en estancias remotas)', () => {
+    const slowFetch = () =>
+      vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))));
+
+    it('sin `timeoutMs` no hay señal de cancelación', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }));
+      vi.stubGlobal('fetch', fetchMock);
+      await apiRequest('/x', { schema: z.object({ ok: z.boolean() }) });
+      expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].signal).toBeUndefined();
+    });
+
+    it('cancela la petición al pasar el tiempo indicado y falla como una caída de red', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.stubGlobal('fetch', slowFetch());
+        const pending = apiRequest('/x', { timeoutMs: 8000 });
+        const assertion = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+        await vi.advanceTimersByTimeAsync(8000);
+        await assertion;
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('una respuesta a tiempo no se cancela ni deja el temporizador activo', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { ok: true })));
+        await expect(apiRequest('/x', { timeoutMs: 8000, schema: z.object({ ok: z.boolean() }) })).resolves.toEqual({ ok: true });
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   it('un GET no envía cuerpo ni content-type', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }));
     vi.stubGlobal('fetch', fetchMock);
