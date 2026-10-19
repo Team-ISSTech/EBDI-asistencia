@@ -25,6 +25,7 @@ describe('isPermissionCode', () => {
     expect(isPermissionCode('ESTANCIA_ADMINISTRAR')).toBe(true);
     expect(isPermissionCode('SALA_ADMINISTRAR')).toBe(true);
     expect(isPermissionCode('SISTEMA_ADMINISTRAR')).toBe(true);
+    expect(isPermissionCode('CICLO_ADMINISTRAR')).toBe(true);
     expect(isPermissionCode('BORRAR_TODO')).toBe(false);
     expect(isPermissionCode(null)).toBe(false);
   });

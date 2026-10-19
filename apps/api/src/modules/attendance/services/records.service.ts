@@ -88,6 +88,7 @@ export class AttendanceRecordsService {
    */
   async markPartial(auth: AuthContext, journeyId: number, input: MarkAttendanceRequest, capturedAt: Date, request: RequestContext): Promise<PartialMarkResult> {
     const journey = await this.requireJourney(auth, journeyId);
+    if (journey.schoolYearArchived) throw new ApiError('CONFLICTO', 'El ciclo escolar de esa jornada está archivado: es de solo lectura y no admite capturas.');
     if (journey.status === 'CERRADA' && (journey.closedAt === null || capturedAt > journey.closedAt)) {
       throw new ApiError('CONFLICTO', 'La jornada ya estaba cerrada cuando se capturó.');
     }
