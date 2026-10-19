@@ -63,7 +63,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RNF-03 | Auditoría de lecturas confidenciales | `apps/api/src/common` (audit interceptor), `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | implementado en `main` (padrón, tutores, teléfono, notas, seguimientos, expedientes y exportaciones) |
 | RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | implementado (estancias, salas, infantes, inscripciones, vínculos, tutores y usuarios se dan de baja con `deleted_at`/`deleted_by`; una prueba comprueba que el código de la API no hace ningún `DELETE` físico) |
 | RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/domain` (reglas), `packages/db` (migración 0016), `apps/api/src/modules/school-years`, `apps/web/src/features/administration` | unitaria y integración Vitest + MySQL | implementado (abrir ciclo nuevo archiva el anterior, que queda de solo lectura; a los 5 años el administrador central puede depurar sus datos sensibles cifrados sin borrar filas; supuesto S-24) |
-| RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth` | integración Vitest + MySQL, revisión de código | parcial: guard cerrado por defecto y permiso declarado en cada ruta; falta la revisión de seguridad (A23) |
+| RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth`, `apps/api/src/common/http` (cabeceras), `apps/web/nginx.conf` (CSP) | integración Vitest + MySQL (aislamiento entre estancias), unitaria Vitest (rutas declaradas, cabeceras), `pnpm audit` en CI, revisión de código | implementado: guard cerrado por defecto, permiso declarado en las 63 rutas, aislamiento entre estancias probado, cabeceras y CSP, dependencias sin avisos; la prueba de penetración externa queda pendiente (`docs/operations/revision-de-seguridad.md`) |
 | RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | implementado en `main` (semillas sintéticas; sin infantes ni tutores reales) |
 | RNF-08 | p95 < 1.5 s con 212 estancias | `apps/api/src/modules/attendance`, `apps/api/src/modules/follow-ups`, `packages/db` (índices) | medición de carga | parcial: tablero con 212 estancias medido en menos de 1.5 s; falta la prueba de 212 peticiones concurrentes |
 | RNF-09 | Cobertura 80 % en lógica de negocio | `packages/domain`, `packages/auth`, `apps/api/src/modules/*` | unitaria Vitest, integración Vitest + MySQL (reporte de cobertura) | parcial: umbral de 80 % en cada paquete; falta el reporte consolidado |
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 46 |
-| Parciales | 7 |
+| Implementados | 47 |
+| Parciales | 6 |
 | Pendientes | 2 |

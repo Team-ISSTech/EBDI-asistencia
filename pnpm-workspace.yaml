@@ -2,3 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
   - "tooling/*"
+
+# Versiones mínimas por avisos de seguridad (pnpm audit). Subir solo si las pruebas pasan.
+overrides:
+  uuid: ">=11.1.1"
+  source-map-js: ">=1.2.2"
+  esbuild: ">=0.28.1"

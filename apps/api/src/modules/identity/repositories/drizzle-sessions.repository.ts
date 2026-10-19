@@ -2,21 +2,28 @@ import { Inject, Injectable } from '@nestjs/common';
 import { schema, type Db } from '@sirai/db';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { DB } from '../../../common/database/database.module';
+import { retryOnDeadlock } from '../../../common/database/retry-on-deadlock';
 import type { NewSession, SessionRecord } from '../identity.types';
 import type { SessionsRepository, TransactionHook } from './repositories';
 
-const { sesiones } = schema;
+const { sesiones, usuarios } = schema;
 
 @Injectable()
 export class DrizzleSessionsRepository implements SessionsRepository {
   constructor(@Inject(DB) private readonly db: Db) {}
 
   create(session: NewSession, inSameTransaction?: TransactionHook<number>): Promise<number> {
-    return this.db.transaction(async (tx) => {
-      const [result] = await tx.insert(sesiones).values({ ...session, lastUsedAt: session.createdAt });
-      await inSameTransaction?.(tx, result.insertId);
-      return result.insertId;
-    });
+    // Dos inicios de sesión de la misma cuenta a la vez se bloquean entre sí (la FK toma un candado compartido
+    // sobre el usuario y luego el UPDATE de su último acceso pide uno exclusivo). Se pide el exclusivo primero, así
+    // se atienden en fila; la repetición queda como red de seguridad.
+    return retryOnDeadlock(() =>
+      this.db.transaction(async (tx) => {
+        await tx.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.id, session.userId)).for('update');
+        const [result] = await tx.insert(sesiones).values({ ...session, lastUsedAt: session.createdAt });
+        await inSameTransaction?.(tx, result.insertId);
+        return result.insertId;
+      }),
+    );
   }
 
   async findActiveByTokenHash(tokenHash: Buffer, now: Date): Promise<SessionRecord | null> {

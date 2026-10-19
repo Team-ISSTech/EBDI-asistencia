@@ -225,4 +225,9 @@ describe.skipIf(!TEST_DATABASE_URL)('identidad (integración)', () => {
     const me = await request(app.getHttpServer()).get('/auth/me').set('Cookie', cookie);
     expect(me.status).toBe(401);
   });
+
+  it('varios inicios de sesión simultáneos de la misma cuenta se atienden todos (sin interbloqueo)', async () => {
+    const responses = await Promise.all(Array.from({ length: 12 }, () => login('docente@sirai.test')));
+    expect(responses.map((response) => response.status)).toEqual(Array.from({ length: 12 }, () => 200));
+  });
 });
