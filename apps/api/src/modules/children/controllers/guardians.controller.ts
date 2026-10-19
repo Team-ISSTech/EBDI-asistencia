@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
+import { Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
 import {
   type ChildGuardian,
   type ChildGuardianListResponse,
@@ -8,6 +8,9 @@ import {
   type GuardianPhoneResponse,
   type LinkGuardianRequest,
   linkGuardianRequestSchema,
+  type UnlinkGuardianQuery,
+  unlinkGuardianQuerySchema,
+  type UnlinkGuardianResponse,
   type UpdateGuardianLinkRequest,
   updateGuardianLinkRequestSchema,
   type UpdateGuardianRequest,
@@ -17,6 +20,7 @@ import type { AuthContext } from '../../../common/auth/auth-context';
 import { CurrentAuth, RequirePermission } from '../../../common/auth/decorators';
 import { extractRequestContext, type RequestWithId } from '../../../common/http/request-context';
 import { ZodBody } from '../../../common/validation/zod-body.decorator';
+import { ZodQuery } from '../../../common/validation/zod-query.decorator';
 import { GuardiansService } from '../services/guardians.service';
 
 @Controller()
@@ -77,16 +81,17 @@ export class GuardiansController {
     return this.guardians.updateLink(auth, childId, guardianId, body, extractRequestContext(request));
   }
 
+  /** Desvincula; con `?retireGuardian=true` también da de baja al tutor si no le quedan otros infantes. */
   @Delete('infantes/:childId/tutores/:guardianId')
-  @HttpCode(204)
   @RequirePermission('INFANTE_ADMINISTRAR')
   unlink(
     @CurrentAuth() auth: AuthContext,
     @Param('childId', ParseIntPipe) childId: number,
     @Param('guardianId', ParseIntPipe) guardianId: number,
+    @ZodQuery(unlinkGuardianQuerySchema) query: UnlinkGuardianQuery,
     @Req() request: RequestWithId,
-  ): Promise<void> {
-    return this.guardians.unlink(auth, childId, guardianId, extractRequestContext(request));
+  ): Promise<UnlinkGuardianResponse> {
+    return this.guardians.unlink(auth, childId, guardianId, extractRequestContext(request), query);
   }
 
   /** Teléfono completo: solo quien accede a notas familiares, y cada consulta se audita. */

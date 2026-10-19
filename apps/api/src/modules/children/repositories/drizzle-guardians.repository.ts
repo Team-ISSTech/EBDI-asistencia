@@ -121,6 +121,28 @@ export class DrizzleGuardiansRepository implements GuardiansRepository {
     });
   }
 
+  async hasActiveLinks(guardianId: number): Promise<boolean> {
+    const [row] = await this.db
+      .select({ childId: childGuardians.childId })
+      .from(childGuardians)
+      .where(
+        and(
+          eq(childGuardians.guardianId, guardianId),
+          isNull(childGuardians.deletedAt),
+          or(isNull(childGuardians.validUntil), sql`${childGuardians.validUntil} >= CURRENT_DATE`),
+        ),
+      )
+      .limit(1);
+    return row !== undefined;
+  }
+
+  async softDelete(id: number, userId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(guardians).set({ deletedAt: now, deletedBy: userId, updatedAt: now }).where(and(eq(guardians.id, id), isNull(guardians.deletedAt)));
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
   async isLinkedInEstancia(guardianId: number, estanciaId: number): Promise<boolean> {
     const [row] = await this.db
       .select({ childId: childGuardians.childId })

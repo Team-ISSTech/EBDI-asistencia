@@ -27,6 +27,8 @@ import {
   type TransferDestinationListResponse,
   transferDestinationListResponseSchema,
   roomListResponseSchema,
+  type UnlinkGuardianResponse,
+  unlinkGuardianResponseSchema,
   type UpdateChildRequest,
   type UpdateGuardianLinkRequest,
   type UpdateGuardianRequest,
@@ -54,8 +56,8 @@ export const updateGuardian = (id: number, body: UpdateGuardianRequest): Promise
 export const updateGuardianLink = (childId: number, guardianId: number, body: UpdateGuardianLinkRequest): Promise<ChildGuardian> =>
   apiRequest(`/infantes/${childId}/tutores/${guardianId}`, { method: 'PATCH', body, schema: childGuardianSchema });
 
-export const unlinkGuardian = (childId: number, guardianId: number): Promise<void> =>
-  apiRequest(`/infantes/${childId}/tutores/${guardianId}`, { method: 'DELETE' });
+export const unlinkGuardian = (childId: number, guardianId: number, retireGuardian: boolean): Promise<UnlinkGuardianResponse> =>
+  apiRequest(`/infantes/${childId}/tutores/${guardianId}?retireGuardian=${String(retireGuardian)}`, { method: 'DELETE', schema: unlinkGuardianResponseSchema });
 
 export const moveChild = (id: number, body: EnrollmentMovementRequest): Promise<void> =>
   apiRequest(`/infantes/${id}/movimientos`, { method: 'POST', body });

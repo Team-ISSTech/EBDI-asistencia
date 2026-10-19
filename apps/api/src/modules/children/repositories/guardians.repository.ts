@@ -13,6 +13,10 @@ export interface GuardiansRepository {
   updateLink(childId: number, guardianId: number, changes: LinkChanges, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void>;
   /** Borrado lógico de un vínculo que nunca llegó a tener vigencia; vincular de nuevo al mismo tutor lo reactiva. */
   softDeleteLink(childId: number, guardianId: number, userId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void>;
+  /** ¿Tiene el tutor algún vínculo vigente (sin terminar ni dar de baja) con algún infante? */
+  hasActiveLinks(guardianId: number): Promise<boolean>;
+  /** Baja lógica del tutor (RNF-04): `deleted_at` y `deleted_by`, más lo que haga `inSameTransaction`. */
+  softDelete(id: number, userId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void>;
   /** ¿Está el tutor vinculado a algún infante con inscripción activa en la estancia? */
   isLinkedInEstancia(guardianId: number, estanciaId: number): Promise<boolean>;
   findPhoneEncrypted(guardianId: number): Promise<Buffer | null>;

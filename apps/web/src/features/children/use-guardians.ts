@@ -51,7 +51,7 @@ export function useEditGuardian(childId: number) {
 export function useUnlinkGuardian(childId: number) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (guardianId: number) => unlinkGuardian(childId, guardianId),
+    mutationFn: ({ guardianId, retireGuardian }: { guardianId: number; retireGuardian: boolean }) => unlinkGuardian(childId, guardianId, retireGuardian),
     onSuccess: () => client.invalidateQueries({ queryKey: guardiansKey(childId) }),
   });
 }

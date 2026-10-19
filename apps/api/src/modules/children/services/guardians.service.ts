@@ -5,6 +5,7 @@ import type {
   Guardian,
   GuardianPhoneResponse,
   LinkGuardianRequest,
+  UnlinkGuardianResponse,
   UpdateGuardianLinkRequest,
   UpdateGuardianRequest,
 } from '@sirai/contracts';
@@ -122,12 +123,27 @@ export class GuardiansService {
 
   /**
    * Baja del tutor para este infante. Si ya tuvo vigencia, ésta termina ayer y el
-   * vínculo queda como historial; si empezó hoy no hay historia y se da de baja con borrado lógico.
+   * vínculo queda como historial; si empezó hoy no hay historia y se da de baja con
+   * borrado lógico. Con `retireGuardian`, si además no le quedan otros infantes
+   * vinculados, el tutor mismo se da de baja (RNF-04); si sigue vinculado a otro,
+   * se conserva. Son dos pasos: si el segundo falla, la desvinculación ya quedó.
    */
-  async unlink(auth: AuthContext, childId: number, guardianId: number, request: RequestContext): Promise<void> {
+  async unlink(
+    auth: AuthContext,
+    childId: number,
+    guardianId: number,
+    request: RequestContext,
+    options: { retireGuardian?: boolean } = {},
+  ): Promise<UnlinkGuardianResponse> {
     await this.requireChild(auth, childId);
     const current = await this.requireLink(childId, guardianId);
+    await this.endLink(auth, childId, current, request);
+    return { guardianRetired: options.retireGuardian === true && (await this.retireIfOrphan(auth, guardianId, request)) };
+  }
+
+  private async endLink(auth: AuthContext, childId: number, current: ChildGuardianRecord, request: RequestContext): Promise<void> {
     const now = new Date();
+    const guardianId = current.id;
     const audit = (tx: Parameters<TransactionHook<void>>[0]) =>
       this.audit.record({ ...this.actor(auth), action: 'TUTOR_DESVINCULADO', tableName: CHILDREN_TABLE, recordId: String(childId), after: { guardianId }, request }, tx);
     if (current.validFrom >= now.toISOString().slice(0, DATE_LENGTH)) {
@@ -136,6 +152,15 @@ export class GuardiansService {
     }
     const yesterday = new Date(now.getTime() - MS_PER_DAY).toISOString().slice(0, DATE_LENGTH);
     await this.guardians.updateLink(childId, guardianId, { validUntil: yesterday, isPrimary: false }, now, audit);
+  }
+
+  /** El tutor se da de baja solo si ya no tiene ningún infante vinculado, en esta ni en otra estancia. */
+  private async retireIfOrphan(auth: AuthContext, guardianId: number, request: RequestContext): Promise<boolean> {
+    if (await this.guardians.hasActiveLinks(guardianId)) return false;
+    await this.guardians.softDelete(guardianId, auth.userId, new Date(), (tx) =>
+      this.audit.record({ ...this.actor(auth), action: 'TUTOR_DADO_DE_BAJA', tableName: GUARDIANS_TABLE, recordId: String(guardianId), request }, tx),
+    );
+    return true;
   }
 
   /**

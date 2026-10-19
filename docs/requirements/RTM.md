@@ -61,7 +61,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RNF-01 | AES-256 en reposo | `apps/api/src/common` (encryption service), `packages/db` (columnas `*_cifrado`) | unitaria Vitest, integración Vitest + MySQL | implementado en `main` (teléfono, discapacidad, notas, observaciones médicas y bitácora) |
 | RNF-02 | Auditoría inmutable con diff | `apps/api/src/common` (audit interceptor), `packages/db` (tabla `auditoria`, solo INSERT) | integración Vitest + MySQL, revisión de código | implementado en `main` (triggers de la migración 0002) |
 | RNF-03 | Auditoría de lecturas confidenciales | `apps/api/src/common` (audit interceptor), `apps/api/src/modules/follow-ups` | integración Vitest + MySQL | implementado en `main` (padrón, tutores, teléfono, notas, seguimientos, expedientes y exportaciones) |
-| RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | parcial: estancias, salas, infantes, inscripciones y vínculos infante-tutor ya se dan de baja con `deleted_at`/`deleted_by`; falta una operación de baja de tutores y de usuarios |
+| RNF-04 | Borrado lógico, nunca DELETE | `packages/db` (Drizzle, MySQL 8), repositorios de `apps/api` | integración Vitest + MySQL, revisión de código | implementado (estancias, salas, infantes, inscripciones, vínculos, tutores y usuarios se dan de baja con `deleted_at`/`deleted_by`; una prueba comprueba que el código de la API no hace ningún `DELETE` físico) |
 | RNF-05 | Retención: ciclo activo, 5 años archivado | `packages/db`, `apps/api/src/modules/administration` | integración Vitest + MySQL, revisión de código | parcial: tabla `ciclos_escolares` y jornadas ligadas a su ciclo; falta archivar y depurar |
 | RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth` | integración Vitest + MySQL, revisión de código | parcial: guard cerrado por defecto y permiso declarado en cada ruta; falta la revisión de seguridad (A23) |
 | RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | implementado en `main` (semillas sintéticas; sin infantes ni tutores reales) |
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 40 |
-| Parciales | 12 |
+| Implementados | 41 |
+| Parciales | 11 |
 | Pendientes | 3 |

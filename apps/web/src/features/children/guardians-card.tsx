@@ -62,7 +62,15 @@ export function GuardiansCard({ child, onClose }: GuardiansCardProps) {
   const [panel, setPanel] = useState<GuardianPanelState | null>(null);
   const permissions = session?.permissions ?? [];
   const canManage = permissions.includes('INFANTE_ADMINISTRAR');
-  const closePanel = () => setPanel(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const closePanel = (message?: string) => {
+    setPanel(null);
+    setNotice(message ?? null);
+  };
+  const openPanel = (next: GuardianPanelState | null) => {
+    setNotice(null);
+    setPanel(next);
+  };
 
   return (
     <Card className="mb-8 flex flex-col gap-4">
@@ -70,10 +78,15 @@ export function GuardiansCard({ child, onClose }: GuardiansCardProps) {
         child={child}
         canManage={canManage}
         adding={panel?.kind === 'add'}
-        onToggleAdd={() => setPanel(panel?.kind === 'add' ? null : { kind: 'add' })}
+        onToggleAdd={() => openPanel(panel?.kind === 'add' ? null : { kind: 'add' })}
         onClose={onClose}
       />
-      {panel ? <GuardianPanel child={child} state={panel} onDone={closePanel} onCancel={closePanel} /> : null}
+      {panel ? <GuardianPanel child={child} state={panel} onDone={closePanel} onCancel={() => closePanel()} /> : null}
+      {notice ? (
+        <p role="status" className="text-sm font-medium text-[var(--color-ink)]">
+          {notice}
+        </p>
+      ) : null}
       {consents.isError ? (
         <p role="alert" className="text-sm text-[var(--color-danger)]">
           No se pudo cargar el estado de consentimiento.
@@ -85,7 +98,7 @@ export function GuardiansCard({ child, onClose }: GuardiansCardProps) {
         consents={consents.data?.consents ?? []}
         canSeePhone={permissions.includes('NOTA_SENSIBLE_CONSULTAR')}
         canManageConsent={permissions.includes('CONSENTIMIENTO_REGISTRAR')}
-        {...(canManage ? { onEdit: (guardian: ChildGuardian) => setPanel({ kind: 'edit', guardian }), onUnlink: (guardian: ChildGuardian) => setPanel({ kind: 'unlink', guardian }) } : {})}
+        {...(canManage ? { onEdit: (guardian: ChildGuardian) => openPanel({ kind: 'edit', guardian }), onUnlink: (guardian: ChildGuardian) => openPanel({ kind: 'unlink', guardian }) } : {})}
       />
     </Card>
   );
