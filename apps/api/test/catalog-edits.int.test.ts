@@ -64,7 +64,8 @@ describe.skipIf(!TEST_DATABASE_URL)('edición de infantes y tutores (integració
     app = moduleRef.createNestApplication();
     configureApp(app);
     await app.init();
-    roomId = (await rows<{ id: number }>(sql`SELECT id FROM salas_grupos WHERE turno = 'MATUTINO' ORDER BY id LIMIT 1`))[0]?.id ?? 0;
+    // Una sala sin límite de cupo: la de la semilla se llena con tantos infantes de prueba.
+    roomId = (await call('post', '/administracion/salas', DIRECTORA, { name: 'Sala amplia', shift: 'MATUTINO' })).body.id as number;
   });
 
   afterAll(async () => {
@@ -159,7 +160,9 @@ describe.skipIf(!TEST_DATABASE_URL)('edición de infantes y tutores (integració
     expect(changed.status).toBe(200);
     expect(changed.body).toMatchObject({ canPickUp: false, isPrimary: true });
 
-    expect((await call('delete', `/infantes/${child.id}/tutores/${guardianId}`, DIRECTORA)).status).toBe(204);
+    const unlinked = await call('delete', `/infantes/${child.id}/tutores/${guardianId}`, DIRECTORA);
+    expect(unlinked.status).toBe(200);
+    expect(unlinked.body).toEqual({ guardianRetired: false });
     const list = await call('get', `/infantes/${child.id}/tutores`, DIRECTORA);
     expect(list.body.guardians).toHaveLength(0);
     const [link] = await rows<{ hasta: string; principal: number }>(
@@ -175,7 +178,7 @@ describe.skipIf(!TEST_DATABASE_URL)('edición de infantes y tutores (integració
   it('un vínculo de hoy se desvincula con borrado lógico y el tutor se puede vincular otra vez', async () => {
     const child = await newChild('10');
     const guardianId = await newGuardian(child.id, '5544445555', { validFrom: today, isPrimary: false });
-    expect((await call('delete', `/infantes/${child.id}/tutores/${guardianId}`, DIRECTORA)).status).toBe(204);
+    expect((await call('delete', `/infantes/${child.id}/tutores/${guardianId}`, DIRECTORA)).status).toBe(200);
     const [row] = await rows<{ borrado: number; por: number | null }>(
       sql`SELECT (deleted_at IS NOT NULL) AS borrado, deleted_by AS por FROM infante_tutor WHERE infante_id = ${child.id} AND tutor_id = ${guardianId}`,
     );
@@ -200,10 +203,43 @@ describe.skipIf(!TEST_DATABASE_URL)('edición de infantes y tutores (integració
     expect(again.body.validUntil).toBeNull();
   });
 
+  it('desvincular y dar de baja al tutor: borrado lógico atribuido, y deja de existir para la estancia (RNF-04)', async () => {
+    const child = await newChild('12');
+    const guardianId = await newGuardian(child.id, '5577778888');
+    const response = await call('delete', `/infantes/${child.id}/tutores/${guardianId}?retireGuardian=true`, DIRECTORA);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ guardianRetired: true });
+    const [row] = await rows<{ borrado: number; por: number | null }>(sql`SELECT (deleted_at IS NOT NULL) AS borrado, deleted_by AS por FROM tutores WHERE id = ${guardianId}`);
+    expect(Number(row?.borrado)).toBe(1);
+    expect(row?.por).not.toBeNull();
+    expect((await call('patch', `/tutores/${guardianId}`, DIRECTORA, { name: 'X' })).status).toBe(404);
+    expect((await call('get', `/tutores/${guardianId}/telefono`, 'trabajo_social@sirai.test')).status).toBe(404);
+    const stillThere = await rows<{ n: number }>(sql`SELECT COUNT(*) AS n FROM tutores WHERE id = ${guardianId}`);
+    expect(Number(stillThere[0]?.n)).toBe(1);
+  });
+
+  it('si el tutor sigue vinculado a otro infante, desvincular con baja no lo da de baja', async () => {
+    const [first, second] = [await newChild('13'), await newChild('14')];
+    const guardianId = await newGuardian(first.id, '5599990000');
+    const linked = await call('post', `/infantes/${second.id}/tutores`, DIRECTORA, { guardianId, relationship: 'Madre', validFrom: lastWeek, isPrimary: false });
+    expect(linked.status, JSON.stringify(linked.body)).toBe(201);
+    const response = await call('delete', `/infantes/${first.id}/tutores/${guardianId}?retireGuardian=true`, DIRECTORA);
+    expect(response.body).toEqual({ guardianRetired: false });
+    expect((await call('get', `/infantes/${second.id}/tutores`, DIRECTORA)).body.guardians).toHaveLength(1);
+    const [row] = await rows<{ borrado: number }>(sql`SELECT (deleted_at IS NOT NULL) AS borrado FROM tutores WHERE id = ${guardianId}`);
+    expect(Number(row?.borrado)).toBe(0);
+  });
+
+  it('rechaza un valor de retireGuardian que no sea true o false', async () => {
+    const child = await newChild('15');
+    const guardianId = await newGuardian(child.id, '5500001111');
+    expect((await call('delete', `/infantes/${child.id}/tutores/${guardianId}?retireGuardian=quizas`, DIRECTORA)).status).toBe(400);
+  });
+
   it('audita cada cambio con la acción de su operación', async () => {
     const actions = await rows<{ accion: string }>(sql`SELECT DISTINCT accion FROM auditoria ORDER BY accion`);
     expect(actions.map((a) => a.accion)).toEqual(
-      expect.arrayContaining(['INFANTE_ACTUALIZADO', 'INFANTE_ELIMINADO', 'TUTOR_ACTUALIZADO', 'TUTOR_VINC_ACTUALIZADO', 'TUTOR_DESVINCULADO']),
+      expect.arrayContaining(['INFANTE_ACTUALIZADO', 'INFANTE_ELIMINADO', 'TUTOR_ACTUALIZADO', 'TUTOR_VINC_ACTUALIZADO', 'TUTOR_DESVINCULADO', 'TUTOR_DADO_DE_BAJA']),
     );
   });
 });

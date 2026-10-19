@@ -173,6 +173,18 @@ export class InMemoryGuardians implements GuardiansRepository {
   }
 
   readonly deletedLinks: { childId: number; guardianId: number; userId: number }[] = [];
+  readonly retiredGuardians: { id: number; userId: number }[] = [];
+
+  hasActiveLinks(guardianId: number): Promise<boolean> {
+    const today = new Date().toISOString().slice(0, 10);
+    return Promise.resolve(this.links.some((entry) => entry.link.guardianId === guardianId && (entry.link.validUntil === null || entry.link.validUntil >= today)));
+  }
+
+  async softDelete(id: number, userId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    this.rows.delete(id);
+    this.retiredGuardians.push({ id, userId });
+    await inSameTransaction?.({} as Parameters<TransactionHook<void>>[0], undefined);
+  }
 
   async softDeleteLink(childId: number, guardianId: number, userId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
     const index = this.links.findIndex((item) => item.childId === childId && item.link.guardianId === guardianId);

@@ -148,6 +148,14 @@ export class DrizzleUsersRepository implements UsersRepository {
     });
   }
 
+  async softDelete(userId: number, byUserId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(usuarios).set({ deletedAt: now, deletedBy: byUserId, status: 'INACTIVO', updatedAt: now }).where(and(eq(usuarios.id, userId), isNull(usuarios.deletedAt)));
+      await this.revokeSessions(tx, userId, now, null);
+      await inSameTransaction?.(tx, undefined);
+    });
+  }
+
   async setTemporaryPassword(userId: number, passwordHash: string, expiresAt: Date, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
     await this.db.transaction(async (tx) => {
       await tx

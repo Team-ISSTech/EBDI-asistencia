@@ -11,7 +11,7 @@ describe('UsersTable', () => {
       { id: 1, name: 'Admin', email: 'a@sirai.test', status: 'ACTIVO' as const, assignments: [{ role: 'ADMIN_CENTRAL' as const, estanciaId: null }], lastAccessAt: '2026-10-07T08:00:00.000Z' },
       { id: 2, name: 'Baja', email: 'b@sirai.test', status: 'INACTIVO' as const, assignments: [], lastAccessAt: null },
     ];
-    renderWithSession(<UsersTable users={users} estancias={[]} onEdit={onEdit} onResetPassword={vi.fn()} />, docenteSession);
+    renderWithSession(<UsersTable users={users} estancias={[]} onEdit={onEdit} onResetPassword={vi.fn()} onRetire={vi.fn()} currentUserId={0} />, docenteSession);
     expect(screen.getByText('Administrador central')).toBeInTheDocument();
     expect(screen.getByText('Sin roles')).toBeInTheDocument();
     expect(screen.getByText('Inactivo')).toBeInTheDocument();

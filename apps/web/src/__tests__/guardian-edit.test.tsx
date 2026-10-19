@@ -118,7 +118,7 @@ describe('editar y desvincular tutores (RF-34)', () => {
   });
 
   it('desvincular pide confirmación y conserva el historial', async () => {
-    const fetchMock = routeFetch({ ...listing, 'DELETE /infantes/5/tutores/1': () => new Response(null, { status: 204 }) });
+    const fetchMock = routeFetch({ ...listing, 'DELETE /infantes/5/tutores/1': () => jsonResponse(200, { guardianRetired: false }) });
     vi.stubGlobal('fetch', fetchMock);
     const user = userEvent.setup();
     renderWithSession(<GuardiansCard child={child} onClose={vi.fn()} />, directoraSession, '/app/infantes');
@@ -127,5 +127,45 @@ describe('editar y desvincular tutores (RF-34)', () => {
     expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false);
     await user.click(screen.getByRole('button', { name: 'Confirmar desvinculación' }));
     await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(true));
+  });
+
+  describe('dar de baja al tutor al desvincularlo (RNF-04)', () => {
+    const deletes = (fetchMock: ReturnType<typeof routeFetch>): URL[] =>
+      fetchMock.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE').map(([url]) => new URL(url));
+
+    it('por defecto solo desvincula: la opción de dar de baja no viene marcada', async () => {
+      const fetchMock = routeFetch({ ...listing, 'DELETE /infantes/5/tutores/1': () => jsonResponse(200, { guardianRetired: false }) });
+      vi.stubGlobal('fetch', fetchMock);
+      const user = userEvent.setup();
+      renderWithSession(<GuardiansCard child={child} onClose={vi.fn()} />, directoraSession, '/app/infantes');
+      await user.click(await screen.findByRole('button', { name: 'Desvincular a Tutora Prueba' }));
+      expect(screen.getByLabelText('Dar de baja también al tutor si no tiene más infantes vinculados')).not.toBeChecked();
+      await user.click(screen.getByRole('button', { name: 'Confirmar desvinculación' }));
+      await waitFor(() => expect(deletes(fetchMock)).toHaveLength(1));
+      expect(deletes(fetchMock)[0]?.searchParams.get('retireGuardian')).toBe('false');
+    });
+
+    it('marcada, pide también la baja del tutor y avisa que se dio de baja', async () => {
+      const fetchMock = routeFetch({ ...listing, 'DELETE /infantes/5/tutores/1': () => jsonResponse(200, { guardianRetired: true }) });
+      vi.stubGlobal('fetch', fetchMock);
+      const user = userEvent.setup();
+      renderWithSession(<GuardiansCard child={child} onClose={vi.fn()} />, directoraSession, '/app/infantes');
+      await user.click(await screen.findByRole('button', { name: 'Desvincular a Tutora Prueba' }));
+      await user.click(screen.getByLabelText('Dar de baja también al tutor si no tiene más infantes vinculados'));
+      await user.click(screen.getByRole('button', { name: 'Confirmar desvinculación' }));
+      await waitFor(() => expect(deletes(fetchMock)).toHaveLength(1));
+      expect(deletes(fetchMock)[0]?.searchParams.get('retireGuardian')).toBe('true');
+      expect(await screen.findByRole('status')).toHaveTextContent('Tutor desvinculado y dado de baja.');
+    });
+
+    it('si el tutor sigue vinculado a otro infante, lo explica', async () => {
+      vi.stubGlobal('fetch', routeFetch({ ...listing, 'DELETE /infantes/5/tutores/1': () => jsonResponse(200, { guardianRetired: false }) }));
+      const user = userEvent.setup();
+      renderWithSession(<GuardiansCard child={child} onClose={vi.fn()} />, directoraSession, '/app/infantes');
+      await user.click(await screen.findByRole('button', { name: 'Desvincular a Tutora Prueba' }));
+      await user.click(screen.getByLabelText('Dar de baja también al tutor si no tiene más infantes vinculados'));
+      await user.click(screen.getByRole('button', { name: 'Confirmar desvinculación' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Sigue vinculado a otro infante, por eso no se dio de baja.');
+    });
   });
 });

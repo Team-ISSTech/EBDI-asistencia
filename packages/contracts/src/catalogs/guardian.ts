@@ -86,6 +86,16 @@ export const updateGuardianLinkRequestSchema = z
   .partial()
   .refine(hasChange, NO_CHANGE);
 
+/** Desvincular no da de baja al tutor salvo que se pida; la baja solo procede si no le quedan otros infantes. */
+export const unlinkGuardianQuerySchema = z.object({
+  retireGuardian: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+});
+
+export const unlinkGuardianResponseSchema = z.object({ guardianRetired: z.boolean() });
+
 export type Guardian = z.infer<typeof guardianSchema>;
 export type ChildGuardian = z.infer<typeof childGuardianSchema>;
 export type ChildGuardianListResponse = z.infer<typeof childGuardianListResponseSchema>;
@@ -94,3 +104,5 @@ export type CreateGuardianRequest = z.infer<typeof createGuardianRequestSchema>;
 export type LinkGuardianRequest = z.infer<typeof linkGuardianRequestSchema>;
 export type UpdateGuardianRequest = z.infer<typeof updateGuardianRequestSchema>;
 export type UpdateGuardianLinkRequest = z.infer<typeof updateGuardianLinkRequestSchema>;
+export type UnlinkGuardianQuery = z.infer<typeof unlinkGuardianQuerySchema>;
+export type UnlinkGuardianResponse = z.infer<typeof unlinkGuardianResponseSchema>;

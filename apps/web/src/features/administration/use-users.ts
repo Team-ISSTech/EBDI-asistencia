@@ -1,6 +1,6 @@
 import type { CreateUserRequest, ReplaceRolesRequest, ResetPasswordRequest } from '@sirai/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createUser, fetchUsers, replaceRoles, resetPassword } from './api';
+import { createUser, fetchUsers, replaceRoles, resetPassword, retireUser } from './api';
 
 const USERS_KEY = ['users'] as const;
 
@@ -13,6 +13,7 @@ export function useUserActions() {
   const refresh = () => client.invalidateQueries({ queryKey: USERS_KEY });
   return {
     create: useMutation({ mutationFn: (body: CreateUserRequest) => createUser(body), onSuccess: refresh }),
+    retire: useMutation({ mutationFn: (userId: number) => retireUser(userId), onSuccess: refresh }),
     replaceRoles: useMutation({
       mutationFn: ({ userId, body }: { userId: number; body: ReplaceRolesRequest }) => replaceRoles(userId, body),
       onSuccess: refresh,

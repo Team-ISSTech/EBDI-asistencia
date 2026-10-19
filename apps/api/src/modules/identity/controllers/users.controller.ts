@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
 import {
   type CreateUserRequest,
   createUserRequestSchema,
@@ -42,6 +42,12 @@ export class UsersController {
     @Req() request: RequestWithId,
   ): Promise<User> {
     return this.users.resetPassword(auth, id, body, extractRequestContext(request));
+  }
+
+  @Post(':id/baja')
+  @HttpCode(204)
+  retire(@CurrentAuth() auth: AuthContext, @Param('id', ParseIntPipe) id: number, @Req() request: RequestWithId): Promise<void> {
+    return this.users.retire(auth, id, extractRequestContext(request));
   }
 
   @Patch(':id/roles')

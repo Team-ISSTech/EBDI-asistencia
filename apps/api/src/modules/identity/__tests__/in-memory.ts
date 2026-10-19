@@ -98,6 +98,14 @@ export class InMemoryUsers implements UsersRepository {
     await inSameTransaction?.(this.executor, undefined);
   }
 
+  readonly retired: { userId: number; byUserId: number }[] = [];
+
+  async softDelete(userId: number, byUserId: number, _now: Date, inSameTransaction?: TransactionHook<void>): Promise<void> {
+    this.rows.delete(userId);
+    this.retired.push({ userId, byUserId });
+    await inSameTransaction?.(this.executor, undefined);
+  }
+
   registerFailedLogin(userId: number, policy: LockoutPolicy, now: Date): Promise<{ locked: boolean }> {
     const user = this.rows.get(userId);
     if (!user) return Promise.resolve({ locked: false });

@@ -9,9 +9,11 @@ interface UserRowProps {
   readonly estanciaNames: ReadonlyMap<number, string>;
   readonly onEdit: () => void;
   readonly onResetPassword: () => void;
+  /** Ausente en la fila de quien tiene la sesión: nadie se da de baja a sí mismo. */
+  readonly onRetire?: () => void;
 }
 
-function UserRow({ user, estanciaNames, onEdit, onResetPassword }: UserRowProps) {
+function UserRow({ user, estanciaNames, onEdit, onResetPassword, onRetire }: UserRowProps) {
   const label = (role: User['assignments'][number]['role'], estanciaId: number | null): string =>
     estanciaId === null ? ROLE_LABELS[role] : `${ROLE_LABELS[role]} · ${estanciaNames.get(estanciaId) ?? `Estancia ${estanciaId}`}`;
   return (
@@ -41,6 +43,11 @@ function UserRow({ user, estanciaNames, onEdit, onResetPassword }: UserRowProps)
         <Button variant="ghost" aria-label={`Restablecer contraseña de ${user.name}`} onClick={onResetPassword}>
           Restablecer contraseña
         </Button>
+        {onRetire ? (
+          <Button variant="ghost" aria-label={`Dar de baja a ${user.name}`} onClick={onRetire}>
+            Dar de baja
+          </Button>
+        ) : null}
       </Td>
     </tr>
   );
@@ -51,9 +58,12 @@ export interface UsersTableProps {
   readonly estancias: readonly EstanciaSummary[];
   readonly onEdit: (user: User) => void;
   readonly onResetPassword: (user: User) => void;
+  readonly onRetire: (user: User) => void;
+  /** Quien tiene la sesión; no se le ofrece darse de baja. */
+  readonly currentUserId: number;
 }
 
-export function UsersTable({ users, estancias, onEdit, onResetPassword }: UsersTableProps) {
+export function UsersTable({ users, estancias, onEdit, onResetPassword, onRetire, currentUserId }: UsersTableProps) {
   const estanciaNames = new Map(estancias.map((e) => [e.id, e.name]));
   return (
     <Table>
@@ -70,7 +80,7 @@ export function UsersTable({ users, estancias, onEdit, onResetPassword }: UsersT
       </thead>
       <tbody>
         {users.map((user) => (
-          <UserRow key={user.id} user={user} estanciaNames={estanciaNames} onEdit={() => onEdit(user)} onResetPassword={() => onResetPassword(user)} />
+          <UserRow key={user.id} user={user} estanciaNames={estanciaNames} onEdit={() => onEdit(user)} onResetPassword={() => onResetPassword(user)} {...(user.id === currentUserId ? {} : { onRetire: () => onRetire(user) })} />
         ))}
       </tbody>
     </Table>

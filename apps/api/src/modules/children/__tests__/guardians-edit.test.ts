@@ -77,7 +77,7 @@ describe('GuardiansService: editar y desvincular (RF-34)', () => {
   });
 
   it('desvincular cierra la vigencia ayer (hoy ya no aparece) y libera el lugar de tutor principal, sin borrar nada', async () => {
-    await service.unlink(directora, childId, guardianId, request);
+    expect(await service.unlink(directora, childId, guardianId, request)).toEqual({ guardianRetired: false });
     expect(await guardians.listForChild(childId)).toHaveLength(0);
     expect(guardians.links[0]?.link).toMatchObject({ isPrimary: false });
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
@@ -93,6 +93,43 @@ describe('GuardiansService: editar y desvincular (RF-34)', () => {
     await service.unlink(directora, childId, fresh, request);
     expect(guardians.links.some((entry) => entry.link.guardianId === fresh)).toBe(false);
     expect(guardians.deletedLinks).toEqual([{ childId, guardianId: fresh, userId: 10 }]);
+  });
+
+  describe('dar de baja al tutor al desvincularlo (RNF-04)', () => {
+    it('sin pedirlo, el tutor se conserva', async () => {
+      const result = await service.unlink(directora, childId, guardianId, request);
+      expect(result).toEqual({ guardianRetired: false });
+      expect(guardians.retiredGuardians).toHaveLength(0);
+    });
+
+    it('si se pide y no le quedan otros infantes, se da de baja con borrado lógico atribuido y se audita', async () => {
+      audit.entries.length = 0;
+      const result = await service.unlink(directora, childId, guardianId, request, { retireGuardian: true });
+      expect(result).toEqual({ guardianRetired: true });
+      expect(guardians.retiredGuardians).toEqual([{ id: guardianId, userId: 10 }]);
+      expect(audit.entries.map((e) => e.action)).toEqual(['TUTOR_DESVINCULADO', 'TUTOR_DADO_DE_BAJA']);
+      expect(audit.entries[1]).toMatchObject({ recordId: String(guardianId), roleCode: 'DIRECTORA' });
+      expect(audit.transactional).toBe(2);
+    });
+
+    it('si el tutor sigue vinculado a otro infante, no se da de baja', async () => {
+      const sibling = await children.registerChild(
+        { enrollmentNumber: 'M-2', curp: null, name: 'Hermano', paternalSurname: 'Prueba', maternalSurname: null, birthDate: '2025-07-01', gender: null, hasDisability: false, disabilityGroupEncrypted: null },
+        { estanciaId: 1, roomId: 1, schoolYearId: 1, startDate: '2026-10-14' },
+        10,
+        new Date(),
+      );
+      await service.link(directora, sibling, { ...link, guardianId, isPrimary: false }, request);
+      const result = await service.unlink(directora, childId, guardianId, request, { retireGuardian: true });
+      expect(result).toEqual({ guardianRetired: false });
+      expect(guardians.retiredGuardians).toHaveLength(0);
+      expect(await guardians.listForChild(sibling)).toHaveLength(1);
+    });
+
+    it('si el vínculo no existe, no se da de baja nada', async () => {
+      await expect(service.unlink(directora, childId, 999, request, { retireGuardian: true })).rejects.toMatchObject({ code: 'NO_ENCONTRADO' });
+      expect(guardians.retiredGuardians).toHaveLength(0);
+    });
   });
 
   it('desvincular a quien ya no está vinculado responde NO_ENCONTRADO', async () => {

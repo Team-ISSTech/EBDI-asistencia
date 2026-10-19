@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { updateChildRequestSchema } from '../catalogs/child.js';
-import { updateGuardianLinkRequestSchema, updateGuardianRequestSchema } from '../catalogs/guardian.js';
+import { unlinkGuardianQuerySchema, unlinkGuardianResponseSchema, updateGuardianLinkRequestSchema, updateGuardianRequestSchema } from '../catalogs/guardian.js';
 
 describe('updateChildRequestSchema (RF-33)', () => {
   it('acepta cambios parciales y no inventa valores para lo que no se manda', () => {
@@ -39,5 +39,19 @@ describe('updateGuardianLinkRequestSchema (RF-34)', () => {
   it('acepta permisos y cierre de vigencia, y rechaza un cuerpo vacío', () => {
     expect(updateGuardianLinkRequestSchema.safeParse({ canPickUp: false, validUntil: '2026-12-01' }).success).toBe(true);
     expect(updateGuardianLinkRequestSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('desvincular y dar de baja al tutor (RNF-04)', () => {
+  it('por defecto solo desvincula; dar de baja al tutor hay que pedirlo', () => {
+    expect(unlinkGuardianQuerySchema.parse({})).toEqual({ retireGuardian: false });
+    expect(unlinkGuardianQuerySchema.parse({ retireGuardian: 'true' })).toEqual({ retireGuardian: true });
+    expect(unlinkGuardianQuerySchema.parse({ retireGuardian: 'false' })).toEqual({ retireGuardian: false });
+    expect(unlinkGuardianQuerySchema.safeParse({ retireGuardian: 'quizas' }).success).toBe(false);
+  });
+
+  it('la respuesta dice si el tutor se dio de baja', () => {
+    expect(unlinkGuardianResponseSchema.safeParse({ guardianRetired: true }).success).toBe(true);
+    expect(unlinkGuardianResponseSchema.safeParse({}).success).toBe(false);
   });
 });

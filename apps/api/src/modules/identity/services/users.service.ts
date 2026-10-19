@@ -84,6 +84,20 @@ export class UsersService {
     return toUserView(await this.requireUser(userId));
   }
 
+  /**
+   * Baja lógica de una cuenta (RNF-04): deja de poder entrar y sus sesiones se
+   * cierran, pero su rastro en la bitácora y sus asignaciones se conservan. No
+   * se permite a uno mismo: así siempre queda al menos un administrador central
+   * (solo ese rol tiene USUARIO_ADMINISTRAR).
+   */
+  async retire(auth: AuthContext, userId: number, request: RequestContext): Promise<void> {
+    const target = await this.requireUser(userId);
+    if (userId === auth.userId) throw new ApiError('FUERA_DE_ALCANCE', 'No puedes darte de baja a ti mismo.');
+    await this.users.softDelete(userId, auth.userId, new Date(), (tx) =>
+      this.audit.record({ ...this.actor(auth), action: 'USUARIO_DADO_DE_BAJA', tableName: USERS_TABLE, recordId: String(userId), before: { name: target.name, email: target.email, status: target.status }, request }, tx),
+    );
+  }
+
   async replaceRoles(auth: AuthContext, userId: number, input: ReplaceRolesRequest, request: RequestContext): Promise<User> {
     const target = await this.requireUser(userId);
     this.assertKeepsOwnAdminRole(auth, userId, input);

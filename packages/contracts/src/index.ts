@@ -46,6 +46,8 @@ export {
   guardianPhoneResponseSchema,
   guardianSchema,
   linkGuardianRequestSchema,
+  unlinkGuardianQuerySchema,
+  unlinkGuardianResponseSchema,
   updateGuardianLinkRequestSchema,
   updateGuardianRequestSchema,
 } from './catalogs/guardian.js';
@@ -56,6 +58,8 @@ export type {
   Guardian,
   GuardianPhoneResponse,
   LinkGuardianRequest,
+  UnlinkGuardianQuery,
+  UnlinkGuardianResponse,
   UpdateGuardianLinkRequest,
   UpdateGuardianRequest,
 } from './catalogs/guardian.js';

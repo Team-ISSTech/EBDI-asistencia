@@ -1,45 +1,56 @@
-import type { EstanciaSummary, User, UserListResponse } from '@sirai/contracts';
+import type { EstanciaSummary, User } from '@sirai/contracts';
 import { Button, Card, EmptyState, PageHeader } from '@sirai/ui';
 import { useState } from 'react';
 import { useSession } from '../../auth/use-session';
-import { ResetPasswordCard } from '../reset-password-card';
-import { RolesEditorCard } from '../roles-editor-card';
 import { UserForm } from '../user-form';
+import { UserPanel, type UserPanelState } from '../user-panel';
 import { useUserActions, useUsers } from '../use-users';
 import { UsersTable } from '../users-table';
 
-interface UsersListProps {
-  readonly data: UserListResponse;
+interface UsersContentProps {
+  readonly query: ReturnType<typeof useUsers>;
   readonly estancias: readonly EstanciaSummary[];
-  readonly onEdit: (user: User) => void;
-  readonly onResetPassword: (user: User) => void;
+  readonly currentUserId: number;
+  readonly onPanel: (state: UserPanelState) => void;
 }
 
-function UsersList({ data, estancias, onEdit, onResetPassword }: UsersListProps) {
-  if (data.users.length === 0) {
+/** Carga, error, vacío o tabla: un solo estado a la vez. */
+function UsersContent({ query, estancias, currentUserId, onPanel }: UsersContentProps) {
+  if (query.isPending) return <p className="text-sm text-[var(--color-text-muted)]">Cargando usuarios…</p>;
+  if (query.isError) {
+    return (
+      <p role="alert" className="text-sm text-[var(--color-danger)]">
+        No se pudo cargar la lista de usuarios.
+      </p>
+    );
+  }
+  if (query.data.users.length === 0) {
     return <EmptyState title="Aún no hay usuarios" description="Crea el primer usuario para que el equipo de la estancia pueda entrar." />;
   }
-  return <UsersTable users={data.users} estancias={estancias} onEdit={onEdit} onResetPassword={onResetPassword} />;
+  return (
+    <UsersTable
+      users={query.data.users}
+      estancias={estancias}
+      currentUserId={currentUserId}
+      onEdit={(user: User) => onPanel({ kind: 'roles', user })}
+      onResetPassword={(user: User) => onPanel({ kind: 'reset', user })}
+      onRetire={(user: User) => onPanel({ kind: 'retire', user })}
+    />
+  );
 }
 
-/** Administración de usuarios: alta y asignación de roles por estancia. */
+/** Administración de usuarios: alta, roles, restablecer contraseña y baja. */
 export function UsersPage() {
   const { data: session } = useSession();
   const users = useUsers();
-  const { create, replaceRoles } = useUserActions();
+  const { create } = useUserActions();
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<User | null>(null);
-  const [resetting, setResetting] = useState<User | null>(null);
+  const [panel, setPanel] = useState<UserPanelState | null>(null);
   const estancias = session?.availableEstancias ?? [];
 
   const toggleForm = () => {
     create.reset();
     setShowForm((visible) => !visible);
-  };
-  /** Cada editor empieza sin el error de la edición anterior. */
-  const openEditor = (user: User | null) => {
-    replaceRoles.reset();
-    setEditing(user);
   };
 
   return (
@@ -60,25 +71,8 @@ export function UsersPage() {
           />
         </Card>
       ) : null}
-      {editing ? (
-        <RolesEditorCard
-          key={editing.id}
-          user={editing}
-          estancias={estancias}
-          pending={replaceRoles.isPending}
-          error={replaceRoles.isError}
-          onSave={(assignments) => replaceRoles.mutate({ userId: editing.id, body: { assignments } }, { onSuccess: () => openEditor(null) })}
-          onCancel={() => openEditor(null)}
-        />
-      ) : null}
-      {resetting ? <ResetPasswordCard key={resetting.id} user={resetting} onClose={() => setResetting(null)} /> : null}
-      {users.isPending ? <p className="text-sm text-[var(--color-text-muted)]">Cargando usuarios…</p> : null}
-      {users.isError ? (
-        <p role="alert" className="text-sm text-[var(--color-danger)]">
-          No se pudo cargar la lista de usuarios.
-        </p>
-      ) : null}
-      {users.data ? <UsersList data={users.data} estancias={estancias} onEdit={openEditor} onResetPassword={setResetting} /> : null}
+      {panel ? <UserPanel state={panel} estancias={estancias} onClose={() => setPanel(null)} /> : null}
+      <UsersContent query={users} estancias={estancias} currentUserId={session?.user.id ?? 0} onPanel={setPanel} />
     </>
   );
 }

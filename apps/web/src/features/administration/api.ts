@@ -19,3 +19,5 @@ export const replaceRoles = (userId: number, body: ReplaceRolesRequest): Promise
 
 export const resetPassword = (userId: number, body: ResetPasswordRequest): Promise<User> =>
   apiRequest(`/usuarios/${userId}/contrasena-temporal`, { method: 'POST', body, schema: userSchema });
+
+export const retireUser = (userId: number): Promise<void> => apiRequest(`/usuarios/${userId}/baja`, { method: 'POST' });

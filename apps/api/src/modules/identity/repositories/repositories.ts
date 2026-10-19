@@ -42,6 +42,12 @@ export interface UsersRepository {
    * transacción junto con lo que haga `inSameTransaction` (la auditoría).
    */
   changePassword(userId: number, passwordHash: string, now: Date, keepSessionId: number | null, inSameTransaction?: TransactionHook<void>): Promise<void>;
+  /**
+   * Baja lógica (RNF-04): marca `deleted_at` y `deleted_by`, deja la cuenta inactiva y
+   * revoca todas sus sesiones, en una transacción con lo que haga `inSameTransaction`.
+   * Sus asignaciones y su rastro en la bitácora se conservan.
+   */
+  softDelete(userId: number, byUserId: number, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void>;
   /** Restablecimiento por un administrador: contraseña temporal nueva, cuenta desbloqueada y todas las sesiones revocadas. */
   setTemporaryPassword(userId: number, passwordHash: string, expiresAt: Date, now: Date, inSameTransaction?: TransactionHook<void>): Promise<void>;
   registerFailedLogin(userId: number, policy: LockoutPolicy, now: Date): Promise<{ locked: boolean }>;

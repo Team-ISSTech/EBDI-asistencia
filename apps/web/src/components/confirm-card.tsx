@@ -4,6 +4,8 @@ import { ApiClientError } from '../lib/api-client';
 
 export interface ConfirmCardProps {
   readonly message: ReactNode;
+  /** Opciones de la acción (por ejemplo una casilla), entre el mensaje y los botones. */
+  readonly extra?: ReactNode;
   readonly confirmLabel: string;
   readonly cancelLabel: string;
   readonly pending: boolean;
@@ -18,11 +20,12 @@ const errorText = (error: unknown): string | null => {
 };
 
 /** Confirmación de una acción que no se puede deshacer desde la pantalla; el motivo del rechazo se muestra aquí mismo. */
-export function ConfirmCard({ message, confirmLabel, cancelLabel, pending, error, onConfirm, onCancel }: ConfirmCardProps) {
+export function ConfirmCard({ message, extra, confirmLabel, cancelLabel, pending, error, onConfirm, onCancel }: ConfirmCardProps) {
   const failure = errorText(error);
   return (
     <Card className="mb-6 flex flex-col gap-3 border-[var(--color-danger)]">
       <p className="text-sm text-[var(--color-ink)]">{message}</p>
+      {extra}
       {failure ? (
         <p role="alert" className="text-sm text-[var(--color-danger)]">
           {failure}
