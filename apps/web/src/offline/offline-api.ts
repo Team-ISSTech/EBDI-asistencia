@@ -10,6 +10,8 @@ export interface OfflineApi {
   readonly online: boolean;
   readonly counts: OutboxCounts;
   readonly syncing: boolean;
+  /** Lo que se está viendo viene de la copia guardada en la tablet y puede no estar al día. */
+  readonly staleData: boolean;
   /** Guarda la captura en la tablet y, si hay conexión, la envía enseguida. Devuelve el UUID de la operación. */
   readonly enqueue: (input: CaptureInput) => Promise<string>;
   /** Envía lo pendiente ahora, sin esperar el plazo entre reintentos. */
@@ -17,6 +19,11 @@ export interface OfflineApi {
   readonly review: () => Promise<ReviewItem[]>;
   readonly discard: (operationId: string) => Promise<boolean>;
   /** Lo marcado en una jornada que aún no llega al servidor, para seguir mostrándolo. */
+  /**
+   * Consulta al servidor y guarda una copia cifrada; sin conexión devuelve la última copia. Un
+   * rechazo del servidor (incluida una sesión vencida) nunca se tapa con la copia.
+   */
+  readonly cached: <T>(name: string, load: () => Promise<T>) => Promise<T>;
   readonly pendingMarks: (journeyId: number) => Promise<ReadonlyMap<number, AttendanceStatus>>;
 }
 

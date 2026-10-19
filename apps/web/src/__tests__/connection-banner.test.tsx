@@ -9,6 +9,8 @@ const api = (overrides: Partial<OfflineApi> = {}): OfflineApi => ({
   online: true,
   counts: { pending: 0, review: 0, others: 0 },
   syncing: false,
+  staleData: false,
+  cached: (_name, load) => load(),
   enqueue: vi.fn(),
   syncNow: vi.fn().mockResolvedValue(null),
   review: vi.fn().mockResolvedValue([]),
@@ -70,6 +72,11 @@ describe('ConnectionBanner (RF-20 a RF-23)', () => {
   it('avisa de las capturas de otra persona en esta tablet, sin más datos', () => {
     show(api({ counts: { pending: 0, review: 0, others: 4 } }));
     expect(screen.getByRole('status')).toHaveTextContent('Hay 4 capturas de otra persona en esta tablet; se enviarán cuando inicie sesión.');
+  });
+
+  it('si lo que se ve viene de la copia guardada, lo avisa aunque haya conexión', () => {
+    show(api({ staleData: true }));
+    expect(screen.getByRole('status')).toHaveTextContent('Mostrando datos guardados en esta tablet; pueden no estar al día.');
   });
 
   it('en singular y plural', () => {

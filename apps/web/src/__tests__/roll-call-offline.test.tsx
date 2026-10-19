@@ -150,7 +150,7 @@ describe('pase de lista sin conexión (RF-20 a RF-23)', () => {
   it('"Marcar a todos presentes" no pisa lo que ya quedó guardado en la tablet', async () => {
     const user = userEvent.setup();
     mount();
-    await user.click(await screen.findByRole('button', { name: 'Falta injustificada' }).catch(() => within(screen.getAllByRole('row')[1] as HTMLElement).getByRole('button', { name: 'Falta injustificada' })));
+    await user.click(within(await rowOf('Infante 1 Prueba')).getByRole('button', { name: 'Falta injustificada' }));
     await user.click(screen.getByRole('button', { name: 'Guardar asistencia' }));
     await screen.findByText(/se guardó en esta tablet/);
     await user.click(screen.getByRole('button', { name: 'Marcar a todos presentes' }));

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiClientError } from '../lib/api-client';
-import { saveOrQueue, shouldQueue } from './save-or-queue';
+import { isConnectionFailure, saveOrQueue, shouldQueue } from './save-or-queue';
 
 describe('shouldQueue (RF-20, RF-23: no perder lo capturado)', () => {
   it.each([
@@ -24,6 +24,26 @@ describe('shouldQueue (RF-20, RF-23: no perder lo capturado)', () => {
     ['409', new ApiClientError(409, 'CONFLICTO', 'x')],
   ])('un rechazo definitivo del servidor no se guarda: %s', (_name, error) => {
     expect(shouldQueue(error)).toBe(false);
+  });
+});
+
+describe('isConnectionFailure (servir lo guardado en la tablet cuando no hay conexión)', () => {
+  it.each([
+    ['sin red', new TypeError('Failed to fetch')],
+    ['tiempo agotado', new DOMException('Aborted', 'AbortError')],
+    ['respuesta ilegible', new ApiClientError(200, 'RESPUESTA_INVALIDA', 'x')],
+    ['503', new ApiClientError(503, 'ERROR_INTERNO', 'x')],
+    ['429', new ApiClientError(429, 'DEMASIADAS_SOLICITUDES', 'x')],
+  ])('sí: %s', (_name, error) => {
+    expect(isConnectionFailure(error)).toBe(true);
+  });
+
+  it.each([
+    ['sesión vencida (401): no se sirven datos de quien ya no tiene sesión', new ApiClientError(401, 'NO_AUTENTICADO', 'x')],
+    ['sin permiso (403)', new ApiClientError(403, 'SIN_PERMISO', 'x')],
+    ['no existe (404)', new ApiClientError(404, 'NO_ENCONTRADO', 'x')],
+  ])('no: %s', (_name, error) => {
+    expect(isConnectionFailure(error)).toBe(false);
   });
 });
 

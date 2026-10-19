@@ -3,18 +3,22 @@ import type { AttendanceStatus, Shift } from '@sirai/domain';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOfflineOptional } from '../../offline/offline-api';
 import { saveOrQueue } from '../../offline/save-or-queue';
+import { withCache } from '../../offline/with-cache';
 import { closeJourney, fetchJourney, fetchRoster, markAttendance, openJourney } from './api';
 
 const journeyKey = (date: string, shift: Shift) => ['attendance', 'journey', date, shift] as const;
 const rosterKey = (journeyId: number) => ['attendance', 'roster', journeyId] as const;
 const pendingMarksKey = (journeyId: number) => ['offline', 'pending-marks', journeyId] as const;
 
+/** La jornada y la lista del día se guardan en la tablet al consultarlas con conexión, para abrirlas sin ella. */
 export function useJourney(date: string, shift: Shift) {
-  return useQuery({ queryKey: journeyKey(date, shift), queryFn: () => fetchJourney(date, shift), retry: false });
+  const offline = useOfflineOptional();
+  return useQuery({ queryKey: journeyKey(date, shift), queryFn: () => withCache(offline, `journey:${date}:${shift}`, () => fetchJourney(date, shift)), retry: false });
 }
 
 export function useRoster(journeyId: number) {
-  return useQuery({ queryKey: rosterKey(journeyId), queryFn: () => fetchRoster(journeyId) });
+  const offline = useOfflineOptional();
+  return useQuery({ queryKey: rosterKey(journeyId), queryFn: () => withCache(offline, `roster:${journeyId}`, () => fetchRoster(journeyId)) });
 }
 
 export function useOpenJourney(date: string, shift: Shift) {

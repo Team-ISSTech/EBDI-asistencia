@@ -11,9 +11,10 @@ interface Line {
 }
 
 /** Los avisos que corresponden al estado de la conexión y de la cola, en el orden en que conviene leerlos. */
-function linesFor({ online, counts, syncing, syncNow }: OfflineApi): Line[] {
+function linesFor({ online, counts, syncing, syncNow, staleData }: OfflineApi): Line[] {
   const lines: Line[] = [];
   if (!online) lines.push({ key: 'offline', content: 'Sin conexión. Lo que captures se guarda en esta tablet y se enviará solo cuando vuelva la conexión.' });
+  if (staleData) lines.push({ key: 'stale', content: 'Mostrando datos guardados en esta tablet; pueden no estar al día.' });
   if (syncing && counts.pending > 0) lines.push({ key: 'syncing', content: 'Enviando capturas…' });
   else if (counts.pending > 0) {
     lines.push({

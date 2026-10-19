@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiClientError } from '../lib/api-client';
 import { docenteSession, renderWithSession } from '../__tests__/test-utils';
 import { useOffline } from './offline-api';
 import { OfflineProvider } from './offline-context';
@@ -74,10 +76,10 @@ describe('OfflineProvider (RF-20 a RF-23)', () => {
     const { client } = mount();
     const invalidate = vi.spyOn(client, 'invalidateQueries');
     await user.click(screen.getByRole('button', { name: 'Encolar' }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const syncCalls = () => fetchMock.mock.calls.filter(([url]) => new URL(url as string).pathname === '/sincronizacion');
+    await waitFor(() => expect(syncCalls()).toHaveLength(1));
     await waitFor(() => expect(state()).toContain('pending=0'));
-    expect(new URL(fetchMock.mock.calls[0]?.[0] as string).pathname).toBe('/sincronizacion');
-    expect(invalidate).toHaveBeenCalled();
+    await waitFor(() => expect(invalidate).toHaveBeenCalled());
   });
 
   it('sin conexión guarda en la tablet y no intenta enviar; al volver la conexión lo envía solo', async () => {
@@ -162,5 +164,117 @@ describe('OfflineProvider (RF-20 a RF-23)', () => {
       spy.mockRestore();
     }
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('OfflineProvider: consultar sin conexión (RF-20)', () => {
+  let runtime: OfflineRuntime;
+
+  function CacheProbe({ name, load }: { readonly name: string; readonly load: () => Promise<unknown> }) {
+    const offline = useOffline();
+    const [text, setText] = useState('sin pedir');
+    return (
+      <div>
+        <p data-testid="cache-result">{text}</p>
+        <p data-testid="stale">{`stale=${offline.staleData}`}</p>
+        <button type="button" onClick={() => offline.cached(name, load).then((value) => setText(`ok ${JSON.stringify(value)}`), (error: unknown) => setText(`error ${error instanceof ApiClientError ? error.status : 'red'}`))}>
+          Pedir
+        </button>
+      </div>
+    );
+  }
+
+  const mountCache = (name: string, load: () => Promise<unknown>) =>
+    renderWithSession(
+      <OfflineProvider runtime={runtime} pollMs={60_000}>
+        <CacheProbe name={name} load={load} />
+      </OfflineProvider>,
+      docenteSession,
+      '/app/pase-de-lista',
+    );
+
+  beforeEach(() => {
+    runtime = createOfflineRuntime({ dbName: `ctx-cache-${counter++}` });
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('con conexión devuelve lo del servidor, lo guarda cifrado y no marca datos viejos', async () => {
+    const user = userEvent.setup();
+    mountCache('roster:3', () => Promise.resolve({ entries: ['Infante Uno'] }));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('ok {"entries":["Infante Uno"]}'));
+    expect(screen.getByTestId('stale')).toHaveTextContent('stale=false');
+    await waitFor(async () => expect((await runtime.cache.get(docenteSession.user.id, 'roster:3'))?.value).toEqual({ entries: ['Infante Uno'] }));
+  });
+
+  it('sin conexión devuelve lo último guardado y avisa que puede no estar al día', async () => {
+    await runtime.cache.put(docenteSession.user.id, 'roster:3', { entries: ['Infante Uno'] });
+    const user = userEvent.setup();
+    mountCache('roster:3', () => Promise.reject(new TypeError('Failed to fetch')));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('ok {"entries":["Infante Uno"]}'));
+    expect(screen.getByTestId('stale')).toHaveTextContent('stale=true');
+  });
+
+  it('al volver la conexión deja de marcar datos viejos', async () => {
+    await runtime.cache.put(docenteSession.user.id, 'roster:3', { v: 'viejo' });
+    const user = userEvent.setup();
+    let online = false;
+    mountCache('roster:3', () => (online ? Promise.resolve({ v: 'nuevo' }) : Promise.reject(new TypeError('Failed to fetch'))));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('stale')).toHaveTextContent('stale=true'));
+    online = true;
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('"nuevo"'));
+    expect(screen.getByTestId('stale')).toHaveTextContent('stale=false');
+  });
+
+  it('sin conexión y sin nada guardado, el error es el de la red', async () => {
+    const user = userEvent.setup();
+    mountCache('roster:9', () => Promise.reject(new TypeError('Failed to fetch')));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('error red'));
+  });
+
+  it('un rechazo del servidor (403) no se tapa con lo guardado', async () => {
+    await runtime.cache.put(docenteSession.user.id, 'roster:3', { v: 'viejo' });
+    const user = userEvent.setup();
+    mountCache('roster:3', () => Promise.reject(new ApiClientError(403, 'SIN_PERMISO', 'Sin permiso.')));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('error 403'));
+  });
+
+  it('una sesión vencida (401) no se tapa con lo guardado: no se muestran datos a quien ya no tiene sesión', async () => {
+    await runtime.cache.put(docenteSession.user.id, 'roster:3', { v: 'viejo' });
+    const user = userEvent.setup();
+    mountCache('roster:3', () => Promise.reject(new ApiClientError(401, 'NO_AUTENTICADO', 'x')));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('error 401'));
+  });
+
+  it('lo guardado por otra persona de la misma tablet no se ve', async () => {
+    await runtime.cache.put(999, 'roster:3', { v: 'de otra persona' });
+    const user = userEvent.setup();
+    mountCache('roster:3', () => Promise.reject(new TypeError('Failed to fetch')));
+    await user.click(screen.getByRole('button', { name: 'Pedir' }));
+    await waitFor(() => expect(screen.getByTestId('cache-result')).toHaveTextContent('error red'));
+  });
+
+  it('al arrancar depura lo guardado hace más de una semana', async () => {
+    await runtime.cache.put(docenteSession.user.id, 'viejo', 1);
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 8 * 86_400_000);
+    try {
+      renderWithSession(
+        <OfflineProvider runtime={runtime} pollMs={60_000}>
+          <Probe />
+        </OfflineProvider>,
+        docenteSession,
+        '/app/pase-de-lista',
+      );
+      await waitFor(async () => expect(await runtime.cache.get(docenteSession.user.id, 'viejo')).toBeNull());
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

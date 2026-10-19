@@ -1,11 +1,15 @@
 import type { CreateGuardianRequest, LinkGuardianRequest, UpdateGuardianLinkRequest, UpdateGuardianRequest } from '@sirai/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useOfflineOptional } from '../../offline/offline-api';
+import { withCache } from '../../offline/with-cache';
 import { createGuardian, fetchChildGuardians, fetchGuardianPhone, linkGuardian, unlinkGuardian, updateGuardian, updateGuardianLink } from './api';
 
 const guardiansKey = (childId: number) => ['children', childId, 'guardians'] as const;
 
+/** Los tutores (sin teléfonos) se guardan al abrirlos con conexión: hacen falta para registrar una llamada sin ella. */
 export function useChildGuardians(childId: number) {
-  return useQuery({ queryKey: guardiansKey(childId), queryFn: () => fetchChildGuardians(childId) });
+  const offline = useOfflineOptional();
+  return useQuery({ queryKey: guardiansKey(childId), queryFn: () => withCache(offline, `guardians:${childId}`, () => fetchChildGuardians(childId)) });
 }
 
 export interface AddGuardianInput {

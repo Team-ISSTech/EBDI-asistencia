@@ -31,6 +31,15 @@ export interface OutboxRow {
   readonly createdAt: number;
 }
 
+/** Lo consultado al servidor, para poder verlo sin conexión. Cifrado y por persona. */
+export interface CacheRow {
+  /** `${userId}:${nombre}`; la sesión usa `session`. */
+  readonly key: string;
+  readonly userId: number | null;
+  readonly sealed: Uint8Array;
+  readonly storedAt: number;
+}
+
 export interface KeyRow {
   readonly id: string;
   /** Llave AES-GCM no extraíble: su material no se puede leer desde JavaScript. */
@@ -41,6 +50,7 @@ export interface KeyRow {
 export class OfflineDb extends Dexie {
   readonly outbox!: Table<OutboxRow, string>;
   readonly keys!: Table<KeyRow, string>;
+  readonly cache!: Table<CacheRow, string>;
 
   constructor(name = 'sirai-offline') {
     super(name);
@@ -48,5 +58,7 @@ export class OfflineDb extends Dexie {
       outbox: 'operationId, userId, status, createdAt, [userId+status]',
       keys: 'id',
     });
+    // v2: lo consultado y la última sesión, para abrir la aplicación sin conexión.
+    this.version(2).stores({ cache: 'key, userId, storedAt' });
   }
 }

@@ -2,13 +2,16 @@ import type { RegisterContactRequest, RegisterMedicalReleaseRequest } from '@sir
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOfflineOptional } from '../../offline/offline-api';
 import { saveOrQueue } from '../../offline/save-or-queue';
+import { withCache } from '../../offline/with-cache';
 import { closeFollowUp, fetchContacts, fetchFollowUps, registerContact, registerRelease } from './api';
 
 const FOLLOW_UPS_KEY = ['follow-ups'] as const;
 const contactsKey = (followUpId: number) => ['follow-ups', followUpId, 'contacts'] as const;
 
+/** La bandeja se guarda en la tablet al consultarla con conexión, para abrirla sin ella. */
 export function useFollowUps() {
-  return useQuery({ queryKey: FOLLOW_UPS_KEY, queryFn: fetchFollowUps });
+  const offline = useOfflineOptional();
+  return useQuery({ queryKey: FOLLOW_UPS_KEY, queryFn: () => withCache(offline, 'follow-ups', fetchFollowUps) });
 }
 
 /** El historial trae notas descifradas: solo se pide si la sesión puede verlas. */

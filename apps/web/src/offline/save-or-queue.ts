@@ -10,8 +10,16 @@ const HTTP_UNAUTHORIZED = 401;
  * (datos inválidos, sin permiso, jornada cerrada…): eso se muestra y se corrige.
  */
 export function shouldQueue(error: unknown): boolean {
+  return isConnectionFailure(error) || (error instanceof ApiClientError && error.status === HTTP_UNAUTHORIZED);
+}
+
+/**
+ * No hubo forma de hablar con el servidor, o este falló: es el momento de servir lo que la
+ * tablet ya tiene. Una sesión vencida (401) no cuenta: no se muestran datos a quien ya no la tiene.
+ */
+export function isConnectionFailure(error: unknown): boolean {
   if (!(error instanceof ApiClientError) || error.code === 'RESPUESTA_INVALIDA') return true;
-  return error.status === HTTP_UNAUTHORIZED || isTransientFailure(error.status);
+  return isTransientFailure(error.status);
 }
 
 export type SaveResult<T> = { readonly queued: false; readonly value: T } | { readonly queued: true };

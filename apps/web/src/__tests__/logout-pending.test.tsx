@@ -9,6 +9,8 @@ const api = (overrides: Partial<OfflineApi> = {}): OfflineApi => ({
   online: true,
   counts: { pending: 0, review: 0, others: 0 },
   syncing: false,
+  staleData: false,
+  cached: (_name, load) => load(),
   enqueue: vi.fn(),
   syncNow: vi.fn().mockResolvedValue(null),
   review: vi.fn().mockResolvedValue([]),

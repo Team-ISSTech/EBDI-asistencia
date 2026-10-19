@@ -35,6 +35,8 @@ const api = (items: ReviewItem[], overrides: Partial<OfflineApi> = {}): OfflineA
   online: true,
   counts: { pending: 0, review: items.length, others: 0 },
   syncing: false,
+  staleData: false,
+  cached: (_name, load) => load(),
   enqueue: vi.fn(),
   syncNow: vi.fn().mockResolvedValue(null),
   review: vi.fn().mockResolvedValue(items),

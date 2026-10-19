@@ -1,15 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/use-session';
 import { type CaptureInput, OfflineContext, type OfflineApi } from './offline-api';
 import type { EnqueueInput, OutboxCounts } from './outbox';
 import { type OfflineRuntime, sharedOfflineRuntime } from './runtime';
+import { isConnectionFailure } from './save-or-queue';
 import type { FlushOutcome } from './sync-engine';
 import { useOnlineStatus } from './use-online-status';
 
 const DEFAULT_POLL_MS = 30_000;
 const NOTHING: OutboxCounts = { pending: 0, review: 0, others: 0 };
 const COUNTS_KEY = ['offline', 'counts'] as const;
+/** Lo consultado se conserva una semana: más viejo ya no sirve para pasar lista. */
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+const ignoreStorageFailure = (): void => undefined;
 
 export interface OfflineProviderProps {
   readonly children: ReactNode;
@@ -29,7 +34,8 @@ export function OfflineProvider({ children, runtime = sharedOfflineRuntime(), po
   const online = useOnlineStatus();
   const userId = session?.user.id ?? null;
   const estanciaId = session?.activeEstancia?.id ?? null;
-  const { outbox, engine } = runtime;
+  const { outbox, engine, cache } = runtime;
+  const [staleData, setStaleData] = useState(false);
 
   const counts = useQuery({
     queryKey: [...COUNTS_KEY, userId],
@@ -70,6 +76,28 @@ export function OfflineProvider({ children, runtime = sharedOfflineRuntime(), po
     };
   }, [flush, pollMs]);
 
+  useEffect(() => {
+    void cache.purgeOlderThan(CACHE_MAX_AGE_MS).catch(ignoreStorageFailure);
+  }, [cache]);
+
+  const cached = useCallback(
+    async <T,>(name: string, load: () => Promise<T>): Promise<T> => {
+      if (userId === null) return load();
+      try {
+        const value = await load();
+        setStaleData(false);
+        void cache.put(userId, name, value).catch(ignoreStorageFailure);
+        return value;
+      } catch (error) {
+        const copy = isConnectionFailure(error) ? await cache.get<T>(userId, name).catch(() => null) : null;
+        if (!copy) throw error;
+        setStaleData(true);
+        return copy.value;
+      }
+    },
+    [cache, userId],
+  );
+
   const enqueue = useCallback(
     async (input: CaptureInput): Promise<string> => {
       if (userId === null || estanciaId === null) throw new Error('No hay sesión con estancia activa para guardar la captura.');
@@ -86,6 +114,8 @@ export function OfflineProvider({ children, runtime = sharedOfflineRuntime(), po
       online,
       counts: counts.data ?? NOTHING,
       syncing: sync.isPending,
+      staleData,
+      cached,
       enqueue,
       syncNow: () => flushNow(true),
       review: async () => (userId === null ? [] : outbox.review(userId)),
@@ -96,7 +126,7 @@ export function OfflineProvider({ children, runtime = sharedOfflineRuntime(), po
         return removed;
       },
     }),
-    [counts.data, enqueue, flushNow, online, outbox, refresh, sync.isPending, userId],
+    [cached, counts.data, enqueue, flushNow, online, outbox, refresh, staleData, sync.isPending, userId],
   );
 
   return <OfflineContext.Provider value={api}>{children}</OfflineContext.Provider>;

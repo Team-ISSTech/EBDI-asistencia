@@ -11,6 +11,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    // Las pruebas de pantallas completas (con IndexedDB) tardan más cuando corre toda la suite a la vez.
+    testTimeout: 20_000,
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
