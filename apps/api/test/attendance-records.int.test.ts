@@ -167,4 +167,18 @@ describe.skipIf(!TEST_DATABASE_URL)('pase de lista (integración)', () => {
       ),
     ).rejects.toThrow();
   });
+
+  it('guardar el grupo completo usa una sentencia por tabla, no una por infante (RNF-08)', async () => {
+    const other = await call('post', '/asistencia/jornadas', DIRECTORA, { date: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10), shift: 'MATUTINO' });
+    const cookie = await cookieFor(DOCENTE);
+    const inserts = async (): Promise<number> => {
+      const [rows] = (await connection.db.execute(sql`SHOW GLOBAL STATUS LIKE 'Com_insert'`)) as unknown as [{ Value: string }[]];
+      return Number(rows[0]?.Value);
+    };
+    const before = await inserts();
+    const saved = await request(app.getHttpServer()).post(`/asistencia/jornadas/${other.body.id}/registros`).set('Cookie', cookie).send(marks(...enrollmentIds.map((id): [number, string] => [id, 'PRESENTE'])));
+    expect(saved.body).toEqual({ saved: 3, unchanged: 0 });
+    // Un INSERT para los registros y uno para la bitácora; con margen de uno por la instrumentación del servidor.
+    expect((await inserts()) - before).toBeLessThanOrEqual(3);
+  });
 });

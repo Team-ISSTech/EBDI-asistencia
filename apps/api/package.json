@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "lint": "eslint src test --max-warnings 0",
+    "lint": "eslint src test load --max-warnings 0",
+    "load:seed": "tsx load/seed-load.ts",
+    "load:run": "tsx load/run-load.ts",
     "typecheck": "tsc --noEmit --pretty false",
     "test": "vitest run --coverage"
   },

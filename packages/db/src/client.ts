@@ -2,6 +2,8 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from './schema/index.js';
 
+const DEFAULT_POOL_SIZE = 10;
+
 export type Db = ReturnType<typeof createDbFromPool>;
 
 const createDbFromPool = (pool: mysql.Pool) => drizzle(pool, { schema, mode: 'default' });
@@ -14,12 +16,12 @@ export interface DbConnection {
 
 /**
  * Crea un pool `mysql2` y el cliente Drizzle sobre él. `multipleStatements`
- * queda desactivado: las migraciones usan su propia conexión.
+ * queda desactivado: las migraciones usan su propia conexión. `poolSize` fija las conexiones simultáneas.
  */
-export function connect(databaseUrl: string): DbConnection {
+export function connect(databaseUrl: string, options: { readonly poolSize?: number } = {}): DbConnection {
   const pool = mysql.createPool({
     uri: databaseUrl,
-    connectionLimit: 10,
+    connectionLimit: options.poolSize ?? DEFAULT_POOL_SIZE,
     timezone: 'Z',
     dateStrings: false,
   });

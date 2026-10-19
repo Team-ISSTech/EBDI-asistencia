@@ -169,3 +169,13 @@ original del equipo (`0000`) no se modifica.
 - **Reserva contra doble envío.** Antes de enviar, el aviso se reserva 5 minutos con un UPDATE
   condicional, así varias instancias de la API, o un proceso que cae a media vuelta, no lo mandan dos veces.
 - **Reintentos:** hasta 3 intentos con espera de 5 y 10 minutos; después queda FALLIDO y se audita.
+
+## Rendimiento con 212 estancias (RNF-08)
+
+- **Una subconsulta por fila no escala.** El candado médico de la lista se calculaba con un `EXISTS` correlacionado que recorría
+  todos los seguimientos abiertos de la red por cada infante. Ahora se consulta una vez por lista, partiendo de los infantes
+  pedidos. La regla (el candado sigue al infante, no a la inscripción) no cambió.
+- **Una sentencia por tabla en los lotes.** Guardar el pase de lista inserta los registros y la bitácora con un INSERT multifila
+  cada uno. `AuditService.recordMany` es la forma de auditar lotes.
+- **Pool configurable** (`DB_POOL_SIZE`, 25). La API es un solo proceso de Node; escalar es añadir instancias, cuidando `max_connections`.
+- **La bitácora de lecturas sensibles se queda síncrona**: cada una se confirma antes de responder (RNF-02).

@@ -75,12 +75,13 @@ class FakeRecords implements AttendanceRecordsRepository {
   async applyChanges(_journeyId: number, _userId: number, now: Date, changes: readonly MarkChange[], hook: MarkChangeHook): Promise<void> {
     this.appliedBatches.push([...changes]);
     this.appliedAt.push(now);
-    for (const change of changes) {
+    const applied = changes.map((change) => {
       const current = this.marks.get(change.enrollmentId);
       const id = current?.id ?? this.nextId++;
       this.marks.set(change.enrollmentId, { id, status: change.status, clientId: current?.clientId ?? change.clientId });
-      await hook({} as Parameters<MarkChangeHook>[0], change, id);
-    }
+      return { change, recordId: id };
+    });
+    await hook({} as Parameters<MarkChangeHook>[0], applied);
   }
 }
 
@@ -88,6 +89,10 @@ class RecordingAudit {
   entries: AuditEntry[] = [];
   record(entry: AuditEntry): Promise<void> {
     this.entries.push(entry);
+    return Promise.resolve();
+  }
+  recordMany(entries: readonly AuditEntry[]): Promise<void> {
+    this.entries.push(...entries);
     return Promise.resolve();
   }
 }

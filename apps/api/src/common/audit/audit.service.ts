@@ -104,7 +104,17 @@ export class AuditService {
   ) {}
 
   async record(entry: AuditEntry, executor: AuditExecutor = this.db): Promise<void> {
-    await executor.insert(schema.auditoria).values({
+    await executor.insert(schema.auditoria).values(this.row(entry));
+  }
+
+  /** Varias entradas con una sola sentencia: un pase de lista de 40 infantes no debe costar 40 viajes a la base. */
+  async recordMany(entries: readonly AuditEntry[], executor: AuditExecutor = this.db): Promise<void> {
+    if (entries.length === 0) return;
+    await executor.insert(schema.auditoria).values(entries.map((entry) => this.row(entry)));
+  }
+
+  private row(entry: AuditEntry) {
+    return {
       userId: entry.userId,
       systemId: entry.systemId ?? null,
       roleCode: entry.roleCode,
@@ -117,6 +127,6 @@ export class AuditService {
       userAgent: entry.request.userAgent,
       requestId: entry.request.requestId,
       occurredAt: new Date(),
-    });
+    };
   }
 }

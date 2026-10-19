@@ -13,7 +13,7 @@ const DB_CONNECTION = Symbol('DB_CONNECTION');
     {
       provide: DB_CONNECTION,
       inject: [API_ENV],
-      useFactory: (env: ApiEnv) => connect(env.DATABASE_URL),
+      useFactory: (env: ApiEnv) => connect(env.DATABASE_URL, { poolSize: env.DB_POOL_SIZE }),
     },
     {
       provide: DB,
