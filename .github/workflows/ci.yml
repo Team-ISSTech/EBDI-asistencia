@@ -51,6 +51,8 @@ jobs:
         run: |
           mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS sirai_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON sirai_test.* TO 'sirai'@'%'; SET GLOBAL log_bin_trust_function_creators = 1; FLUSH PRIVILEGES;"
       - run: pnpm install --frozen-lockfile
+      # RNF-06: una dependencia con vulnerabilidad alta o crítica conocida rompe la integración.
+      - run: pnpm audit --audit-level=high
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build

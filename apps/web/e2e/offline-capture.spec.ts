@@ -103,8 +103,12 @@ test('pasar lista sin conexión: se guarda cifrado en la tablet, sobrevive a rec
   // El servidor tiene lo capturado.
   const journey = await page.request.get(`${API_URL}/asistencia/jornadas/activa?date=${new Date().toLocaleDateString('en-CA')}&shift=MATUTINO`);
   const { id } = (await journey.json()) as { id: number };
-  const roster = await page.request.get(`${API_URL}/asistencia/jornadas/${id}/lista`);
-  const entries = ((await roster.json()) as { entries: { childName: string; status: string | null }[] }).entries.filter((entry) => CHILD_NAMES.some((name) => entry.childName.startsWith(name)));
-  expect(entries).toHaveLength(CHILD_NAMES.length);
-  expect(entries.every((entry) => entry.status === 'PRESENTE')).toBe(true);
+  // Mientras se envía, el aviso de pendientes ya no está pero el servidor aún no responde: se espera a verlo.
+  await expect
+    .poll(async () => {
+      const response = await page.request.get(`${API_URL}/asistencia/jornadas/${id}/lista`);
+      const { entries } = (await response.json()) as { entries: { childName: string; status: string | null }[] };
+      return entries.filter((entry) => CHILD_NAMES.some((name) => entry.childName.startsWith(name))).map((entry) => entry.status);
+    })
+    .toEqual(CHILD_NAMES.map(() => 'PRESENTE'));
 });

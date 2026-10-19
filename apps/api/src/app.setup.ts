@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import type { Express } from 'express';
 import { API_ENV } from './common/config/config.module';
 import { requestIdMiddleware } from './common/http/request-id.middleware';
+import { securityHeadersMiddleware } from './common/http/security-headers.middleware';
 
 /** Middleware y CORS compartidos por `main.ts` y las pruebas de integración. */
 export function configureApp(app: INestApplication): void {
@@ -15,6 +16,7 @@ export function configureApp(app: INestApplication): void {
   }
   app.use(cookieParser());
   app.use(requestIdMiddleware);
+  app.use(securityHeadersMiddleware({ hsts: env.COOKIE_SECURE }));
   app.enableCors({ origin: env.WEB_ORIGIN, credentials: true });
   app.enableShutdownHooks();
 }
