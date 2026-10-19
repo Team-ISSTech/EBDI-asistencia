@@ -30,17 +30,17 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
 
   it('aplica todas las migraciones una sola vez', async () => {
     const first = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
-    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql', '0012_permisos_catalogo.sql', '0013_borrado_logico_vinculos.sql', '0014_cambio_contrasena.sql', '0015_sistemas_integracion.sql']);
+    expect(first.applied).toEqual(['0000_esquema_equipo.sql', '0001_sesiones.sql', '0002_auditoria_inmutable.sql', '0003_ajustes_catalogos.sql', '0004_checks_catalogos.sql', '0005_permisos_padron.sql', '0006_checks_consentimientos.sql', '0007_checks_asistencia.sql', '0008_checks_seguimientos.sql', '0009_checks_contactos.sql', '0010_expedientes.sql', '0011_sincronizacion.sql', '0012_permisos_catalogo.sql', '0013_borrado_logico_vinculos.sql', '0014_cambio_contrasena.sql', '0015_sistemas_integracion.sql', '0016_retencion_ciclos.sql']);
     const second = await applyMigrations(TEST_DATABASE_URL!, SQL_DIR);
     expect(second.applied).toEqual([]);
-    expect(second.skipped).toHaveLength(16);
+    expect(second.skipped).toHaveLength(17);
   });
 
   it('deja los catálogos de roles y permisos sembrados por el SQL del equipo', async () => {
     const roleRows = await connection.db.select().from(roles);
     const permissionRows = await connection.db.select().from(permisos);
     expect(roleRows).toHaveLength(7);
-    expect(permissionRows).toHaveLength(17);
+    expect(permissionRows).toHaveLength(18);
   });
 
   it('sincroniza rol_permiso con la matriz y es idempotente', async () => {
@@ -138,6 +138,23 @@ describe.skipIf(!TEST_DATABASE_URL)('migraciones y semilla (integración)', () =
     // Se limpian para no alterar el conteo de usuarios que verifica la prueba de la semilla.
     await connection.db.execute(sql`DELETE FROM sistemas_integracion WHERE client_id IN (${'e'.repeat(32)}, ${'f'.repeat(32)})`);
     await connection.db.execute(sql`DELETE FROM usuarios WHERE correo = 'creador-sistemas@sirai.test'`);
+  });
+
+  it('solo puede haber un ciclo escolar activo, y solo un ciclo archivado se depura (RNF-05)', async () => {
+    const year = (code: string, status: string, archivedAt: string | null, purgedAt: string | null) =>
+      connection.db.execute(
+        sql`INSERT INTO ciclos_escolares (codigo, fecha_inicio, fecha_fin, estado, archivado_at, depurado_at) VALUES (${code}, '2030-08-01', '2031-07-01', ${status}, ${archivedAt}, ${purgedAt})`,
+      );
+    // Ya hay un ciclo activo de las pruebas anteriores; con o sin él, un segundo activo debe rechazarse.
+    const [active] = (await connection.db.execute(sql`SELECT COUNT(*) AS n FROM ciclos_escolares WHERE estado = 'ACTIVO'`)) as unknown as [{ n: number }[]];
+    if (Number(active[0]?.n) === 0) await expect(year('RET-A', 'ACTIVO', null, null)).resolves.toBeDefined();
+    await expect(year('RET-B', 'ACTIVO', null, null)).rejects.toThrow();
+    await expect(year('RET-C', 'ACTIVO', null, '2031-01-01 00:00:00')).rejects.toThrow();
+    await expect(year('RET-D', 'ARCHIVADO', null, '2031-01-01 00:00:00')).rejects.toThrow();
+    await expect(year('RET-E', 'ARCHIVADO', '2031-08-01 00:00:00', '2031-01-01 00:00:00')).rejects.toThrow();
+    await expect(year('RET-F', 'ARCHIVADO', '2031-08-01 00:00:00', '2036-08-01 00:00:00')).resolves.toBeDefined();
+    await expect(year('RET-G', 'ARCHIVADO', '2031-08-01 00:00:00', null)).resolves.toBeDefined();
+    await connection.db.execute(sql`DELETE FROM ciclos_escolares WHERE codigo LIKE 'RET-%'`);
   });
 
   it('el esquema Drizzle de infantes y tutores coincide con las tablas reales', async () => {

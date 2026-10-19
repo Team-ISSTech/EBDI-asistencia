@@ -112,3 +112,21 @@ original del equipo (`0000`) no se modifica.
 - **Límite de peticiones** por sistema y minuto en la memoria de cada réplica de la
   API (`INTEGRATION_RATE_LIMIT_PER_MINUTE`); con varias réplicas el tope real es
   el límite por el número de réplicas.
+
+## Retención por ciclo escolar (RNF-05)
+
+- **Archivar = solo lectura.** Abrir el ciclo nuevo archiva el actual en la misma
+  transacción. Solo se puede si todo lo suyo está cerrado, así que lo ya cerrado
+  no se vuelve a abrir; el único camino de escritura que quedaba, una captura sin
+  conexión tardía (S-20), se rechaza si el ciclo de la jornada está archivado.
+- **Un solo ciclo activo**, garantizado por la base (columna generada con índice
+  único, migración 0016): el alta de infantes y de jornadas usa «el» ciclo activo.
+- **Depurar = vaciar, no borrar.** Choca con RNF-04 (nunca `DELETE`): la depuración
+  pone en `NULL` las columnas cifradas sensibles de los seguimientos del ciclo
+  (teléfono y notas de los contactos, observaciones de las altas médicas) y marca
+  el ciclo con quién y cuándo. Las filas, los conteos y la bitácora se conservan.
+- **Condiciones de la depuración:** ciclo archivado, 5 años cumplidos
+  (`RETENTION_YEARS` en `packages/domain`), sin depurar antes, acción aparte del
+  administrador central y escribiendo la clave del ciclo. Nunca es automática.
+- **Fuera de alcance:** los infantes y los tutores no pertenecen a un ciclo y no se
+  depuran por esta vía; la bitácora no se depura.

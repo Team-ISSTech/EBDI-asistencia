@@ -161,3 +161,18 @@ export type {
   SystemListResponse,
   SystemView,
 } from './integration/system.js';
+export {
+  SCHOOL_YEAR_STATUSES,
+  openSchoolYearRequestSchema,
+  purgeSchoolYearRequestSchema,
+  purgeSchoolYearResponseSchema,
+  schoolYearListResponseSchema,
+  schoolYearSchema,
+} from './school-years/school-year.js';
+export type {
+  OpenSchoolYearRequest,
+  PurgeSchoolYearRequest,
+  PurgeSchoolYearResponse,
+  SchoolYearListResponse,
+  SchoolYearView,
+} from './school-years/school-year.js';

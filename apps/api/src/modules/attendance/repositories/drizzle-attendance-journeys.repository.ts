@@ -18,8 +18,13 @@ const requireShift = (shift: string): Shift => {
   if (!isShift(shift)) throw new Error(`Turno de jornada no reconocido: ${shift}`);
   return shift;
 };
-/** El ciclo escolar es de la base (retención); la jornada del dominio no lo expone. */
-const toRecord = ({ schoolYearId: _schoolYearId, ...row }: Row): AttendanceJourneyRecord => ({ ...row, shift: requireShift(row.shift), status: requireStatus(row.status) });
+/** El ciclo escolar es de la base (retención); del dominio solo importa si ya está archivado. */
+const toRecord = ({ journey: { schoolYearId: _schoolYearId, ...row }, yearStatus }: { journey: Row; yearStatus: string }): AttendanceJourneyRecord => ({
+  ...row,
+  shift: requireShift(row.shift),
+  status: requireStatus(row.status),
+  schoolYearArchived: yearStatus === 'ARCHIVADO',
+});
 const driverCode = (error: unknown): string | null => {
   if (typeof error !== 'object' || error === null) return null;
   const { code, cause } = error as { code?: unknown; cause?: unknown };
@@ -30,13 +35,20 @@ const driverCode = (error: unknown): string | null => {
 export class DrizzleAttendanceJourneysRepository implements AttendanceJourneysRepository {
   constructor(@Inject(DB) private readonly db: Db) {}
 
+  private withYear() {
+    return this.db
+      .select({ journey: jornadasAsistencia, yearStatus: ciclosEscolares.status })
+      .from(jornadasAsistencia)
+      .innerJoin(ciclosEscolares, eq(ciclosEscolares.id, jornadasAsistencia.schoolYearId));
+  }
+
   async findById(id: number, estanciaId: number): Promise<AttendanceJourneyRecord | null> {
-    const [row] = await this.db.select().from(jornadasAsistencia).where(and(eq(jornadasAsistencia.id, id), eq(jornadasAsistencia.estanciaId, estanciaId)));
+    const [row] = await this.withYear().where(and(eq(jornadasAsistencia.id, id), eq(jornadasAsistencia.estanciaId, estanciaId)));
     return row ? toRecord(row) : null;
   }
 
   async findByKey(estanciaId: number, date: string, shift: Shift): Promise<AttendanceJourneyRecord | null> {
-    const [row] = await this.db.select().from(jornadasAsistencia).where(and(eq(jornadasAsistencia.estanciaId, estanciaId), eq(jornadasAsistencia.date, date), eq(jornadasAsistencia.shift, shift)));
+    const [row] = await this.withYear().where(and(eq(jornadasAsistencia.estanciaId, estanciaId), eq(jornadasAsistencia.date, date), eq(jornadasAsistencia.shift, shift)));
     return row ? toRecord(row) : null;
   }
 

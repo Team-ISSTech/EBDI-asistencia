@@ -27,6 +27,7 @@ const journey = (overrides: Partial<AttendanceJourneyRecord> = {}): AttendanceJo
   openedBy: 5,
   closedAt: null,
   closedBy: null,
+  schoolYearArchived: false,
   ...overrides,
 });
 
@@ -251,6 +252,13 @@ describe('AttendanceRecordsService', () => {
     it('acepta captura tardía en una jornada que se cerró después de capturar (sin pérdida de datos)', async () => {
       journeys.rows.set(1, journey({ status: 'CERRADA', closedAt: new Date('2026-10-15T13:45:00Z'), closedBy: 5 }));
       await expect(partial(batch([1, 'PRESENTE']), CAPTURED)).resolves.toMatchObject({ saved: 1 });
+    });
+
+    it('un ciclo archivado es de solo lectura: ni una captura anterior al cierre de la jornada se acepta (RNF-05)', async () => {
+      journeys.rows.set(1, journey({ status: 'CERRADA', closedAt: new Date('2026-10-15T13:45:00Z'), closedBy: 5, schoolYearArchived: true }));
+      await expect(partial(batch([1, 'PRESENTE']), CAPTURED)).rejects.toMatchObject({ code: 'CONFLICTO', message: expect.stringContaining('archivado') as string });
+      expect(records.appliedBatches).toHaveLength(0);
+      expect(audit.entries).toHaveLength(0);
     });
 
     it('rechaza toda la captura si se hizo después de que la jornada se cerró', async () => {
