@@ -17,7 +17,9 @@ export interface FollowUpsRepository {
   findContactOperation(operationId: string): Promise<number | null>;
   /** Teléfono cifrado del tutor si está vinculado al infante; null si no lo está. */
   findGuardianPhone(childId: number, guardianId: number): Promise<{ readonly phoneEncrypted: Buffer | null } | null>;
-  /** Inserta el intento, actualiza el ticket y ejecuta `hook`, en una sola transacción. Lanza CONFLICTO si el intento ya existe. */
+  /** Contactos vigentes de emergencia del infante (tutores vinculados y activos marcados como tales). */
+  findEmergencyGuardianIds(childId: number): Promise<number[]>;
+  /** Inserta el intento, actualiza el ticket, deja los avisos de `contact.emergencyGuardianIds` y ejecuta `hook`, en una sola transacción. Lanza CONFLICTO si el intento ya existe. */
   registerContact(
     followUpId: number,
     contact: NewContact,

@@ -26,6 +26,7 @@ export class FakeRepo implements FollowUpsRepository {
   tickets = new Map<number, StoredTicket>();
   contacts = new Map<number, Array<ContactRow & NewContact & { followUpId: number }>>();
   linked = new Map<string, Buffer | null>();
+  emergencyGuardians: number[] = [];
   releases = new Map<number, NewRelease>();
   closedAt = new Map<number, Date>();
   nextId = 1;
@@ -60,6 +61,9 @@ export class FakeRepo implements FollowUpsRepository {
   findGuardianPhone(childId: number, guardianId: number): Promise<{ phoneEncrypted: Buffer | null } | null> {
     const key = `${childId}:${guardianId}`;
     return Promise.resolve(this.linked.has(key) ? { phoneEncrypted: this.linked.get(key) ?? null } : null);
+  }
+  findEmergencyGuardianIds(): Promise<number[]> {
+    return Promise.resolve(this.emergencyGuardians);
   }
   async registerContact(
     followUpId: number,

@@ -51,6 +51,8 @@ export interface NewContact {
   readonly nextAttemptAt: Date | null;
   /** UUID de la operación sin conexión que lo creó; nulo si se registró en línea. */
   readonly operationId: string | null;
+  /** RF-27: contactos de emergencia a los que se deja un aviso pendiente junto con este intento. */
+  readonly emergencyGuardianIds: readonly number[];
 }
 
 export interface TicketChange {

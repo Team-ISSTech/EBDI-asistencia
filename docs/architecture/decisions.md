@@ -154,3 +154,18 @@ original del equipo (`0000`) no se modifica.
   'prompt'` una versión nueva espera a que se cierren las pestañas, para no recargar a media captura.
 - **Verificación en navegador real** con Playwright (`docs/operations/pruebas-sin-conexion.md`);
   no corre en CI porque necesita la pila completa.
+
+## Avisos a contactos de emergencia por WhatsApp (RF-27)
+
+- **Bandeja de salida en la base de datos.** El segundo intento fallido deja un aviso pendiente por
+  cada contacto de emergencia, en la misma transacción que el intento y su auditoría. Un proceso
+  aparte los envía. Así un fallo de WhatsApp nunca pierde el intento de contacto ni el aviso, y la
+  restricción única (seguimiento, tutor) impide avisar dos veces al mismo contacto.
+- **El aviso no guarda texto ni teléfono.** El texto es fijo (`EMERGENCY_NOTICE_TEXT`) y el número se
+  lee cifrado del tutor al enviar; ni la bitácora ni los registros del servidor lo contienen. De un
+  error de Meta solo se conserva el código, porque su mensaje puede repetir el número.
+- **Canal intercambiable.** `MessageChannel` aísla a WhatsApp Cloud API. Sin cuenta configurada el canal
+  está apagado y la cola no se toca; los avisos esperan en la base.
+- **Reserva contra doble envío.** Antes de enviar, el aviso se reserva 5 minutos con un UPDATE
+  condicional, así varias instancias de la API, o un proceso que cae a media vuelta, no lo mandan dos veces.
+- **Reintentos:** hasta 3 intentos con espera de 5 y 10 minutos; después queda FALLIDO y se audita.

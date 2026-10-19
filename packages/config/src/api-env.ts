@@ -13,6 +13,13 @@ const DEFAULT_INTEGRATION_TOKEN_MINUTES = 15;
 const DEFAULT_INTEGRATION_RATE_LIMIT_PER_MINUTE = 60;
 const MIN_TOKEN_SECRET_LENGTH = 32;
 const DEFAULT_FOLLOW_UP_JOB_SECONDS = 60;
+const DEFAULT_EMERGENCY_NOTICE_JOB_SECONDS = 60;
+const DEFAULT_WHATSAPP_TEMPLATE = 'aviso_urgente_sirai';
+const DEFAULT_WHATSAPP_LANGUAGE = 'es_MX';
+const DEFAULT_WHATSAPP_API_VERSION = 'v21.0';
+
+/** Una variable vacía (`VAR=` en .env o `${VAR:-}` en compose) significa «sin definir». */
+const blankAsUndefined = (value: unknown): unknown => (value === '' ? undefined : value);
 /** Llave pública de .env.example y CI; válida solo fuera de producción. */
 export const EXAMPLE_DATA_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
@@ -50,6 +57,15 @@ export const apiEnvSchema = z.object({
     .regex(/^[0-9a-f]{64}$/i, { message: 'Debe ser 32 bytes en hexadecimal (64 caracteres)' }),
   /** Cada cuántos segundos la API genera los tickets de ausencia vencidos; 0 apaga el proceso. */
   FOLLOW_UP_JOB_SECONDS: z.coerce.number().int().nonnegative().default(DEFAULT_FOLLOW_UP_JOB_SECONDS),
+  /** Cada cuántos segundos la API envía los avisos de emergencia pendientes (RF-27); 0 apaga el proceso. */
+  EMERGENCY_NOTICE_JOB_SECONDS: z.coerce.number().int().nonnegative().default(DEFAULT_EMERGENCY_NOTICE_JOB_SECONDS),
+  /** Cuenta de WhatsApp Business (Cloud API) para avisar a los contactos de emergencia. Sin ella no se envía nada. */
+  WHATSAPP_PHONE_NUMBER_ID: z.preprocess(blankAsUndefined, z.string().trim().min(1).optional()),
+  WHATSAPP_ACCESS_TOKEN: z.preprocess(blankAsUndefined, z.string().trim().min(1).optional()),
+  /** Plantilla aprobada por Meta con el texto del aviso (sin variables). */
+  WHATSAPP_TEMPLATE_NAME: z.preprocess(blankAsUndefined, z.string().trim().min(1).default(DEFAULT_WHATSAPP_TEMPLATE)),
+  WHATSAPP_TEMPLATE_LANGUAGE: z.preprocess(blankAsUndefined, z.string().trim().min(1).default(DEFAULT_WHATSAPP_LANGUAGE)),
+  WHATSAPP_API_VERSION: z.preprocess(blankAsUndefined, z.string().trim().min(1).default(DEFAULT_WHATSAPP_API_VERSION)),
   /**
    * Versión del aviso de privacidad vigente. El servidor la guarda como
    * evidencia en cada consentimiento; el cliente nunca la elige. La confirma
@@ -90,6 +106,14 @@ export const apiEnvSchema = z.object({
   .refine((env) => env.API_TOKEN_SECRET === undefined || env.API_TOKEN_SECRET.toLowerCase() !== env.DATA_ENCRYPTION_KEY.toLowerCase(), {
     path: ['API_TOKEN_SECRET'],
     message: 'API_TOKEN_SECRET no puede ser igual a DATA_ENCRYPTION_KEY',
+  })
+  .refine((env) => (env.WHATSAPP_PHONE_NUMBER_ID === undefined) === (env.WHATSAPP_ACCESS_TOKEN === undefined), {
+    path: ['WHATSAPP_ACCESS_TOKEN'],
+    message: 'WHATSAPP_PHONE_NUMBER_ID y WHATSAPP_ACCESS_TOKEN se definen juntas o ninguna (y WHATSAPP_PHONE_NUMBER_ID debe acompañar al token)',
+  })
+  .refine((env) => env.WHATSAPP_ACCESS_TOKEN === undefined || env.WHATSAPP_ACCESS_TOKEN.toLowerCase() !== env.DATA_ENCRYPTION_KEY.toLowerCase(), {
+    path: ['WHATSAPP_ACCESS_TOKEN'],
+    message: 'WHATSAPP_ACCESS_TOKEN no puede ser igual a DATA_ENCRYPTION_KEY',
   })
   .refine((env) => env.SESSION_MAX_HOURS >= env.SESSION_TTL_HOURS, {
     path: ['SESSION_MAX_HOURS'],
