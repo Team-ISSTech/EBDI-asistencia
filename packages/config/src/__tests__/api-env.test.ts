@@ -122,4 +122,32 @@ describe('parseApiEnv', () => {
     expect(parseApiEnv({ ...minimal, FOLLOW_UP_JOB_SECONDS: '0' }).FOLLOW_UP_JOB_SECONDS).toBe(0);
     expect(() => parseApiEnv({ ...minimal, FOLLOW_UP_JOB_SECONDS: '-5' })).toThrow(/FOLLOW_UP_JOB_SECONDS/);
   });
+
+  describe('avisos por WhatsApp (RF-27)', () => {
+    const whatsapp = { WHATSAPP_PHONE_NUMBER_ID: '123456', WHATSAPP_ACCESS_TOKEN: 'token-de-prueba' };
+
+    it('sin cuenta el canal queda apagado y el proceso corre cada minuto', () => {
+      const env = parseApiEnv(minimal);
+      expect(env.WHATSAPP_PHONE_NUMBER_ID).toBeUndefined();
+      expect(env.WHATSAPP_ACCESS_TOKEN).toBeUndefined();
+      expect(env.WHATSAPP_TEMPLATE_NAME).toBe('aviso_urgente_sirai');
+      expect(env.WHATSAPP_TEMPLATE_LANGUAGE).toBe('es_MX');
+      expect(env.EMERGENCY_NOTICE_JOB_SECONDS).toBe(60);
+    });
+
+    it('variables vacías cuentan como sin definir', () => {
+      const env = parseApiEnv({ ...minimal, WHATSAPP_PHONE_NUMBER_ID: '', WHATSAPP_ACCESS_TOKEN: '' });
+      expect(env.WHATSAPP_ACCESS_TOKEN).toBeUndefined();
+    });
+
+    it('la cuenta se configura completa: número y token van juntos', () => {
+      expect(parseApiEnv({ ...minimal, ...whatsapp }).WHATSAPP_PHONE_NUMBER_ID).toBe('123456');
+      expect(() => parseApiEnv({ ...minimal, WHATSAPP_PHONE_NUMBER_ID: '123456' })).toThrow(/WHATSAPP_ACCESS_TOKEN/);
+      expect(() => parseApiEnv({ ...minimal, WHATSAPP_ACCESS_TOKEN: 'token-de-prueba' })).toThrow(/WHATSAPP_PHONE_NUMBER_ID/);
+    });
+
+    it('el token no puede ser la llave de cifrado', () => {
+      expect(() => parseApiEnv({ ...minimal, WHATSAPP_PHONE_NUMBER_ID: '1', WHATSAPP_ACCESS_TOKEN: minimal.DATA_ENCRYPTION_KEY })).toThrow(/WHATSAPP_ACCESS_TOKEN/);
+    });
+  });
 });

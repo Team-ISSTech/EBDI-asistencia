@@ -89,6 +89,7 @@ export class FollowUpsService {
     if (!outcome.ok) throw new ApiError('DATOS_INVALIDOS', 'El contacto no tiene los datos que exige su resultado.');
     const { state } = outcome;
     const attemptNumber = current.attemptCount + 1;
+    const emergencyGuardianIds = await this.emergencyRecipients(state.emergencyAlert, current.childId);
     await this.followUps.registerContact(
       followUpId,
       {
@@ -99,6 +100,7 @@ export class FollowUpsService {
         notesEncrypted: input.notes === undefined ? null : this.encryption.encrypt(input.notes),
         nextAttemptAt: state.nextAttemptAt,
         operationId: origin.operationId ?? null,
+        emergencyGuardianIds,
       },
       { status: state.status, cause: state.cause, requiresMedicalRelease: state.requiresMedicalRelease, expectedReturnDate: state.expectedReturnDate },
       { userId: auth.userId, now },
@@ -110,7 +112,7 @@ export class FollowUpsService {
             tableName: FOLLOW_UPS_TABLE,
             recordId: String(followUpId),
             before: { status: current.status, cause: current.cause, requiresMedicalRelease: current.requiresMedicalRelease },
-            after: { status: state.status, cause: state.cause, requiresMedicalRelease: state.requiresMedicalRelease, attemptNumber, result: input.result },
+            after: { status: state.status, cause: state.cause, requiresMedicalRelease: state.requiresMedicalRelease, attemptNumber, result: input.result, emergencyNotices: emergencyGuardianIds.length },
             request,
           },
           tx,
@@ -186,6 +188,11 @@ export class FollowUpsService {
       ),
     );
     return this.requireView(followUpId, estanciaId);
+  }
+
+  /** RF-27: solo cuando salta la alerta se buscan los contactos de emergencia que recibirán el aviso. */
+  private async emergencyRecipients(alert: boolean, childId: number): Promise<readonly number[]> {
+    return alert ? this.followUps.findEmergencyGuardianIds(childId) : [];
   }
 
   private async requireView(id: number, estanciaId: number): Promise<FollowUp> {

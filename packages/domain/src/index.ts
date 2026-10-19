@@ -84,3 +84,5 @@ export {
   RETENTION_YEARS,
 } from './school-year.js';
 export type { ArchiveCheck, PurgeCheck, SchoolYearLifecycle, SchoolYearUsage } from './school-year.js';
+export { EMERGENCY_NOTICE_STATUSES, EMERGENCY_NOTICE_TEXT, MAX_NOTICE_ATTEMPTS, afterFailedNotice } from './emergency-notice.js';
+export type { EmergencyNoticeStatus, NoticeRetry } from './emergency-notice.js';

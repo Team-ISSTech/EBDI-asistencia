@@ -8,6 +8,7 @@ import {
   CONTACT_RESULTS,
   FOLLOW_UP_CAUSES,
   FOLLOW_UP_STATUSES,
+  EMERGENCY_NOTICE_STATUSES,
   ENROLLMENT_MOVEMENTS,
   ENROLLMENT_STATUSES,
   ESTANCIA_STATUSES,
@@ -22,6 +23,7 @@ const MIGRATION = resolve(import.meta.dirname, '../../sql/0004_checks_catalogos.
 const ATTENDANCE_MIGRATION = resolve(import.meta.dirname, '../../sql/0007_checks_asistencia.sql');
 const FOLLOW_UP_MIGRATION = resolve(import.meta.dirname, '../../sql/0008_checks_seguimientos.sql');
 const CONTACT_MIGRATION = resolve(import.meta.dirname, '../../sql/0009_checks_contactos.sql');
+const NOTICE_MIGRATION = resolve(import.meta.dirname, '../../sql/0017_avisos_emergencia.sql');
 const CONSENT_MIGRATION = resolve(import.meta.dirname, '../../sql/0006_checks_consentimientos.sql');
 
 /** Lista `IN (...)` del CHECK con el nombre dado. */
@@ -96,5 +98,17 @@ describe('CHECK de contactos de seguimiento (migración 0009)', () => {
 
   it('el canal es el teléfono, que exige el SRS (RF-25)', () => {
     expect(checkValues(sqlText, 'ck_contactos_canal')).toEqual(['TELEFONO']);
+  });
+});
+
+describe('CHECK de avisos de emergencia (migración 0017)', () => {
+  const sqlText = readFileSync(NOTICE_MIGRATION, 'utf8');
+
+  it('ck_avisos_estado replica los estados de packages/domain', () => {
+    expect(checkValues(sqlText, 'ck_avisos_estado')).toEqual([...EMERGENCY_NOTICE_STATUSES]);
+  });
+
+  it('un contacto recibe un solo aviso por seguimiento', () => {
+    expect(sqlText).toMatch(/UNIQUE KEY uq_avisos_seguimiento_tutor \(seguimiento_id, tutor_id\)/);
   });
 });

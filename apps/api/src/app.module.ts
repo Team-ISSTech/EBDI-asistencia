@@ -9,6 +9,7 @@ import { API_ENV, ConfigModule } from './common/config/config.module';
 import { DatabaseModule } from './common/database/database.module';
 import { ApiExceptionFilter } from './common/errors/api-exception.filter';
 import { ChildrenModule } from './modules/children/children.module';
+import { EmergencyNoticesModule } from './modules/emergency-notices/emergency-notices.module';
 import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
 import { DossiersModule } from './modules/dossiers/dossiers.module';
 import { SyncModule } from './modules/sync/sync.module';
@@ -41,6 +42,7 @@ const THROTTLE_WINDOW_MS = 60_000;
     ChildrenModule,
     AttendanceModule,
     FollowUpsModule,
+    EmergencyNoticesModule,
     ReportsModule,
     DossiersModule,
     SyncModule,

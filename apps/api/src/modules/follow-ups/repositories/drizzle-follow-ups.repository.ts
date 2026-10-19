@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ABSENCE_STATUSES, CONTACT_RESULTS, FOLLOW_UP_CAUSES, FOLLOW_UP_STATUSES, type ContactResult, type FollowUpCause, type FollowUpStatus } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
-import { and, asc, eq, gte, inArray, isNull, ne, notExists, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, ne, notExists, or, sql } from 'drizzle-orm';
 import { ApiError } from '../../../common/errors/api-error.js';
 import { DB } from '../../../common/database/database.module.js';
 import type { AuditExecutor } from '../../../common/audit/audit.service.js';
 import type { AbsenceCandidate, ContactRow, FollowUpDetail, FollowUpRow, NewContact, NewRelease, TicketChange } from '../follow-ups.types.js';
 import type { FollowUpsRepository, TicketHook } from './follow-ups.repository.js';
 
-const { attendanceRecords, jornadasAsistencia, estancias, followUps, followUpContacts, medicalReleases, enrollments, children, rooms, childGuardians, guardians } = schema;
+const { attendanceRecords, jornadasAsistencia, estancias, followUps, followUpContacts, emergencyNotices, medicalReleases, enrollments, children, rooms, childGuardians, guardians } = schema;
 const DUPLICATE_ENTRY = 'ER_DUP_ENTRY';
 
 const driverCode = (error: unknown): string | null => {
@@ -130,6 +130,26 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
     return row ? { phoneEncrypted: row.phone } : null;
   }
 
+  async findEmergencyGuardianIds(childId: number): Promise<number[]> {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = await this.db
+      .select({ guardianId: childGuardians.guardianId })
+      .from(childGuardians)
+      .innerJoin(guardians, eq(guardians.id, childGuardians.guardianId))
+      .where(
+        and(
+          eq(childGuardians.childId, childId),
+          eq(childGuardians.isEmergencyContact, true),
+          isNull(childGuardians.deletedAt),
+          isNull(guardians.deletedAt),
+          eq(guardians.status, 'ACTIVO'),
+          or(isNull(childGuardians.validUntil), gte(childGuardians.validUntil, today)),
+        ),
+      )
+      .orderBy(asc(childGuardians.guardianId));
+    return rows.map((row) => row.guardianId);
+  }
+
   async registerContact(
     followUpId: number,
     contact: NewContact,
@@ -157,6 +177,13 @@ export class DrizzleFollowUpsRepository implements FollowUpsRepository {
           .update(followUps)
           .set({ status: change.status, cause: change.cause, requiresMedicalRelease: change.requiresMedicalRelease, expectedReturnDate: change.expectedReturnDate, updatedAt: context.now })
           .where(eq(followUps.id, followUpId));
+        if (contact.emergencyGuardianIds.length > 0) {
+          // Si otro intento ya dejó el aviso para ese contacto, el índice único lo omite.
+          await tx
+            .insert(emergencyNotices)
+            .ignore()
+            .values(contact.emergencyGuardianIds.map((guardianId) => ({ followUpId, guardianId, nextAttemptAt: context.now, createdAt: context.now, updatedAt: context.now })));
+        }
         await hook(tx, created.insertId);
         return created.insertId;
       });

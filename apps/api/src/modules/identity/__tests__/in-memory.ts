@@ -221,6 +221,10 @@ export const testEnv: ApiEnv = {
   WEB_ORIGIN: 'http://localhost:5173',
   DATA_ENCRYPTION_KEY: 'a'.repeat(64),
   FOLLOW_UP_JOB_SECONDS: 0,
+  EMERGENCY_NOTICE_JOB_SECONDS: 0,
+  WHATSAPP_TEMPLATE_NAME: 'aviso_urgente_sirai',
+  WHATSAPP_TEMPLATE_LANGUAGE: 'es_MX',
+  WHATSAPP_API_VERSION: 'v21.0',
 };
 
 export const request: RequestContext = { ip: '127.0.0.1', userAgent: 'vitest', requestId: null };
