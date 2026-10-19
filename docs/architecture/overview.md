@@ -29,6 +29,21 @@ apps/web ── HTTP/REST ──> apps/api ──> packages/db ──> MySQL 8 (
 - `packages/domain` hacia React, NestJS, cualquier ORM o APIs del navegador.
 - Dependencias circulares.
 
+## Modo sin conexión (`apps/web/src/offline`)
+
+| Pieza | Qué hace |
+| --- | --- |
+| `db.ts`, `vault.ts` | Almacén IndexedDB (Dexie) y bóveda AES-GCM con llave no extraíble. |
+| `outbox.ts` | Cola de capturas pendientes: por persona, cifrada, con reintentos de espera creciente. |
+| `sync-engine.ts`, `sync-api.ts` | Envío por lotes de hasta 50 a `POST /sincronizacion`; falla de red = reintento, rechazo = revisión, 401 = pide iniciar sesión sin perder nada. |
+| `read-cache.ts` | Copias de lectura cifradas por persona y copia de la última sesión. |
+| `save-or-queue.ts` | Criterio de «guardar en la tablet o mostrar el error». |
+| `offline-context.tsx` | Proveedor: estado de conexión, conteos, envío automático (al reconectar, al volver a la pantalla y cada 30 s). |
+| `connection-banner.tsx`, `capture-review-page.tsx` | Franja de estado y pantalla de capturas por revisar. |
+
+El Service Worker lo genera `vite-plugin-pwa` al compilar. Detalle de las decisiones en
+`decisions.md`; procedimiento para el personal en `docs/operations/protocolo-caida-de-enlace.md`.
+
 ## Mapa futuro del frontend
 
 Las carpetas se crearán cuando empiece su fase, no antes:

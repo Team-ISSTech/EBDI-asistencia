@@ -1,6 +1,7 @@
 import { EstanciaStamp } from '@sirai/ui';
 import { Link, Outlet } from 'react-router';
 import { useSession } from '../../features/auth/use-session';
+import { ConnectionBanner } from '../../offline/connection-banner';
 import { ShellFooter } from './shell-footer';
 import { Sidebar } from './sidebar';
 
@@ -40,6 +41,7 @@ export function AppShell() {
         <ShellFooter session={session} />
       </aside>
       <main id="contenido" tabIndex={-1} className="px-6 py-8 outline-none lg:px-12 lg:py-10">
+        <ConnectionBanner />
         <Outlet />
       </main>
     </div>

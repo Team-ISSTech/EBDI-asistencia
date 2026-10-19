@@ -10,6 +10,9 @@ import {
 import type { Shift } from '@sirai/domain';
 import { ApiClientError, apiRequest } from '../../lib/api-client';
 
+/** Con una conexión débil es mejor guardar en la tablet y reintentar que dejar la captura colgada. */
+const CAPTURE_TIMEOUT_MS = 15_000;
+
 /** `null` cuando no hay jornada abierta para ese día y turno (la API responde 404). */
 export async function fetchJourney(date: string, shift: Shift): Promise<AttendanceJourney | null> {
   try {
@@ -30,4 +33,4 @@ export const fetchRoster = (journeyId: number): Promise<RosterResponse> =>
   apiRequest(`/asistencia/jornadas/${journeyId}/lista`, { schema: rosterResponseSchema });
 
 export const markAttendance = (journeyId: number, body: MarkAttendanceRequest): Promise<MarkAttendanceResponse> =>
-  apiRequest(`/asistencia/jornadas/${journeyId}/registros`, { method: 'POST', body, schema: markAttendanceResponseSchema });
+  apiRequest(`/asistencia/jornadas/${journeyId}/registros`, { method: 'POST', body, schema: markAttendanceResponseSchema, timeoutMs: CAPTURE_TIMEOUT_MS });

@@ -12,10 +12,10 @@ interface DraftMark {
 }
 
 /** Lo marcado en pantalla y aún no guardado; el servidor solo recibe esto al guardar. */
-export function useAttendanceDraft(entries: readonly RosterEntry[]) {
+export function useAttendanceDraft(entries: readonly RosterEntry[], pendingMarks: ReadonlyMap<number, AttendanceStatus> = new Map()) {
   const [draft, setDraft] = useState<ReadonlyMap<number, DraftMark>>(new Map());
 
-  const statusOf = (entry: RosterEntry): AttendanceStatus | null => draft.get(entry.enrollmentId)?.status ?? entry.status;
+  const statusOf = (entry: RosterEntry): AttendanceStatus | null => draft.get(entry.enrollmentId)?.status ?? pendingMarks.get(entry.enrollmentId) ?? entry.status;
 
   const lockedIds = new Set(entries.filter((entry) => entry.medicalLock).map((entry) => entry.enrollmentId));
 
@@ -30,12 +30,12 @@ export function useAttendanceDraft(entries: readonly RosterEntry[]) {
     });
   };
 
-  /** Solo a quienes todavía no tienen estado y no tienen candado médico: no pisa un filtro sanitario ni una falta ya marcados. */
+  /** Solo a quienes todavía no tienen estado (ni guardado en la tablet) y no tienen candado médico: no pisa un filtro sanitario ni una falta ya marcados. */
   const markAllPresent = () =>
     setDraft((current) => {
       const next = new Map(current);
       for (const entry of entries) {
-        if (entry.status === null && !entry.medicalLock && !current.has(entry.enrollmentId)) next.set(entry.enrollmentId, { status: 'PRESENTE', method: 'MANUAL', clientId: crypto.randomUUID() });
+        if (entry.status === null && !entry.medicalLock && !current.has(entry.enrollmentId) && !pendingMarks.has(entry.enrollmentId)) next.set(entry.enrollmentId, { status: 'PRESENTE', method: 'MANUAL', clientId: crypto.randomUUID() });
       }
       return next;
     });

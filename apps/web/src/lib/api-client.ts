@@ -19,6 +19,8 @@ export interface RequestOptions<T> {
   readonly body?: unknown;
   /** Esquema de `@sirai/contracts` que valida la respuesta; `undefined` para 204. */
   readonly schema?: ZodType<T>;
+  /** Corta la petición pasado este tiempo (falla como una caída de red). Sin él, espera lo que tarde el navegador. */
+  readonly timeoutMs?: number;
 }
 
 const parseError = async (response: Response): Promise<ApiClientError> => {
@@ -27,18 +29,30 @@ const parseError = async (response: Response): Promise<ApiClientError> => {
   return parsed.success ? new ApiClientError(response.status, parsed.data.error.code, parsed.data.error.message) : fallback;
 };
 
+/** `fetch` que se cancela pasado `timeoutMs`; sin tiempo máximo es un `fetch` normal. */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number | undefined): Promise<Response> {
+  if (timeoutMs === undefined) return fetch(url, init);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Único punto de `fetch` de la aplicación: cookies incluidas, JSON y
  * validación de la respuesta con el contrato. Ningún componente llama a
  * `fetch` directamente.
  */
 export async function apiRequest<T = undefined>(path: string, options: RequestOptions<T> = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetchWithTimeout(`${API_URL}${path}`, {
     method: options.method ?? 'GET',
     credentials: 'include',
     headers: options.body === undefined ? {} : { 'content-type': 'application/json' },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  }, options.timeoutMs);
   if (!response.ok) throw await parseError(response);
   if (!options.schema) return undefined as T;
   const parsed = options.schema.safeParse(await response.json());

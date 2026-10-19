@@ -15,6 +15,7 @@ import { RoomsPage } from '../features/administration/pages/rooms-page';
 import { SystemsPage } from '../features/administration/pages/systems-page';
 import { SchoolYearsPage } from '../features/administration/pages/school-years-page';
 import { UsersPage } from '../features/administration/pages/users-page';
+import { CaptureReviewPage } from '../offline/capture-review-page';
 import { AuditPage } from '../features/audit/pages/audit-page';
 import { ForbiddenPage } from './pages/forbidden-page';
 import { HomePage } from './pages/home-page';
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
       { path: 'administracion/ciclos', element: guarded('CICLO_ADMINISTRAR', <SchoolYearsPage />) },
       { path: 'administracion/salas', element: guarded('SALA_ADMINISTRAR', <RoomsPage />) },
       { path: 'auditoria', element: guarded('AUDITORIA_CONSULTAR', <AuditPage />) },
+      { path: 'capturas', element: <CaptureReviewPage /> },
       { path: 'sin-permiso', element: <ForbiddenPage /> },
     ],
   },
