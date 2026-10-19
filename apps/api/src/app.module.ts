@@ -13,6 +13,7 @@ import { FollowUpsModule } from './modules/follow-ups/follow-ups.module';
 import { DossiersModule } from './modules/dossiers/dossiers.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { IntegrationModule } from './modules/integration/integration.module';
+import { SchoolYearsModule } from './modules/school-years/school-years.module';
 import { AuditQueryModule } from './modules/audit/audit.module';
 import { AdministrationModule } from './modules/administration/administration.module';
 import { HealthModule } from './modules/health/health.module';
@@ -45,6 +46,7 @@ const THROTTLE_WINDOW_MS = 60_000;
     SyncModule,
     AdministrationModule,
     AuditQueryModule,
+    SchoolYearsModule,
     IntegrationModule,
   ],
   providers: [

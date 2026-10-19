@@ -25,9 +25,9 @@ class InMemoryJourneys implements AttendanceJourneysRepository {
     return Promise.resolve([...this.rows.values()].find((row) => row.estanciaId === estanciaId && row.date === date && row.shift === shift) ?? null);
   }
 
-  async create(input: Omit<AttendanceJourneyRecord, 'id' | 'status' | 'closedAt' | 'closedBy'>, hook?: JourneyTransactionHook<number>): Promise<AttendanceJourneyRecord> {
+  async create(input: Omit<AttendanceJourneyRecord, 'id' | 'status' | 'closedAt' | 'closedBy' | 'schoolYearArchived'>, hook?: JourneyTransactionHook<number>): Promise<AttendanceJourneyRecord> {
     if (await this.findByKey(input.estanciaId, input.date, input.shift)) throw new ApiError('CONFLICTO', 'Ya existe una jornada.');
-    const row: AttendanceJourneyRecord = { ...input, id: this.nextId++, status: 'ABIERTA', closedAt: null, closedBy: null };
+    const row: AttendanceJourneyRecord = { ...input, id: this.nextId++, status: 'ABIERTA', closedAt: null, closedBy: null, schoolYearArchived: false };
     this.rows.set(row.id, row);
     await hook?.({} as Parameters<JourneyTransactionHook<number>>[0], row.id);
     return row;

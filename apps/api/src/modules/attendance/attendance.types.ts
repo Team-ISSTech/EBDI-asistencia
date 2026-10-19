@@ -10,4 +10,6 @@ export interface AttendanceJourneyRecord {
   readonly openedBy: number;
   readonly closedAt: Date | null;
   readonly closedBy: number | null;
+  /** Su ciclo escolar está archivado: la jornada es de solo lectura (RNF-05). */
+  readonly schoolYearArchived: boolean;
 }

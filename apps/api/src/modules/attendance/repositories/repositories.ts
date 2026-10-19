@@ -8,7 +8,7 @@ export interface AttendanceJourneysRepository {
   findById(id: number, estanciaId: number): Promise<AttendanceJourneyRecord | null>;
   findByKey(estanciaId: number, date: string, shift: Shift): Promise<AttendanceJourneyRecord | null>;
   create(
-    input: Omit<AttendanceJourneyRecord, 'id' | 'status' | 'closedAt' | 'closedBy'>,
+    input: Omit<AttendanceJourneyRecord, 'id' | 'status' | 'closedAt' | 'closedBy' | 'schoolYearArchived'>,
     hook?: JourneyTransactionHook<number>,
   ): Promise<AttendanceJourneyRecord>;
   close(

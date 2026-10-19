@@ -76,3 +76,11 @@ export {
 } from './password-policy.js';
 export type { PasswordCheck } from './password-policy.js';
 export { changedFieldNames } from './audit-fields.js';
+export {
+  canArchiveSchoolYear,
+  canPurgeSchoolYear,
+  isPurgeEligible,
+  purgeEligibleOn,
+  RETENTION_YEARS,
+} from './school-year.js';
+export type { ArchiveCheck, PurgeCheck, SchoolYearLifecycle, SchoolYearUsage } from './school-year.js';
