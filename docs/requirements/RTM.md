@@ -72,8 +72,8 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RNF-12 | Compuertas de calidad en CI | `.github/workflows`, `tooling/` | revisión de código | implementado en `main` |
 | RNF-13 | F1: SRS y RTM | `docs/requirements` | revisión de código | implementado en `main` |
 | RNF-14 | F2: ER y prototipos de UI | `docs/architecture/data-model.md`, `apps/web/src/features/*` | revisión de código | parcial: modelo entidad-relación en `data-model.md`; faltan los prototipos UI/UX con revisión de accesibilidad |
-| RNF-15 | F3: repositorio con 80 % de cobertura | repositorio completo | unitaria Vitest, integración Vitest + MySQL, e2e Playwright | pendiente |
-| RNF-16 | F4: script de migración y manual | `packages/db` (migraciones Drizzle), `docs/` (manual de instalación) | integración Vitest + MySQL, revisión de código | parcial: migraciones repetibles con `pnpm --filter @sirai/db migrate`; falta el manual de instalación |
+| RNF-15 | F3: repositorio con 80 % de cobertura | repositorio completo, `tooling/coverage` | unitaria Vitest, integración Vitest + MySQL, e2e Playwright, reporte consolidado de cobertura en CI | implementado: 97.9 % de cobertura de líneas sobre la lógica de negocio (`docs/operations/cobertura.md`) |
+| RNF-16 | F4: script de migración y manual | `packages/db` (migraciones SQL, `create-admin`), `docs/operations/manual-de-instalacion.md`, `docs/operations/manual-de-usuario.md` | integración Vitest + MySQL, revisión de código | implementado: migraciones repetibles con `pnpm --filter @sirai/db migrate`, comando para crear el primer administrador y manuales de instalación y de usuario; los datos de infraestructura (dominio, HTTPS, respaldos) quedan a definir con el cliente |
 | RNF-17 | F5: UAT con 3 a 5 estancias piloto | `apps/web`, `apps/api` | e2e Playwright | pendiente |
 
 ## Resumen
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 48 |
-| Parciales | 5 |
-| Pendientes | 2 |
+| Implementados | 50 |
+| Parciales | 4 |
+| Pendientes | 1 |

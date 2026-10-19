@@ -133,6 +133,12 @@ pnpm typecheck
 pnpm test
 ```
 
+## Documentación operativa
+
+- Instalación y operación en un servidor: `docs/operations/manual-de-instalacion.md` (incluye cómo crear el primer administrador).
+- Manual de usuario por rol: `docs/operations/manual-de-usuario.md`.
+- Caída de enlace, pruebas sin conexión, avisos por WhatsApp, revisión de seguridad, prueba de carga y cobertura: `docs/operations/`.
+
 ## Compuertas de calidad
 
 Cada pull request ejecuta en GitHub Actions (`.github/workflows/ci.yml`):
