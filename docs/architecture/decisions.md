@@ -130,3 +130,27 @@ original del equipo (`0000`) no se modifica.
   administrador central y escribiendo la clave del ciclo. Nunca es automática.
 - **Fuera de alcance:** los infantes y los tutores no pertenecen a un ciclo y no se
   depuran por esta vía; la bitácora no se depura.
+
+## Modo sin conexión del navegador (RF-20 a RF-23)
+
+- **Guardar primero, enviar después.** Una captura se intenta enviar al servidor con su ruta
+  de siempre y, si no se supo si llegó (sin red, tiempo agotado, servidor caído, sesión vencida),
+  se guarda en la cola de la tablet y se envía por `POST /sincronizacion`. Un rechazo definitivo
+  (datos inválidos, sin permiso, jornada cerrada) no se guarda: se muestra. Como cada marca
+  lleva su UUID desde el principio, reenviar lo que quizá sí llegó nunca duplica.
+- **Nada se pierde en silencio.** Una operación sale de la cola solo cuando el servidor la
+  aplica. Lo rechazado, total o parcialmente, queda en «Capturas por revisar» con su motivo
+  hasta que alguien lo reconcilie con el formato físico y lo descarte.
+- **IndexedDB cifrado y por persona.** Dexie sobre IndexedDB; el contenido va con AES-GCM y una
+  llave no extraíble. Cada captura pertenece a quien la hizo y solo se envía con su sesión.
+  No se guardan teléfonos ni notas para leer sin conexión.
+- **Copias de lectura** (sesión, jornada, lista, bandeja, tutores): cifradas, por persona, de una
+  semana como máximo y borradas al cerrar sesión. Un 401 nunca se tapa con una copia.
+- **TanStack Query con `networkMode: 'always'`.** Por defecto pausa consultas y mutaciones cuando
+  el navegador cree que no hay red, que es justo cuando hay que servir la copia o guardar en la
+  tablet; `navigator.onLine` tampoco es fiable (portales cautivos).
+- **Service Worker solo para la aplicación**, con `vite-plugin-pwa` (Workbox, `generateSW`): se guarda el
+  código, los estilos y las tipografías. Las respuestas de la API nunca pasan por él. Con `registerType:
+  'prompt'` una versión nueva espera a que se cierren las pestañas, para no recargar a media captura.
+- **Verificación en navegador real** con Playwright (`docs/operations/pruebas-sin-conexion.md`);
+  no corre en CI porque necesita la pila completa.
