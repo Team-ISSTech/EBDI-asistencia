@@ -66,7 +66,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RNF-06 | Autorización en backend | `apps/api/src/modules/identity` (guards), `packages/auth`, `apps/api/src/common/http` (cabeceras), `apps/web/nginx.conf` (CSP) | integración Vitest + MySQL (aislamiento entre estancias), unitaria Vitest (rutas declaradas, cabeceras), `pnpm audit` en CI, revisión de código | implementado: guard cerrado por defecto, permiso declarado en las 63 rutas, aislamiento entre estancias probado, cabeceras y CSP, dependencias sin avisos; la prueba de penetración externa queda pendiente (`docs/operations/revision-de-seguridad.md`) |
 | RNF-07 | Sin datos reales de menores en el repositorio | repositorio completo, `packages/db` (seeds sintéticos) | revisión de código | implementado en `main` (semillas sintéticas; sin infantes ni tutores reales) |
 | RNF-08 | p95 < 1.5 s con 212 estancias | `apps/api/load` (semilla y ejecutor), `apps/api/src/modules/attendance`, `apps/api/src/modules/follow-ups`, `packages/db` (índices) | medición de carga (manual, no corre en CI) | parcial: con 212 estancias trabajando a la vez cumple en 2 de 3 corridas en un portátil (p95 de 0.65 a 1.3 s) y queda ajustado en las escrituras; falta repetirla en la infraestructura real (`docs/operations/prueba-de-carga.md`) |
-| RNF-09 | Cobertura 80 % en lógica de negocio | `packages/domain`, `packages/auth`, `apps/api/src/modules/*` | unitaria Vitest, integración Vitest + MySQL (reporte de cobertura) | parcial: umbral de 80 % en cada paquete; falta el reporte consolidado |
+| RNF-09 | Cobertura 80 % en lógica de negocio | `packages/domain`, `packages/auth`, `apps/api/src/modules/*`, `tooling/coverage` | unitaria Vitest, integración Vitest + MySQL, reporte consolidado de cobertura en CI | implementado: reporte consolidado en CI con total de 97.9 % en líneas (95.6 % sentencias, 96.8 % funciones, 83.6 % ramas); ver `docs/operations/cobertura.md` |
 | RNF-10 | Complejidad ciclomática < 10 | `packages/eslint-config` (regla `complexity: 10`) | inspección de ESLint | implementado en `main` |
 | RNF-11 | Sin `console` ni código muerto | `packages/eslint-config` (`no-console`, `no-unused-vars`) | inspección de ESLint | implementado en `main` |
 | RNF-12 | Compuertas de calidad en CI | `.github/workflows`, `tooling/` | revisión de código | implementado en `main` |
@@ -84,6 +84,6 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | Requisitos no funcionales (RNF) | 17 |
 | Total | 55 |
 | Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 47 |
-| Parciales | 6 |
+| Implementados | 48 |
+| Parciales | 5 |
 | Pendientes | 2 |

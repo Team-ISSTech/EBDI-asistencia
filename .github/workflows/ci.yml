@@ -57,3 +57,16 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
+      # RNF-09: reporte consolidado de cobertura; falla si el total baja de 80 % y queda en el resumen del trabajo.
+      - run: pnpm coverage:report
+      - name: Guardar el reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: |
+            coverage/consolidado.md
+            packages/domain/coverage/
+            packages/auth/coverage/
+            apps/api/coverage/
+          if-no-files-found: ignore
