@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { MarkAttendanceRequest, MarkAttendanceResponse, RosterEntry, SyncRejection } from '@sirai/contracts';
 import { planMark } from '@sirai/domain';
-import { AuditService } from '../../../common/audit/audit.service.js';
+import { type AuditEntry, AuditService } from '../../../common/audit/audit.service.js';
 import type { AuthContext } from '../../../common/auth/auth-context.js';
 import { ApiError } from '../../../common/errors/api-error.js';
 import type { RequestContext } from '../../../common/http/request-context.js';
 import type { AttendanceJourneyRecord } from '../attendance.types.js';
 import { ATTENDANCE_RECORDS_REPOSITORY, type AttendanceRecordsRepository } from '../repositories/records.repository.js';
 import { ATTENDANCE_JOURNEYS_REPOSITORY, type AttendanceJourneysRepository } from '../repositories/repositories.js';
-import type { EnrollmentForMarking, ExistingMark, MarkChange } from '../records.types.js';
+import type { AppliedMark, EnrollmentForMarking, ExistingMark, MarkChange } from '../records.types.js';
 
 const RECORDS_TABLE = 'asistencias';
 const JOURNEYS_TABLE = 'jornadas_asistencia';
@@ -61,20 +61,7 @@ export class AttendanceRecordsService {
     await this.assertNoMedicalLock(journey.estanciaId, input);
     const changes = await this.planChanges(journey.id, input);
     if (changes.length > 0) {
-      await this.records.applyChanges(journey.id, auth.userId, this.clock(), changes, (tx, change, recordId) =>
-        this.audit.record(
-          {
-            ...this.actor(auth),
-            action: change.plan === 'CREATE' ? 'ASISTENCIA_REGISTRADA' : 'ASISTENCIA_MODIFICADA',
-            tableName: RECORDS_TABLE,
-            recordId: String(recordId),
-            ...(change.before === null ? {} : { before: { status: change.before } }),
-            after: { journeyId: journey.id, enrollmentId: change.enrollmentId, status: change.status, method: change.method },
-            request,
-          },
-          tx,
-        ),
-      );
+      await this.records.applyChanges(journey.id, auth.userId, this.clock(), changes, (tx, applied) => this.audit.recordMany(this.auditEntries(auth, journey.id, applied, request), tx));
     }
     return { saved: changes.length, unchanged: input.marks.length - changes.length };
   }
@@ -96,20 +83,7 @@ export class AttendanceRecordsService {
     const { valid, rejections } = await this.splitValid(journey, input);
     const changes = valid.marks.length === 0 ? [] : await this.planChanges(journey.id, valid);
     if (changes.length > 0) {
-      await this.records.applyChanges(journey.id, auth.userId, at, changes, (tx, change, recordId) =>
-        this.audit.record(
-          {
-            ...this.actor(auth),
-            action: change.plan === 'CREATE' ? 'ASISTENCIA_REGISTRADA' : 'ASISTENCIA_MODIFICADA',
-            tableName: RECORDS_TABLE,
-            recordId: String(recordId),
-            ...(change.before === null ? {} : { before: { status: change.before } }),
-            after: { journeyId: journey.id, enrollmentId: change.enrollmentId, status: change.status, method: change.method, capturedAt: at.toISOString() },
-            request,
-          },
-          tx,
-        ),
-      );
+      await this.records.applyChanges(journey.id, auth.userId, at, changes, (tx, applied) => this.audit.recordMany(this.auditEntries(auth, journey.id, applied, request, at), tx));
     }
     return { saved: changes.length, unchanged: valid.marks.length - changes.length, rejections };
   }
@@ -169,6 +143,19 @@ export class AttendanceRecordsService {
     const journey = await this.journeys.findById(journeyId, auth.activeEstanciaId);
     if (!journey) throw new ApiError('NO_ENCONTRADO', 'Jornada no encontrada.');
     return journey;
+  }
+
+  /** Una entrada de bitácora por cambio: el antes y el después, sin nombres ni datos del infante. */
+  private auditEntries(auth: AuthContext, journeyId: number, applied: readonly AppliedMark[], request: RequestContext, capturedAt?: Date): AuditEntry[] {
+    return applied.map(({ change, recordId }) => ({
+      ...this.actor(auth),
+      action: change.plan === 'CREATE' ? 'ASISTENCIA_REGISTRADA' : 'ASISTENCIA_MODIFICADA',
+      tableName: RECORDS_TABLE,
+      recordId: String(recordId),
+      ...(change.before === null ? {} : { before: { status: change.before } }),
+      after: { journeyId, enrollmentId: change.enrollmentId, status: change.status, method: change.method, ...(capturedAt ? { capturedAt: capturedAt.toISOString() } : {}) },
+      request,
+    }));
   }
 
   private actor(auth: AuthContext): { userId: number; roleCode: string | null } {

@@ -31,3 +31,9 @@ export interface MarkChange {
   readonly method: AttendanceMethod;
   readonly before: AttendanceStatus | null;
 }
+
+/** Un cambio ya guardado, con el id de su registro de asistencia. */
+export interface AppliedMark {
+  readonly change: MarkChange;
+  readonly recordId: number;
+}

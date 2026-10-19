@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ATTENDANCE_STATUSES, isShift, type AttendanceStatus, type Shift } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/mysql-core';
 import { DB } from '../../../common/database/database.module.js';
 import type { EnrollmentForMarking, ExistingMark, MarkChange, RosterRow } from '../records.types.js';
 import type { AttendanceRecordsRepository, MarkChangeHook } from './records.repository.js';
 
-const { attendanceRecords, enrollments, children, rooms } = schema;
+const { attendanceRecords, enrollments, children, rooms, followUps, medicalReleases } = schema;
 
 const requireStatus = (value: string): AttendanceStatus => {
   if (!(ATTENDANCE_STATUSES as readonly string[]).includes(value)) throw new Error(`Estado de asistencia no reconocido: ${value}`);
@@ -19,22 +20,6 @@ const requireShift = (value: string): Shift => {
 };
 
 const fullName = (name: string, paternal: string, maternal: string | null): string => [name, paternal, maternal].filter((part): part is string => Boolean(part)).join(' ');
-
-/**
- * RF-29: el infante tiene un caso abierto que requiere alta médica y aún no la
- * tiene. Sigue al infante, no a una inscripción: un traslado no lo libera.
- */
-const medicalLockExpr = sql<number>`EXISTS (
-  SELECT 1 FROM seguimientos s
-  INNER JOIN asistencias a ON a.id = s.asistencia_id
-  INNER JOIN inscripciones e2 ON e2.id = a.inscripcion_id
-  LEFT JOIN altas_medicas m ON m.seguimiento_id = s.id
-  WHERE e2.infante_id = ${enrollments.childId}
-    AND s.requiere_alta_medica = 1
-    AND m.id IS NULL
-    AND s.estado <> 'CERRADO'
-    AND s.deleted_at IS NULL
-)`.mapWith(Boolean);
 
 /** Inscripciones activas, sin borrado lógico, de una estancia. */
 const activeIn = (estanciaId: number) =>
@@ -56,7 +41,6 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
         roomId: rooms.id,
         roomName: rooms.name,
         status: attendanceRecords.status,
-        medicalLock: medicalLockExpr,
       })
       .from(enrollments)
       .innerJoin(children, eq(children.id, enrollments.childId))
@@ -64,6 +48,7 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       .leftJoin(attendanceRecords, and(eq(attendanceRecords.enrollmentId, enrollments.id), eq(attendanceRecords.journeyId, journeyId)))
       .where(and(activeIn(estanciaId), eq(rooms.shift, shift)))
       .orderBy(asc(rooms.name), asc(children.paternalSurname), asc(children.maternalSurname), asc(children.name));
+    const locked = await this.lockedChildIds(rows.map((row) => row.childId));
     return rows.map((row) => ({
       enrollmentId: row.enrollmentId,
       childId: row.childId,
@@ -72,7 +57,7 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       roomId: row.roomId,
       roomName: row.roomName,
       status: row.status === null ? null : requireStatus(row.status),
-      medicalLock: row.medicalLock,
+      medicalLock: locked.has(row.childId),
     }));
   }
 
@@ -90,11 +75,30 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
   async findLockedEnrollmentIds(estanciaId: number, enrollmentIds: readonly number[]): Promise<Set<number>> {
     if (enrollmentIds.length === 0) return new Set();
     const rows = await this.db
-      .select({ id: enrollments.id })
+      .select({ id: enrollments.id, childId: enrollments.childId })
       .from(enrollments)
       .innerJoin(children, eq(children.id, enrollments.childId))
-      .where(and(activeIn(estanciaId), inArray(enrollments.id, [...enrollmentIds]), medicalLockExpr));
-    return new Set(rows.map((row) => row.id));
+      .where(and(activeIn(estanciaId), inArray(enrollments.id, [...enrollmentIds])));
+    const locked = await this.lockedChildIds(rows.map((row) => row.childId));
+    return new Set(rows.filter((row) => locked.has(row.childId)).map((row) => row.id));
+  }
+
+  /**
+   * RF-29: infantes con un caso abierto que requiere alta médica y aún no la tiene. El candado sigue al infante,
+   * no a una inscripción: un traslado no lo libera. Se parte de los infantes pedidos (índice por infante) en vez de
+   * recorrer todos los casos abiertos de la red por cada fila de la lista.
+   */
+  private async lockedChildIds(childIds: readonly number[]): Promise<Set<number>> {
+    if (childIds.length === 0) return new Set();
+    const history = alias(enrollments, 'inscripcion_historial');
+    const rows = await this.db
+      .selectDistinct({ childId: history.childId })
+      .from(history)
+      .innerJoin(attendanceRecords, eq(attendanceRecords.enrollmentId, history.id))
+      .innerJoin(followUps, eq(followUps.attendanceRecordId, attendanceRecords.id))
+      .leftJoin(medicalReleases, eq(medicalReleases.followUpId, followUps.id))
+      .where(and(inArray(history.childId, [...childIds]), eq(followUps.requiresMedicalRelease, true), isNull(medicalReleases.id), ne(followUps.status, 'CERRADO'), isNull(followUps.deletedAt)));
+    return new Set(rows.map((row) => row.childId));
   }
 
   async findMarks(journeyId: number, enrollmentIds: readonly number[]): Promise<ExistingMark[]> {
@@ -112,15 +116,17 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
 
   async applyChanges(journeyId: number, userId: number, now: Date, changes: readonly MarkChange[], hook: MarkChangeHook): Promise<void> {
     await this.db.transaction(async (tx) => {
-      for (const change of changes) {
-        const recordId = change.plan === 'CREATE' ? await this.insert(tx, journeyId, userId, now, change) : await this.update(tx, journeyId, now, change);
-        await hook(tx, change, recordId);
-      }
+      const created = changes.filter((change) => change.plan === 'CREATE');
+      // Una sola sentencia para todos los registros nuevos: 212 estancias pasan lista a la vez (RNF-08).
+      if (created.length > 0) await tx.insert(attendanceRecords).values(created.map((change) => this.row(journeyId, userId, now, change)));
+      for (const change of changes.filter((item) => item.plan === 'CHANGE')) await this.update(tx, journeyId, now, change);
+      const ids = await this.recordIds(tx, journeyId, changes);
+      await hook(tx, changes.map((change) => ({ change, recordId: this.requireId(ids, change) })));
     });
   }
 
-  private async insert(tx: Pick<Db, 'insert'>, journeyId: number, userId: number, now: Date, change: MarkChange): Promise<number> {
-    const [result] = await tx.insert(attendanceRecords).values({
+  private row(journeyId: number, userId: number, now: Date, change: MarkChange) {
+    return {
       journeyId,
       enrollmentId: change.enrollmentId,
       status: change.status,
@@ -130,19 +136,28 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       recordedBy: userId,
       recordedAt: now,
       updatedAt: now,
-    });
-    return result.insertId;
+    };
+  }
+
+  private async recordIds(tx: Pick<Db, 'select'>, journeyId: number, changes: readonly MarkChange[]): Promise<Map<number, number>> {
+    const rows = await tx
+      .select({ id: attendanceRecords.id, enrollmentId: attendanceRecords.enrollmentId })
+      .from(attendanceRecords)
+      .where(and(eq(attendanceRecords.journeyId, journeyId), inArray(attendanceRecords.enrollmentId, changes.map((change) => change.enrollmentId))));
+    return new Map(rows.map((row) => [row.enrollmentId, row.id]));
+  }
+
+  private requireId(ids: ReadonlyMap<number, number>, change: MarkChange): number {
+    const id = ids.get(change.enrollmentId);
+    if (id === undefined) throw new Error('No se encontró el registro de asistencia que se acababa de guardar.');
+    return id;
   }
 
   /** El `uuid_cliente` conserva el de la operación que creó el registro. */
-  private async update(tx: Pick<Db, 'update' | 'select'>, journeyId: number, now: Date, change: MarkChange): Promise<number> {
-    const where = and(eq(attendanceRecords.journeyId, journeyId), eq(attendanceRecords.enrollmentId, change.enrollmentId));
+  private async update(tx: Pick<Db, 'update'>, journeyId: number, now: Date, change: MarkChange): Promise<void> {
     await tx
       .update(attendanceRecords)
       .set({ status: change.status, method: change.method, enteredAt: change.status === 'PRESENTE' ? now : null, updatedAt: now })
-      .where(where);
-    const [row] = await tx.select({ id: attendanceRecords.id }).from(attendanceRecords).where(where);
-    if (!row) throw new Error('No se encontró el registro de asistencia que se acababa de cambiar.');
-    return row.id;
+      .where(and(eq(attendanceRecords.journeyId, journeyId), eq(attendanceRecords.enrollmentId, change.enrollmentId)));
   }
 }

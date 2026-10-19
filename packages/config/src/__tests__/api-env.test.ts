@@ -150,4 +150,16 @@ describe('parseApiEnv', () => {
       expect(() => parseApiEnv({ ...minimal, WHATSAPP_PHONE_NUMBER_ID: '1', WHATSAPP_ACCESS_TOKEN: minimal.DATA_ENCRYPTION_KEY })).toThrow(/WHATSAPP_ACCESS_TOKEN/);
     });
   });
+
+  describe('conexiones a la base (RNF-08)', () => {
+    it('el pool es de 25 conexiones salvo que se configure otro tamaño', () => {
+      expect(parseApiEnv(minimal).DB_POOL_SIZE).toBe(25);
+      expect(parseApiEnv({ ...minimal, DB_POOL_SIZE: '40' }).DB_POOL_SIZE).toBe(40);
+    });
+
+    it('rechaza un tamaño que no sea un entero positivo', () => {
+      expect(() => parseApiEnv({ ...minimal, DB_POOL_SIZE: '0' })).toThrow(/DB_POOL_SIZE/);
+      expect(() => parseApiEnv({ ...minimal, DB_POOL_SIZE: 'muchas' })).toThrow(/DB_POOL_SIZE/);
+    });
+  });
 });

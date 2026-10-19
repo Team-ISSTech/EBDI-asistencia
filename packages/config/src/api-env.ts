@@ -13,6 +13,7 @@ const DEFAULT_INTEGRATION_TOKEN_MINUTES = 15;
 const DEFAULT_INTEGRATION_RATE_LIMIT_PER_MINUTE = 60;
 const MIN_TOKEN_SECRET_LENGTH = 32;
 const DEFAULT_FOLLOW_UP_JOB_SECONDS = 60;
+const DEFAULT_DB_POOL_SIZE = 25;
 const DEFAULT_EMERGENCY_NOTICE_JOB_SECONDS = 60;
 const DEFAULT_WHATSAPP_TEMPLATE = 'aviso_urgente_sirai';
 const DEFAULT_WHATSAPP_LANGUAGE = 'es_MX';
@@ -55,6 +56,8 @@ export const apiEnvSchema = z.object({
   DATA_ENCRYPTION_KEY: z
     .string()
     .regex(/^[0-9a-f]{64}$/i, { message: 'Debe ser 32 bytes en hexadecimal (64 caracteres)' }),
+  /** Conexiones simultáneas de la API a MySQL. Cada instancia usa hasta este número: la suma debe caber en `max_connections`. */
+  DB_POOL_SIZE: z.coerce.number().int().positive().default(DEFAULT_DB_POOL_SIZE),
   /** Cada cuántos segundos la API genera los tickets de ausencia vencidos; 0 apaga el proceso. */
   FOLLOW_UP_JOB_SECONDS: z.coerce.number().int().nonnegative().default(DEFAULT_FOLLOW_UP_JOB_SECONDS),
   /** Cada cuántos segundos la API envía los avisos de emergencia pendientes (RF-27); 0 apaga el proceso. */

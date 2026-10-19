@@ -221,6 +221,7 @@ export const testEnv: ApiEnv = {
   WEB_ORIGIN: 'http://localhost:5173',
   DATA_ENCRYPTION_KEY: 'a'.repeat(64),
   FOLLOW_UP_JOB_SECONDS: 0,
+  DB_POOL_SIZE: 25,
   EMERGENCY_NOTICE_JOB_SECONDS: 0,
   WHATSAPP_TEMPLATE_NAME: 'aviso_urgente_sirai',
   WHATSAPP_TEMPLATE_LANGUAGE: 'es_MX',
