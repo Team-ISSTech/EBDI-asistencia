@@ -1,25 +1,14 @@
 import { expect, type Page, test } from '@playwright/test';
-
-const PASSWORD = process.env['SEED_PASSWORD'];
-if (!PASSWORD) throw new Error('Define SEED_PASSWORD (en .env o en el entorno) para las pruebas e2e.');
+import { API_URL, loginAsDirector } from './support';
 
 /**
  * Modo sin conexión (RF-20 a RF-23) en un navegador real, con la aplicación compilada (el Service Worker solo
  * existe en el build). Requiere la API y MySQL arriba con la semilla de desarrollo y la web servida
  * por `vite preview` o por la pila Docker (E2E_WEB_URL). Ver `docs/operations/pruebas-sin-conexion.md`.
  */
-const API_URL = process.env['E2E_API_URL'] ?? 'http://localhost:3100';
 const RUN = Date.now().toString(36);
 const CHILD_NAMES = [`NombreSecretoUno${RUN}`, `NombreSecretoDos${RUN}`, `NombreSecretoTres${RUN}`];
 const birthDate = new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
-
-async function login(page: Page): Promise<void> {
-  await page.goto('/iniciar-sesion');
-  await page.getByLabel('Correo').fill('directora@sirai.test');
-  await page.getByLabel('Contraseña').fill(PASSWORD ?? '');
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page).toHaveURL(/\/app\/pase-de-lista$/);
-}
 
 async function seedChildren(page: Page): Promise<void> {
   const rooms = await page.request.get(`${API_URL}/salas`);
@@ -60,7 +49,7 @@ async function localStorageDump(page: Page): Promise<string> {
 }
 
 test('pasar lista sin conexión: se guarda cifrado en la tablet, sobrevive a recargar y se envía solo al volver la red', async ({ page, context }) => {
-  await login(page);
+  await loginAsDirector(page);
   await seedChildren(page);
 
   // Con conexión: se abre la jornada y se carga la lista (queda guardada en la tablet).
