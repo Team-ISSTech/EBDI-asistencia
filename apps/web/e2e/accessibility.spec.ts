@@ -18,10 +18,13 @@ async function axeViolations(page: Page): Promise<string[]> {
   return violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(' | ')}`);
 }
 
+/** Cada pantalla avisa con «Cargando …» o «Buscando …» mientras llegan sus datos. */
+const LOADING_TEXT = /^(Cargando|Buscando)[^…]*…$/;
+
 /** Espera a que la pantalla termine de cargar sus datos antes de revisarla. */
 async function settle(page: Page): Promise<void> {
-  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByText(LOADING_TEXT)).toHaveCount(0);
 }
 
 /** Tras el login: los roles centrales pueden pasar por el selector de estancia, que también se revisa. */
@@ -60,10 +63,13 @@ const FOCUS_RING_MARGIN = 8;
 async function focusIsVisible(page: Page, target: Locator): Promise<boolean> {
   const box = await target.boundingBox();
   if (!box) throw new Error('El elemento no está en pantalla.');
-  const clip = { x: box.x - FOCUS_RING_MARGIN, y: box.y - FOCUS_RING_MARGIN, width: box.width + 2 * FOCUS_RING_MARGIN, height: box.height + 2 * FOCUS_RING_MARGIN };
+  const x = Math.max(0, box.x - FOCUS_RING_MARGIN);
+  const y = Math.max(0, box.y - FOCUS_RING_MARGIN);
+  const clip = { x, y, width: box.x + box.width + FOCUS_RING_MARGIN - x, height: box.y + box.height + FOCUS_RING_MARGIN - y };
   const focused = await page.screenshot({ clip, animations: 'disabled' });
   await target.evaluate((element) => (element as HTMLElement).blur());
   const blurred = await page.screenshot({ clip, animations: 'disabled' });
+  // Tras usar el teclado, Chromium vuelve a mostrar :focus-visible al enfocar por código.
   await target.focus();
   return !focused.equals(blurred);
 }
@@ -71,8 +77,10 @@ async function focusIsVisible(page: Page, target: Locator): Promise<boolean> {
 /** Infantes sin marcar en la jornada de hoy (la prueba de teclado necesita alguno). */
 async function unmarkedCount(page: Page): Promise<number> {
   const journey = await page.request.get(`${API_URL}/asistencia/jornadas/activa?date=${today()}&shift=MATUTINO`);
+  expect(journey.ok(), await journey.text()).toBe(true);
   const { id } = (await journey.json()) as { id: number };
   const roster = await page.request.get(`${API_URL}/asistencia/jornadas/${id}/lista`);
+  expect(roster.ok(), await roster.text()).toBe(true);
   const { entries } = (await roster.json()) as { entries: { status: string | null }[] };
   return entries.filter((entry) => entry.status === null).length;
 }
@@ -100,6 +108,7 @@ for (const role of ROLE_CODES) {
     expect(paths.length).toBeGreaterThan(0);
     for (const path of paths) {
       await page.goto(path);
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
       await settle(page);
       violations.push(...(await axeViolations(page)).map((violation) => `${path} ${violation}`));
     }
@@ -107,6 +116,7 @@ for (const role of ROLE_CODES) {
   });
 }
 
+/** Comprueba que hay algún indicador de foco (WCAG 2.4.7): la regla global `:focus-visible` o el anillo del botón. */
 test('el pase de lista se hace solo con teclado y con el foco visible', async ({ page }) => {
   await page.goto('/iniciar-sesion');
   await tabTo(page, page.getByLabel('Correo'));
