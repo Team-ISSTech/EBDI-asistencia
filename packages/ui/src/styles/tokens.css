@@ -9,7 +9,8 @@
 :root {
   --color-ink: #14323a;
   --color-ink-soft: #27505a;
-  --color-ink-muted: #5d7a81;
+  /* Texto secundario sobre papel y superficie: ≥ 4.5:1 (WCAG 1.4.3). */
+  --color-ink-muted: #59747b;
   --color-paper: #f5f7f6;
   --color-surface: #ffffff;
   --color-line: #d7dfdc;
@@ -22,7 +23,8 @@
   --color-success-text: #1d6a3f;
   /* Anillo de foco sobre superficies claras: ≥ 3:1 (WCAG 1.4.11). */
   --color-focus: #27505a;
-  --color-danger: #c2433a;
+  /* Texto de error, también sobre --color-danger-soft: ≥ 4.5:1. */
+  --color-danger: #ba4038;
   --color-danger-soft: #fbe9e7;
 
   /* Estados de asistencia (SRS RF-14). */

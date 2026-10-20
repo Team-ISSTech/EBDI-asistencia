@@ -1,40 +1,13 @@
 import { expect, type Page, test } from '@playwright/test';
-import { API_URL, loginAsDirector } from './support';
+import { API_URL, loginAsDirector, openJourney, RUN, type SeededChild, seedChildren, SURNAME, today } from './support';
 
 /**
  * Pase de lista (RF-12) y captura por matrícula (RF-13) en un navegador real.
  * Requiere la API y MySQL arriba con la semilla de desarrollo; lo guardado se
  * comprueba en el servidor, no en la pantalla.
  */
-const RUN = Date.now().toString(36);
-const today = (): string => new Date().toLocaleDateString('en-CA');
-const SURNAME = 'Prueba';
 /** Guardar pasa por la API (o la cola local): se le da margen a un entorno lento. */
 const SAVE_TIMEOUT = { timeout: 15_000 };
-const birthDate = new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
-
-interface SeededChild {
-  readonly name: string;
-  readonly enrollmentNumber: string;
-}
-
-async function seedChildren(page: Page, prefix: string, count: number): Promise<SeededChild[]> {
-  const rooms = await page.request.get(`${API_URL}/salas`);
-  const roomId = ((await rooms.json()) as { rooms: { id: number; shift: string }[] }).rooms.find((room) => room.shift === 'MATUTINO')?.id;
-  const children = Array.from({ length: count }, (_, index) => ({ name: `${prefix}${index}${RUN}`, enrollmentNumber: `E2E${prefix.slice(0, 3)}${RUN}${index}`.toUpperCase() }));
-  for (const child of children) {
-    const response = await page.request.post(`${API_URL}/infantes`, {
-      data: { enrollmentNumber: child.enrollmentNumber, name: child.name, paternalSurname: SURNAME, birthDate, roomId },
-    });
-    expect(response.ok(), await response.text()).toBe(true);
-  }
-  return children;
-}
-
-async function openJourney(page: Page): Promise<void> {
-  const opened = await page.request.post(`${API_URL}/asistencia/jornadas`, { data: { date: today(), shift: 'MATUTINO' } });
-  expect([201, 409]).toContain(opened.status());
-}
 
 /** Estado guardado en el servidor para cada infante, en el mismo orden. */
 async function savedStatuses(page: Page, children: readonly SeededChild[]): Promise<(string | null)[]> {

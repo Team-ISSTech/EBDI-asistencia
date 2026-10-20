@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "tsc -b --pretty false && tsc --noEmit --pretty false -p tsconfig.e2e.json",
     "test": "vitest run --coverage",
     "test:e2e": "playwright test"
   },
@@ -28,6 +28,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.0",
     "@sirai/eslint-config": "workspace:*",
     "@sirai/typescript-config": "workspace:*",
