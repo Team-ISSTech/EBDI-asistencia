@@ -80,7 +80,7 @@ const upsertUser = async (db: Db, role: RoleCode, passwordHash: string, estancia
  * estancia es NULL (roles centrales), porque MySQL trata cada NULL como
  * distinto. Por eso se busca antes de insertar.
  */
-const ensureAssignment = async (db: Db, userId: number, role: RoleCode, estanciaId: number | null): Promise<void> => {
+export const ensureAssignment = async (db: Db, userId: number, role: RoleCode, estanciaId: number | null): Promise<void> => {
   const [roleRow] = await db.select({ id: roles.id }).from(roles).where(eq(roles.code, role));
   if (!roleRow) throw new Error(`Falta el rol ${role} en la base.`);
   const scopeCondition = estanciaId === null ? isNull(usuarioRol.estanciaId) : eq(usuarioRol.estanciaId, estanciaId);
