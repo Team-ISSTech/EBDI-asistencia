@@ -4,6 +4,7 @@ import { schema, type Db } from '@sirai/db';
 import { and, asc, count, eq, inArray, isNull, ne } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 import { DB } from '../../../common/database/database.module.js';
+import { ApiError } from '../../../common/errors/api-error.js';
 import type { EnrollmentForMarking, ExistingMark, MarkChange, RosterRow } from '../records.types.js';
 import type { AttendanceRecordsRepository, MarkChangeHook } from './records.repository.js';
 
@@ -170,9 +171,11 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
 
   /** El `uuid_cliente` conserva el de la operación que creó el registro. */
   private async update(tx: Pick<Db, 'update'>, journeyId: number, now: Date, change: MarkChange): Promise<void> {
-    await tx
+    const [result] = await tx
       .update(attendanceRecords)
       .set({ status: change.status, method: change.method, enteredAt: change.status === 'PRESENTE' ? now : null, updatedAt: now })
-      .where(and(eq(attendanceRecords.journeyId, journeyId), eq(attendanceRecords.enrollmentId, change.enrollmentId)));
+      .where(and(eq(attendanceRecords.journeyId, journeyId), eq(attendanceRecords.enrollmentId, change.enrollmentId), isNull(attendanceRecords.leftAt)));
+    // S-27: si la salida se registró entre la lectura y esta escritura, el lote completo se deshace.
+    if (result.affectedRows === 0) throw new ApiError('CONFLICTO', 'El infante ya tiene registrada su salida; su asistencia del día no cambia.');
   }
 }

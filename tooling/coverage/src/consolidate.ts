@@ -1,7 +1,7 @@
 /**
- * Reporte consolidado de cobertura (RNF-09, S-12): suma lo cubierto en cada
- * fuente archivo por archivo, a partir del json-summary de Vitest, en lugar
- * de promediar porcentajes.
+ * Reporte consolidado de cobertura (RNF-09, S-12): suma las cuentas de cada
+ * fuente (el `total` del json-summary de Vitest, que ya suma archivo por
+ * archivo) en lugar de promediar porcentajes.
  */
 export const METRICS = ['lines', 'statements', 'functions', 'branches'] as const;
 export type Metric = (typeof METRICS)[number];
@@ -26,7 +26,8 @@ const LABELS: Readonly<Record<Metric, string>> = { lines: 'líneas', statements:
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 function parseCounts(raw: unknown, source: string, metric: Metric): Counts {
-  if (!isRecord(raw) || typeof raw['total'] !== 'number' || typeof raw['covered'] !== 'number') {
+  const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  if (!isRecord(raw) || !isCount(raw['total']) || !isCount(raw['covered'])) {
     throw new Error(`${source}: el resumen de cobertura no trae cuentas válidas de ${metric}.`);
   }
   return { total: raw['total'], covered: raw['covered'] };

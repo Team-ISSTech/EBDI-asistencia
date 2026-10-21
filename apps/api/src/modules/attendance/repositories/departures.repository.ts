@@ -10,7 +10,7 @@ export interface DeparturesRepository {
   findDayRecord(journeyId: number, enrollmentId: number): Promise<DayRecordRow | null>;
   /** Todos los vínculos del infante, también los vencidos o dados de baja: la regla decide. */
   listPickupLinks(childId: number): Promise<PickupLinkRow[]>;
-  /** Registra la salida solo si aún no la tenía; devuelve false si otra petición se adelantó. */
+  /** Registra la salida solo si sigue Presente y sin salida; devuelve false si otra petición se adelantó. */
   recordDeparture(departure: NewDeparture, hook: WriteHook): Promise<boolean>;
   createIncident(incident: NewIncident, hook: WriteHook): Promise<number>;
   listIncidents(recordId: number): Promise<IncidentRow[]>;

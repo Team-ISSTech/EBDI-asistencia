@@ -75,10 +75,10 @@ test.describe.serial('salida e incidencias en el pase de lista', () => {
     await expect(page.getByText(DESCRIPTION)).toHaveCount(0);
     await expect(row.getByText(/1 incidencia/)).toBeVisible();
 
-    // Tras la salida, cambiarle la asistencia no se guarda.
-    await row.getByRole('button', { name: 'Falta injustificada' }).click();
-    await page.getByRole('button', { name: 'Guardar asistencia' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'No se pudo guardar la asistencia' })).toBeVisible();
+    // Tras la salida, su asistencia ya no se puede cambiar desde la lista.
+    for (const status of ['Presente', 'Ausente justificado', 'Falta injustificada', 'Comisión médica', 'Filtro sanitario']) {
+      await expect(row.getByRole('button', { name: status })).toBeDisabled();
+    }
 
     const saved = await savedRecord(page);
     expect(saved).toMatchObject({ status: 'PRESENTE', incidentCount: 1 });

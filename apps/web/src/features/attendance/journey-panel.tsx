@@ -80,9 +80,9 @@ interface OpenDayProps {
 
 /** Se busca en la lista vigente: tras registrar la salida, el panel muestra la hora sin volver a abrirlo. */
 function OpenDay({ journey, entries, openId, permissions, onClose }: OpenDayProps) {
-  const entry = entries.find((candidate) => candidate.enrollmentId === openId && candidate.status === 'PRESENTE');
+  const entry = entries.find((candidate) => candidate.enrollmentId === openId && (candidate.status === 'PRESENTE' || candidate.incidentCount > 0));
   if (!entry) return null;
-  const canRegister = permissions.includes('ASISTENCIA_REGISTRAR') && journey.status === 'ABIERTA';
+  const canRegister = permissions.includes('ASISTENCIA_REGISTRAR') && journey.status === 'ABIERTA' && entry.status === 'PRESENTE';
   return <DayRecordPanel journeyId={journey.id} entry={entry} canRegister={canRegister} canReadDetail={permissions.includes('NOTA_SENSIBLE_CONSULTAR')} onClose={onClose} />;
 }
 

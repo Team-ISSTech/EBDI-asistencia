@@ -49,7 +49,8 @@ Al terminar, detén los dos procesos en segundo plano. Para repetir la prueba, v
 la base (paso 1): la lista del turno debe empezar sin infantes de otras corridas.
 
 `FOLLOW_UP_JOB_SECONDS=2` deja encendido el trabajo que abre los casos de seguimiento al pasar las 9:00 (RF-24):
-la prueba de llamadas lo necesita. Antes de las 9:00 locales esa prueba se omite.
+la prueba de llamadas lo necesita. Antes de las 9:00 en el reloj de la máquina de pruebas esa prueba se omite; el servidor
+usa la zona horaria de la estancia, así que conviene correrla con ambas en la misma zona.
 
 ## Qué comprueba
 

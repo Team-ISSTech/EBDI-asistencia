@@ -20,6 +20,9 @@ describe('parseSummary', () => {
   it('rechaza un archivo sin total o con cuentas que no son números, nombrando la fuente', () => {
     expect(() => parseSummary({}, 'apps/api')).toThrow(/apps\/api/);
     expect(() => parseSummary({ total: { lines: { total: '10', covered: 9 } } }, 'apps/api')).toThrow(/apps\/api.*lines/);
+    const bad = (counts: object) => () => parseSummary({ total: { ...vitestSummary(summary([1, 1], [1, 1], [1, 1], [1, 1])).total, lines: counts } }, 'apps/api');
+    expect(bad({ total: -1, covered: 0 })).toThrow(/lines/);
+    expect(bad({ total: Number.NaN, covered: 0 })).toThrow(/lines/);
   });
 });
 

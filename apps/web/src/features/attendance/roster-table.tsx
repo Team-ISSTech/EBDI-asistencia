@@ -17,8 +17,8 @@ interface StatusButtonsProps {
   readonly onSelect: (status: AttendanceStatus) => void;
 }
 
-/** RF-29: con candado médico no se puede marcar Presente; lo demás sí. */
-const isBlocked = (entry: RosterEntry, status: AttendanceStatus): boolean => entry.medicalLock && status === 'PRESENTE';
+/** RF-29: con candado médico no se puede marcar Presente; lo demás sí. S-27: con la salida registrada ya no cambia. */
+const isBlocked = (entry: RosterEntry, status: AttendanceStatus): boolean => entry.leftAt !== null || (entry.medicalLock && status === 'PRESENTE');
 
 /** Un botón por estado; el activo queda marcado con `aria-pressed`. */
 function StatusButtons({ entry, current, onSelect }: StatusButtonsProps) {
@@ -42,9 +42,9 @@ export interface RosterTableProps {
   readonly onOpenDay?: (entry: RosterEntry) => void;
 }
 
-/** Solo quien ingresó (Presente guardado en el servidor) tiene salida e incidencias. */
+/** Quien ingresó (Presente guardado en el servidor) tiene salida e incidencias; las que ya existen siguen a la vista aunque cambie su estado. */
 function DayCell({ entry, onOpenDay }: { readonly entry: RosterEntry; readonly onOpenDay?: RosterTableProps['onOpenDay'] }) {
-  if (entry.status !== 'PRESENTE') return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
+  if (entry.status !== 'PRESENTE' && entry.incidentCount === 0) return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
   const incidents = entry.incidentCount === 1 ? '1 incidencia' : `${entry.incidentCount} incidencias`;
   return (
     <div className="flex flex-col items-start gap-1">

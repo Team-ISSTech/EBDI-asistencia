@@ -154,8 +154,10 @@ describe.skipIf(!TEST_DATABASE_URL)('salida e incidencias (integración)', () =>
 
     const detail = incidentListResponseSchema.parse((await call('get', `${record(0)}/incidencias/detalle`, TRABAJO_SOCIAL)).body);
     expect(detail.incidents[0]?.description).toBe(DESCRIPTION);
-    const [audit] = await rows<{ n: number }>(sql`SELECT COUNT(*) AS n FROM auditoria WHERE accion = 'INCIDENCIAS_CONSULTADAS'`);
-    expect(Number(audit?.n)).toBe(1);
+    // La lectura se audita sobre el registro de asistencia del día, no con una lista de ids.
+    const [present] = await rows<{ id: number }>(sql`SELECT id FROM asistencias WHERE inscripcion_id = ${enrollmentIds[0]}`);
+    const audits = await rows<{ recordId: string; tableName: string }>(sql`SELECT registro_id AS recordId, tabla_afectada AS tableName FROM auditoria WHERE accion = 'INCIDENCIAS_CONSULTADAS'`);
+    expect(audits).toEqual([{ recordId: String(present?.id), tableName: 'asistencias' }]);
     const { entries } = rosterResponseSchema.parse((await call('get', `/asistencia/jornadas/${journeyId}/lista`, DOCENTE)).body);
     expect(entries.find((entry) => entry.enrollmentId === enrollmentIds[0])?.incidentCount).toBe(1);
   });

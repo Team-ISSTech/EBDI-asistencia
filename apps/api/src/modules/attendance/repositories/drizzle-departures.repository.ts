@@ -77,7 +77,8 @@ export class DrizzleDeparturesRepository implements DeparturesRepository {
       const [result] = await tx
         .update(attendanceRecords)
         .set({ leftAt: departure.at, pickedUpBy: departure.guardianId, departureRecordedBy: departure.userId, updatedAt: departure.at })
-        .where(and(eq(attendanceRecords.id, departure.recordId), isNull(attendanceRecords.leftAt)));
+        // También exige Presente: si otra petición cambió el estado entre la lectura y esta escritura, no hay salida.
+        .where(and(eq(attendanceRecords.id, departure.recordId), isNull(attendanceRecords.leftAt), eq(attendanceRecords.status, 'PRESENTE')));
       if (result.affectedRows === 0) return false;
       await hook(tx, departure.recordId);
       return true;

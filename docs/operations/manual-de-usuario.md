@@ -51,7 +51,7 @@ En la fila de un infante presente, pulsa «Salida e incidencias».
   autorizados a recogerlo y que siguen vigentes; si no aparece nadie, no lo entregues y avisa a la directora. Después de
   la salida ya no se le cambia la asistencia del día.
 - **Incidencias.** Elige el tipo (accidente, enfermedad, conducta u otra), escribe qué pasó y pulsa «Registrar incidencia».
-  La descripción se guarda cifrada: tú ves el tipo y la hora; trabajo social, enfermería, médico y directora pueden leerla.
+  La descripción se guarda cifrada: la docente ve el tipo y la hora; trabajo social, enfermería, médico y directora pueden leerla.
 
 Las dos cosas necesitan conexión; sin internet anótalas en el formato de papel y regístralas al volver la red.
 

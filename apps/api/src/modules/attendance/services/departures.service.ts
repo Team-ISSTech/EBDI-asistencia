@@ -52,7 +52,7 @@ export class DeparturesService {
     const saved = await this.departures.recordDeparture({ recordId: record.id, guardianId: input.guardianId, userId: auth.userId, at }, (tx, id) =>
       this.audit.record({ ...this.actor(auth), action: 'SALIDA_REGISTRADA', tableName: 'asistencias', recordId: String(id), after: { journeyId, enrollmentId, guardianId: input.guardianId, leftAt: at.toISOString() }, request }, tx),
     );
-    if (!saved) throw new ApiError('CONFLICTO', BLOCKER_MESSAGES.YA_SALIO);
+    if (!saved) throw new ApiError('CONFLICTO', BLOCKER_MESSAGES[departureBlocker(await this.departures.findDayRecord(journey.id, enrollmentId)) ?? 'YA_SALIO']);
     return { leftAt: at.toISOString() };
   }
 
@@ -69,24 +69,25 @@ export class DeparturesService {
 
   /** Tipo y hora, sin la descripción: para quien consulta la asistencia. */
   async listIncidents(auth: AuthContext, journeyId: number, enrollmentId: number): Promise<Incident[]> {
-    const rows = await this.incidentRows(auth, journeyId, enrollmentId);
+    const { rows } = await this.incidentRows(auth, journeyId, enrollmentId);
     return rows.map((row) => this.toIncident(row, null));
   }
 
   /** Con la descripción descifrada: solo con permiso de notas sensibles, y la lectura se audita. */
   async listIncidentDetails(auth: AuthContext, journeyId: number, enrollmentId: number, request: RequestContext): Promise<Incident[]> {
-    const rows = await this.incidentRows(auth, journeyId, enrollmentId);
+    const { recordId, rows } = await this.incidentRows(auth, journeyId, enrollmentId);
+    // Se audita sobre el registro de asistencia, con cuántas se leyeron: una lista de ids no cabe en la columna.
     if (rows.length > 0) {
-      await this.audit.record({ ...this.actor(auth), action: 'INCIDENCIAS_CONSULTADAS', tableName: 'incidencias_asistencia', recordId: rows.map((row) => row.id).join(','), request });
+      await this.audit.record({ ...this.actor(auth), action: 'INCIDENCIAS_CONSULTADAS', tableName: 'asistencias', recordId: String(recordId), after: { incidents: rows.length }, request });
     }
     return rows.map((row) => this.toIncident(row, row.descriptionEncrypted === null ? null : this.encryption.decrypt(row.descriptionEncrypted)));
   }
 
-  private async incidentRows(auth: AuthContext, journeyId: number, enrollmentId: number): Promise<IncidentRow[]> {
+  private async incidentRows(auth: AuthContext, journeyId: number, enrollmentId: number): Promise<{ recordId: number | null; rows: IncidentRow[] }> {
     const journey = await this.requireJourney(auth, journeyId);
     await this.requireChild(journey, enrollmentId);
     const record = await this.departures.findDayRecord(journey.id, enrollmentId);
-    return record === null ? [] : this.departures.listIncidents(record.id);
+    return record === null ? { recordId: null, rows: [] } : { recordId: record.id, rows: await this.departures.listIncidents(record.id) };
   }
 
   private toIncident(row: IncidentRow, description: string | null): Incident {
