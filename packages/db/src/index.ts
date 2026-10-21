@@ -6,3 +6,5 @@ export type { MigrationReport } from './migrate/runner.js';
 export { expectedRolePermissionPairs, syncRolePermissions } from './seed/catalog.js';
 export { DEV_ESTANCIAS, DEV_ROOMS, DEV_SCHOOL_YEAR, assertSeedAllowed, devUserEmail, seedDevelopmentData } from './seed/dev.js';
 export { assertAdminInput, bootstrapAdmin, generateTemporaryPassword } from './seed/bootstrap-admin.js';
+export { createSeedCipher } from './seed/demo-cipher.js';
+export type { SeedCipher } from './seed/demo-cipher.js';

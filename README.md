@@ -102,6 +102,7 @@ docker compose up -d mysql      # solo la base de datos
 pnpm install
 pnpm --filter @sirai/db migrate # aplica packages/db/sql/*.sql
 pnpm --filter @sirai/db seed    # roles, permisos, 2 estancias y un usuario por rol (SEED_PASSWORD)
+pnpm --filter @sirai/db seed:demo  # opcional: infantes, tutores, asistencia y seguimientos de prueba
 pnpm dev
 ```
 
@@ -112,7 +113,16 @@ Pruebas de extremo a extremo (Playwright) con API y base arriba:
 Usuarios de desarrollo: `docente@sirai.test`, `directora@sirai.test`,
 `trabajo_social@sirai.test`, `enfermeria@sirai.test`, `medico@sirai.test`,
 `supervisor_central@sirai.test` y `admin_central@sirai.test`, todos con la
-contraseña `SEED_PASSWORD` del `.env`. No existen infantes ni tutores de prueba.
+contraseña `SEED_PASSWORD` del `.env`.
+
+`seed:demo` (opcional, después de `seed`) llena las dos estancias con datos inventados para probar sin teclear:
+52 infantes (matrículas `DEMO-01-001`…) en tres salas, sus tutores con teléfono cifrado, consentimientos en
+todos los estados, diez días hábiles de jornadas cerradas y unas seis decenas de seguimientos repartidos entre abiertos,
+clasificados, con candado médico, con alerta de emergencia y cerrados. Hoy queda sin jornada para abrirla y
+pasar lista. Los usuarios de estancia (directora, docente, etc.) quedan asignados a las dos estancias para probar
+el cambio de estancia. Usa `DATA_ENCRYPTION_KEY` del `.env` (la misma de la API) y es repetible: si ya hay
+datos `DEMO-*` no toca nada. Se niega con `NODE_ENV=production`. Para empezar de nuevo hay que recrear la
+base (las tablas con datos de menores no se borran).
 
 La web queda disponible en `http://localhost:5173` y la API en `http://localhost:3000`.
 

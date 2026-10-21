@@ -15,7 +15,7 @@ export default defineConfig([
     external: ['mysql2', 'argon2'],
   },
   {
-    entry: { 'cli/migrate': 'src/cli/migrate.ts', 'cli/seed': 'src/cli/seed.ts', 'cli/create-admin': 'src/cli/create-admin.ts' },
+    entry: { 'cli/migrate': 'src/cli/migrate.ts', 'cli/seed': 'src/cli/seed.ts', 'cli/seed-demo': 'src/cli/seed-demo.ts', 'cli/create-admin': 'src/cli/create-admin.ts' },
     format: ['esm'],
     sourcemap: true,
     // dotenv es CommonJS: debe resolverse en tiempo de ejecución, no empaquetarse en ESM.
