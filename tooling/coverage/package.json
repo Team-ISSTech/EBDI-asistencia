@@ -1,0 +1,22 @@
+{
+  "name": "@sirai/coverage",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Reporte consolidado de cobertura de RNF-09: suma domain, auth y la API y falla bajo el umbral.",
+  "type": "module",
+  "scripts": {
+    "report": "tsx src/main.ts",
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit --pretty false",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@sirai/eslint-config": "workspace:*",
+    "@sirai/typescript-config": "workspace:*",
+    "@types/node": "26.6.2",
+    "eslint": "10.11.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}

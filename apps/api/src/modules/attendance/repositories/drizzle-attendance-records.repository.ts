@@ -1,13 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ATTENDANCE_STATUSES, isShift, type AttendanceStatus, type Shift } from '@sirai/domain';
 import { schema, type Db } from '@sirai/db';
-import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull, ne } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/mysql-core';
 import { DB } from '../../../common/database/database.module.js';
+import { ApiError } from '../../../common/errors/api-error.js';
 import type { EnrollmentForMarking, ExistingMark, MarkChange, RosterRow } from '../records.types.js';
 import type { AttendanceRecordsRepository, MarkChangeHook } from './records.repository.js';
 
-const { attendanceRecords, enrollments, children, rooms, followUps, medicalReleases } = schema;
+const { attendanceRecords, attendanceIncidents, enrollments, children, rooms, followUps, medicalReleases } = schema;
 
 const requireStatus = (value: string): AttendanceStatus => {
   if (!(ATTENDANCE_STATUSES as readonly string[]).includes(value)) throw new Error(`Estado de asistencia no reconocido: ${value}`);
@@ -41,6 +42,7 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
         roomId: rooms.id,
         roomName: rooms.name,
         status: attendanceRecords.status,
+        leftAt: attendanceRecords.leftAt,
       })
       .from(enrollments)
       .innerJoin(children, eq(children.id, enrollments.childId))
@@ -49,6 +51,7 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       .where(and(activeIn(estanciaId), eq(rooms.shift, shift)))
       .orderBy(asc(rooms.name), asc(children.paternalSurname), asc(children.maternalSurname), asc(children.name));
     const locked = await this.lockedChildIds(rows.map((row) => row.childId));
+    const incidents = await this.incidentCounts(journeyId);
     return rows.map((row) => ({
       enrollmentId: row.enrollmentId,
       childId: row.childId,
@@ -58,7 +61,20 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
       roomName: row.roomName,
       status: row.status === null ? null : requireStatus(row.status),
       medicalLock: locked.has(row.childId),
+      leftAt: row.leftAt,
+      incidentCount: incidents.get(row.enrollmentId) ?? 0,
     }));
+  }
+
+  /** S-27: incidencias vigentes por inscripción en la jornada, en una sola consulta para toda la lista. */
+  private async incidentCounts(journeyId: number): Promise<Map<number, number>> {
+    const rows = await this.db
+      .select({ enrollmentId: attendanceRecords.enrollmentId, total: count() })
+      .from(attendanceIncidents)
+      .innerJoin(attendanceRecords, eq(attendanceRecords.id, attendanceIncidents.attendanceRecordId))
+      .where(and(eq(attendanceRecords.journeyId, journeyId), isNull(attendanceIncidents.deletedAt)))
+      .groupBy(attendanceRecords.enrollmentId);
+    return new Map(rows.map((row) => [row.enrollmentId, row.total]));
   }
 
   async findEnrollments(estanciaId: number, enrollmentIds: readonly number[]): Promise<EnrollmentForMarking[]> {
@@ -103,10 +119,10 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
 
   async findMarks(journeyId: number, enrollmentIds: readonly number[]): Promise<ExistingMark[]> {
     const rows = await this.db
-      .select({ enrollmentId: attendanceRecords.enrollmentId, status: attendanceRecords.status })
+      .select({ enrollmentId: attendanceRecords.enrollmentId, status: attendanceRecords.status, leftAt: attendanceRecords.leftAt })
       .from(attendanceRecords)
       .where(and(eq(attendanceRecords.journeyId, journeyId), inArray(attendanceRecords.enrollmentId, [...enrollmentIds])));
-    return rows.map((row) => ({ enrollmentId: row.enrollmentId, status: requireStatus(row.status) }));
+    return rows.map((row) => ({ enrollmentId: row.enrollmentId, status: requireStatus(row.status), leftAt: row.leftAt }));
   }
 
   async findAppliedClientIds(clientIds: readonly string[]): Promise<Set<string>> {
@@ -155,9 +171,11 @@ export class DrizzleAttendanceRecordsRepository implements AttendanceRecordsRepo
 
   /** El `uuid_cliente` conserva el de la operación que creó el registro. */
   private async update(tx: Pick<Db, 'update'>, journeyId: number, now: Date, change: MarkChange): Promise<void> {
-    await tx
+    const [result] = await tx
       .update(attendanceRecords)
       .set({ status: change.status, method: change.method, enteredAt: change.status === 'PRESENTE' ? now : null, updatedAt: now })
-      .where(and(eq(attendanceRecords.journeyId, journeyId), eq(attendanceRecords.enrollmentId, change.enrollmentId)));
+      .where(and(eq(attendanceRecords.journeyId, journeyId), eq(attendanceRecords.enrollmentId, change.enrollmentId), isNull(attendanceRecords.leftAt)));
+    // S-27: si la salida se registró entre la lectura y esta escritura, el lote completo se deshace.
+    if (result.affectedRows === 0) throw new ApiError('CONFLICTO', 'El infante ya tiene registrada su salida; su asistencia del día no cambia.');
   }
 }

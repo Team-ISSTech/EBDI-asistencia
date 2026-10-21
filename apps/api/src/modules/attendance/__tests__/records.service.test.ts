@@ -41,7 +41,7 @@ class FakeJourneys {
 
 class FakeRecords implements AttendanceRecordsRepository {
   enrollments = new Map<number, EnrollmentForMarking & { estanciaId: number; childName: string }>();
-  marks = new Map<number, { id: number; status: ExistingMark['status']; clientId: string }>();
+  marks = new Map<number, { id: number; status: ExistingMark['status']; clientId: string; leftAt?: Date }>();
   locked = new Set<number>();
   appliedBatches: MarkChange[][] = [];
   appliedAt: Date[] = [];
@@ -51,7 +51,7 @@ class FakeRecords implements AttendanceRecordsRepository {
     return Promise.resolve(
       [...this.enrollments.values()]
         .filter((e) => e.estanciaId === estanciaId && e.roomShift === shift)
-        .map((e) => ({ enrollmentId: e.enrollmentId, childId: e.enrollmentId, childName: e.childName, enrollmentNumber: `M-${e.enrollmentId}`, roomId: 1, roomName: 'Sala', status: this.marks.get(e.enrollmentId)?.status ?? null, medicalLock: this.locked.has(e.enrollmentId) })),
+        .map((e) => ({ enrollmentId: e.enrollmentId, childId: e.enrollmentId, childName: e.childName, enrollmentNumber: `M-${e.enrollmentId}`, roomId: 1, roomName: 'Sala', status: this.marks.get(e.enrollmentId)?.status ?? null, medicalLock: this.locked.has(e.enrollmentId), leftAt: this.marks.get(e.enrollmentId)?.leftAt ?? null, incidentCount: 0 })),
     );
   }
 
@@ -64,7 +64,7 @@ class FakeRecords implements AttendanceRecordsRepository {
   }
 
   findMarks(_journeyId: number, ids: readonly number[]): Promise<ExistingMark[]> {
-    return Promise.resolve(ids.flatMap((id) => { const m = this.marks.get(id); return m ? [{ enrollmentId: id, status: m.status }] : []; }));
+    return Promise.resolve(ids.flatMap((id) => { const m = this.marks.get(id); return m ? [{ enrollmentId: id, status: m.status, leftAt: m.leftAt ?? null }] : []; }));
   }
 
   findAppliedClientIds(clientIds: readonly string[]): Promise<Set<string>> {
@@ -78,7 +78,7 @@ class FakeRecords implements AttendanceRecordsRepository {
     const applied = changes.map((change) => {
       const current = this.marks.get(change.enrollmentId);
       const id = current?.id ?? this.nextId++;
-      this.marks.set(change.enrollmentId, { id, status: change.status, clientId: current?.clientId ?? change.clientId });
+      this.marks.set(change.enrollmentId, { ...current, id, status: change.status, clientId: current?.clientId ?? change.clientId });
       return { change, recordId: id };
     });
     await hook({} as Parameters<MarkChangeHook>[0], applied);
@@ -129,6 +129,14 @@ describe('AttendanceRecordsService', () => {
     const result = await service.mark(auth, 1, batch([2, 'FALTA_INJUSTIFICADA', 20]), request);
     expect(result).toEqual({ saved: 1, unchanged: 0 });
     expect(audit.entries[0]).toMatchObject({ action: 'ASISTENCIA_MODIFICADA', before: { status: 'PRESENTE' }, after: { status: 'FALTA_INJUSTIFICADA' } });
+  });
+
+  it('tras la salida (S-27) el estado del día no cambia, pero repetir Presente no es un error', async () => {
+    await service.mark(auth, 1, batch([1, 'PRESENTE']), request);
+    records.marks.set(1, { ...records.marks.get(1)!, leftAt: new Date('2026-10-15T20:00:00Z') });
+    await expect(service.mark(auth, 1, batch([1, 'FALTA_INJUSTIFICADA', 10]), request)).rejects.toMatchObject({ code: 'CONFLICTO' });
+    expect(records.marks.get(1)?.status).toBe('PRESENTE');
+    expect(await service.mark(auth, 1, batch([1, 'PRESENTE', 11], [2, 'PRESENTE']), request)).toEqual({ saved: 1, unchanged: 1 });
   });
 
   it('un reintento con la misma operación no duplica ni audita', async () => {
@@ -213,6 +221,14 @@ describe('AttendanceRecordsService', () => {
   });
 
   describe('markPartial (captura sin conexión)', () => {
+    it('sin conexión, una marca sobre quien ya salió se rechaza sola y el resto se aplica', async () => {
+      await service.mark(auth, 1, batch([1, 'PRESENTE']), request);
+      records.marks.set(1, { ...records.marks.get(1)!, leftAt: new Date('2026-10-15T13:00:00Z') });
+      const result = await service.markPartial(auth, 1, batch([1, 'FALTA_INJUSTIFICADA', 10], [2, 'PRESENTE']), new Date('2026-10-15T13:30:00Z'), request);
+      expect(result).toMatchObject({ saved: 1, rejections: [{ ref: 1, code: 'YA_SALIO' }] });
+      expect(records.marks.get(1)?.status).toBe('PRESENTE');
+    });
+
     const CAPTURED = new Date('2026-10-15T13:30:00Z');
     const partial = (input: ReturnType<typeof batch>, capturedAt = CAPTURED) => service.markPartial(auth, 1, input, capturedAt, request);
 

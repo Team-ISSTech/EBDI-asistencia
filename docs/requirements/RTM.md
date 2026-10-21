@@ -27,7 +27,7 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-10 | Supervisor Central solo agregados | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/reports` | integración Vitest + MySQL | implementado en `main` (permisos, tablero y exportaciones solo agregados, con alcance por región) |
 | RF-11 | Admin Central: usuarios, roles y auditoría | `packages/auth`, `apps/api/src/modules/identity`, `apps/api/src/modules/administration` | integración Vitest + MySQL | implementado (usuarios, roles y consulta de la bitácora con filtros y paginación; del cambio solo los nombres de los campos, supuesto S-23) |
 | RF-12 | Pase de lista en menos de 3 clics | `apps/web/src/features/attendance` | e2e Playwright | implementado en `main` (pase de lista en dos clics, comprobado con e2e Playwright en `apps/web/e2e/roll-call.spec.ts`) |
-| RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance` | unitaria Vitest (pantalla con lector simulado y cámara simulada), e2e Playwright (lector y captura manual) | parcial: el cliente pide un lector para credenciales de infantes y tutores autorizados; está implementado el ingreso de infantes por matrícula (lector, cámara o captura manual). Faltan las credenciales de tutores y la salida, que el documento no define (S-22) |
+| RF-13 | Escaneo QR/código de barras | `apps/web/src/features/attendance` | unitaria Vitest (pantalla con lector simulado y cámara simulada), e2e Playwright (lector y captura manual) | parcial: el cliente pide un lector para credenciales de infantes y tutores autorizados; está implementado el ingreso de infantes por matrícula (lector, cámara o captura manual). La salida se registra eligiendo al tutor autorizado (RF-39); faltan las credenciales de tutores, que el documento no define (S-22) |
 | RF-14 | Estados de asistencia | `packages/domain` (estados y reglas), `apps/api/src/modules/attendance` | unitaria Vitest | implementado en `main` |
 | RF-15 | Jornada por estancia, fecha y turno | `packages/domain`, `apps/api/src/modules/attendance`, `packages/db` (índice único) | unitaria Vitest, integración Vitest + MySQL | implementado en `main` |
 | RF-16 | Tablero semaforizado en tiempo real | `apps/api/src/modules/reports`, `apps/web/src/features/reports` | integración Vitest + MySQL, e2e Playwright | implementado en `main` (umbrales del semáforo por confirmar, S-15) |
@@ -53,6 +53,8 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 | RF-36 | Consentimiento del tutor | `apps/api/src/modules/children`, `apps/web/src/features/children` | integración Vitest + MySQL | implementado en `main` (la versión del aviso la fija el servidor; falta confirmar la versión real) |
 | RF-37 | API con Bearer tokens para sistemas institucionales (A21A, #52) | `apps/api/src/modules/integration`, `packages/db` (`sistemas_integracion`, migración 0015), `packages/auth` (alcances) | integración Vitest + MySQL, unitaria Vitest | implementado (credenciales de cliente, JWT de 15 min, alcances, revocación inmediata, límite y auditoría; un solo endpoint de lectura agregada, supuesto S-18) |
 | RF-38 | Cambio de contraseña temporal y voluntario | `apps/api/src/modules/identity`, `apps/web/src/features/auth`, `packages/contracts` | integración Vitest + MySQL, unitaria Vitest | implementado (cambio obligatorio con temporal, voluntario, caducidad y restablecimiento por administrador; supuesto S-19) |
+| RF-39 | Salida con tutor autorizado (A12, #43) | `packages/domain` (`departure.ts`), `apps/api/src/modules/attendance` (salida), `packages/db` (migración 0018), `apps/web/src/features/attendance` | unitaria Vitest, integración Vitest + MySQL, e2e Playwright (`departures.spec.ts`) | implementado (supuesto S-27 por confirmar; sin credenciales de tutores, S-22) |
+| RF-40 | Incidencias del día cifradas (A12, #43) | `apps/api/src/modules/attendance` (incidencias), `packages/db` (`incidencias_asistencia`, migración 0018), `apps/web/src/features/attendance` | integración Vitest + MySQL, e2e Playwright (`departures.spec.ts`) | implementado (tipos y alcance del supuesto S-27, por confirmar) |
 
 ## Requisitos no funcionales
 
@@ -80,10 +82,10 @@ construye desde la Fase 1, según el supuesto S-04 del SRS.
 
 | Métrica | Valor |
 | --- | --- |
-| Requisitos funcionales (RF) | 38 |
+| Requisitos funcionales (RF) | 40 |
 | Requisitos no funcionales (RNF) | 17 |
-| Total | 55 |
-| Mapeados a paquete o módulo | 55 (100 %) |
-| Implementados | 51 |
+| Total | 57 |
+| Mapeados a paquete o módulo | 57 (100 %) |
+| Implementados | 53 |
 | Parciales | 3 |
 | Pendientes | 1 |

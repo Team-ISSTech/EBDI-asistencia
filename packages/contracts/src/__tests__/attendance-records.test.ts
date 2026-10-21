@@ -35,8 +35,9 @@ describe('rosterResponseSchema', () => {
   });
 
   it('solo indica si hay candado médico, sin diagnósticos ni contacto', () => {
+    // De la salida y las incidencias (S-27) solo viajan la hora y cuántas hay: ni el tutor ni la descripción.
     expect(Object.keys(rosterResponseSchema.shape.entries.element.shape).sort()).toEqual(
-      ['childId', 'childName', 'enrollmentId', 'enrollmentNumber', 'medicalLock', 'roomId', 'roomName', 'status'].sort(),
+      ['childId', 'childName', 'enrollmentId', 'enrollmentNumber', 'incidentCount', 'leftAt', 'medicalLock', 'roomId', 'roomName', 'status'].sort(),
     );
   });
 });

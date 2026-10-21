@@ -10,6 +10,9 @@ export interface RosterRow {
   readonly status: AttendanceStatus | null;
   /** RF-29: el infante requiere alta médica y no puede marcarse Presente. */
   readonly medicalLock: boolean;
+  /** S-27: hora de salida, si ya la registró. */
+  readonly leftAt: Date | null;
+  readonly incidentCount: number;
 }
 
 /** Inscripción activa en la estancia, con el turno de su sala. */
@@ -21,6 +24,8 @@ export interface EnrollmentForMarking {
 export interface ExistingMark {
   readonly enrollmentId: number;
   readonly status: AttendanceStatus;
+  /** S-27: con la salida registrada, el estado del día ya no cambia. */
+  readonly leftAt: Date | null;
 }
 
 export interface MarkChange {

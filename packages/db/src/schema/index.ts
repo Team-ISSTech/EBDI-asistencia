@@ -9,7 +9,7 @@ export { children } from './infantes.js';
 export { childGuardians, guardians } from './tutores.js';
 export { enrollmentMovements, enrollments } from './inscripciones.js';
 export { consents } from './consentimientos.js';
-export { attendanceRecords, jornadasAsistencia } from './asistencia.js';
+export { attendanceIncidents, attendanceRecords, jornadasAsistencia } from './asistencia.js';
 export { followUpContacts, followUps, medicalReleases } from './seguimientos.js';
 export { emergencyNotices } from './avisos.js';
 export { issuedDossiers } from './expedientes.js';

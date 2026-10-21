@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { MarkAttendanceRequest, MarkAttendanceResponse, RosterEntry, SyncRejection } from '@sirai/contracts';
-import { planMark } from '@sirai/domain';
+import { markBlockedByDeparture, planMark } from '@sirai/domain';
 import { type AuditEntry, AuditService } from '../../../common/audit/audit.service.js';
 import type { AuthContext } from '../../../common/auth/auth-context.js';
 import { ApiError } from '../../../common/errors/api-error.js';
@@ -26,6 +26,7 @@ const REJECTION_MESSAGES = {
   INSCRIPCION_INVALIDA: 'El infante no está inscrito en esta estancia.',
   TURNO_DISTINTO: 'El infante es de una sala de otro turno.',
   CANDADO_MEDICO: 'El infante requiere alta médica para ingresar; no se puede marcar presente.',
+  YA_SALIO: 'El infante ya tiene registrada su salida; su asistencia del día no cambia.',
 } as const;
 
 /**
@@ -46,7 +47,7 @@ export class AttendanceRecordsService {
     const journey = await this.requireJourney(auth, journeyId);
     const rows = await this.records.listRoster(journey.estanciaId, journey.id, journey.shift);
     await this.audit.record({ ...this.actor(auth), action: 'LISTA_ASISTENCIA_CONSULTADA', tableName: JOURNEYS_TABLE, recordId: String(journeyId), request });
-    return rows.map((row) => ({ ...row }));
+    return rows.map((row) => ({ ...row, leftAt: row.leftAt?.toISOString() ?? null }));
   }
 
   /**
@@ -59,6 +60,7 @@ export class AttendanceRecordsService {
     const enrollmentIds = input.marks.map((mark) => mark.enrollmentId);
     this.assertEnrollable(journey, enrollmentIds, await this.records.findEnrollments(journey.estanciaId, enrollmentIds));
     await this.assertNoMedicalLock(journey.estanciaId, input);
+    if ((await this.departedRefs(journey.id, input)).size > 0) throw new ApiError('CONFLICTO', REJECTION_MESSAGES.YA_SALIO);
     const changes = await this.planChanges(journey.id, input);
     if (changes.length > 0) {
       await this.records.applyChanges(journey.id, auth.userId, this.clock(), changes, (tx, applied) => this.audit.recordMany(this.auditEntries(auth, journey.id, applied, request), tx));
@@ -80,12 +82,27 @@ export class AttendanceRecordsService {
       throw new ApiError('CONFLICTO', 'La jornada ya estaba cerrada cuando se capturó.');
     }
     const at = new Date(Math.min(capturedAt.getTime(), this.clock().getTime()));
-    const { valid, rejections } = await this.splitValid(journey, input);
+    const { valid, rejections } = await this.withoutDeparted(journey.id, await this.splitValid(journey, input));
     const changes = valid.marks.length === 0 ? [] : await this.planChanges(journey.id, valid);
     if (changes.length > 0) {
       await this.records.applyChanges(journey.id, auth.userId, at, changes, (tx, applied) => this.audit.recordMany(this.auditEntries(auth, journey.id, applied, request, at), tx));
     }
     return { saved: changes.length, unchanged: valid.marks.length - changes.length, rejections };
+  }
+
+  /** S-27: inscripciones cuya marca cambiaría el estado de un infante que ya salió. */
+  private async departedRefs(journeyId: number, input: MarkAttendanceRequest): Promise<Set<number>> {
+    const existing = new Map((await this.records.findMarks(journeyId, input.marks.map((mark) => mark.enrollmentId))).map((mark) => [mark.enrollmentId, mark]));
+    return new Set(input.marks.filter((mark) => markBlockedByDeparture(existing.get(mark.enrollmentId) ?? null, mark.status)).map((mark) => mark.enrollmentId));
+  }
+
+  /** Sin conexión, una marca sobre un infante que ya salió se rechaza sola, sin tumbar el resto del lote. */
+  private async withoutDeparted(journeyId: number, split: { valid: MarkAttendanceRequest; rejections: SyncRejection[] }): Promise<{ valid: MarkAttendanceRequest; rejections: SyncRejection[] }> {
+    if (split.valid.marks.length === 0) return split;
+    const departed = await this.departedRefs(journeyId, split.valid);
+    if (departed.size === 0) return split;
+    const blocked = [...departed].map((ref) => ({ ref, code: 'YA_SALIO', message: REJECTION_MESSAGES.YA_SALIO }));
+    return { valid: { marks: split.valid.marks.filter((mark) => !departed.has(mark.enrollmentId)) }, rejections: [...split.rejections, ...blocked] };
   }
 
   /** Separa las marcas que se pueden aplicar de las que no, con el motivo de cada una. */

@@ -11,7 +11,10 @@ export const today = (): string => new Date().toLocaleDateString('en-CA');
 
 /** Sufijo de esta corrida: hace únicos los nombres y las matrículas que se siembran. */
 export const RUN = Date.now().toString(36);
-const birthDate = new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
+const MS_PER_DAY = 86_400_000;
+/** Edad que admite cada sala de la semilla: Lactantes (0-18 meses, cupo 12) y Maternal (19-48 meses, cupo 20). */
+const ROOMS = { Lactantes: 180, Maternal: 900 } as const;
+export type SeedRoom = keyof typeof ROOMS;
 
 /** Llena y envía el formulario de inicio de sesión con un usuario de la semilla (`<rol>@sirai.test`). */
 export async function submitLogin(page: Page, email: string): Promise<void> {
@@ -28,22 +31,38 @@ export async function loginAsDirector(page: Page): Promise<void> {
 }
 
 export interface SeededChild {
+  readonly id: number;
   readonly name: string;
   readonly enrollmentNumber: string;
 }
 
-/** Inscribe infantes ficticios en la primera sala matutina; requiere una sesión con permiso de alta. */
-export async function seedChildren(page: Page, prefix: string, count: number): Promise<SeededChild[]> {
+/**
+ * Inscribe infantes ficticios en una sala matutina (Lactantes por omisión); requiere una sesión con
+ * permiso de alta. Las pruebas que no necesitan Lactantes usan Maternal para no llenar su cupo.
+ */
+export async function seedChildren(page: Page, prefix: string, count: number, room: SeedRoom = 'Lactantes'): Promise<SeededChild[]> {
   const rooms = await page.request.get(`${API_URL}/salas`);
-  const roomId = ((await rooms.json()) as { rooms: { id: number; shift: string }[] }).rooms.find((room) => room.shift === 'MATUTINO')?.id;
-  const children = Array.from({ length: count }, (_, index) => ({ name: `${prefix}${index}${RUN}`, enrollmentNumber: `E2E${prefix.slice(0, 3)}${RUN}${index}`.toUpperCase() }));
-  for (const child of children) {
-    const response = await page.request.post(`${API_URL}/infantes`, {
-      data: { enrollmentNumber: child.enrollmentNumber, name: child.name, paternalSurname: SURNAME, birthDate, roomId },
-    });
+  const roomId = ((await rooms.json()) as { rooms: { id: number; name: string; shift: string }[] }).rooms.find((candidate) => candidate.shift === 'MATUTINO' && candidate.name.startsWith(room))?.id;
+  const birthDate = new Date(Date.now() - ROOMS[room] * MS_PER_DAY).toISOString().slice(0, 10);
+  const seeded: SeededChild[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const name = `${prefix}${index}${RUN}`;
+    const enrollmentNumber = `E2E${prefix.slice(0, 3)}${RUN}${index}`.toUpperCase();
+    const response = await page.request.post(`${API_URL}/infantes`, { data: { enrollmentNumber, name, paternalSurname: SURNAME, birthDate, roomId } });
     expect(response.ok(), await response.text()).toBe(true);
+    seeded.push({ id: ((await response.json()) as { id: number }).id, name, enrollmentNumber });
   }
-  return children;
+  return seeded;
+}
+
+/** Marca la asistencia de hoy por la API (preparación; el pase de lista real se prueba en roll-call.spec.ts). */
+export async function markViaApi(page: Page, enrollmentNumber: string, status: string): Promise<void> {
+  const journey = await page.request.get(`${API_URL}/asistencia/jornadas/activa?date=${today()}&shift=MATUTINO`);
+  const { id } = (await journey.json()) as { id: number };
+  const roster = (await (await page.request.get(`${API_URL}/asistencia/jornadas/${id}/lista`)).json()) as { entries: { enrollmentId: number; enrollmentNumber: string }[] };
+  const enrollmentId = roster.entries.find((entry) => entry.enrollmentNumber === enrollmentNumber)?.enrollmentId;
+  const response = await page.request.post(`${API_URL}/asistencia/jornadas/${id}/registros`, { data: { marks: [{ enrollmentId, status, clientId: crypto.randomUUID() }] } });
+  expect(response.ok(), await response.text()).toBe(true);
 }
 
 /** Abre la jornada matutina de hoy; si ya estaba abierta, la deja como está. */

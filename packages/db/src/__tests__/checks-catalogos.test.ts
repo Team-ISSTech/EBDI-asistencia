@@ -11,6 +11,7 @@ import {
   EMERGENCY_NOTICE_STATUSES,
   ENROLLMENT_MOVEMENTS,
   ENROLLMENT_STATUSES,
+  INCIDENT_TYPES,
   ESTANCIA_STATUSES,
   GUARDIAN_STATUSES,
   JOURNEY_STATUSES,
@@ -23,6 +24,7 @@ const MIGRATION = resolve(import.meta.dirname, '../../sql/0004_checks_catalogos.
 const ATTENDANCE_MIGRATION = resolve(import.meta.dirname, '../../sql/0007_checks_asistencia.sql');
 const FOLLOW_UP_MIGRATION = resolve(import.meta.dirname, '../../sql/0008_checks_seguimientos.sql');
 const CONTACT_MIGRATION = resolve(import.meta.dirname, '../../sql/0009_checks_contactos.sql');
+const DEPARTURE_MIGRATION = resolve(import.meta.dirname, '../../sql/0018_salida_incidencias.sql');
 const NOTICE_MIGRATION = resolve(import.meta.dirname, '../../sql/0017_avisos_emergencia.sql');
 const CONSENT_MIGRATION = resolve(import.meta.dirname, '../../sql/0006_checks_consentimientos.sql');
 
@@ -110,5 +112,13 @@ describe('CHECK de avisos de emergencia (migración 0017)', () => {
 
   it('un contacto recibe un solo aviso por seguimiento', () => {
     expect(sqlText).toMatch(/UNIQUE KEY uq_avisos_seguimiento_tutor \(seguimiento_id, tutor_id\)/);
+  });
+});
+
+describe('CHECK de salida e incidencias (migración 0018)', () => {
+  const sqlText = readFileSync(DEPARTURE_MIGRATION, 'utf8');
+
+  it('ck_incidencias_tipo replica los tipos de packages/domain', () => {
+    expect(checkValues(sqlText, 'ck_incidencias_tipo')).toEqual([...INCIDENT_TYPES]);
   });
 });

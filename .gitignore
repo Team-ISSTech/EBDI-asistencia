@@ -2,6 +2,8 @@ node_modules/
 .turbo/
 dist/
 coverage/
+# El paquete del reporte consolidado (RNF-09) sí se versiona; sus reportes no.
+!/tooling/coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo

@@ -11,7 +11,7 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "coverage:report": "pnpm --filter @sirai/coverage report",
+    "coverage:report": "pnpm --filter @sirai/coverage --fail-if-no-match report",
     "docker:up": "docker compose up -d",
     "docker:build": "docker compose up --build -d",
     "docker:down": "docker compose down",

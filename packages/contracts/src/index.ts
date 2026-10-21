@@ -98,6 +98,25 @@ export type {
   RosterResponse,
 } from './attendance/record.js';
 export {
+  authorizedPickupSchema,
+  authorizedPickupsResponseSchema,
+  incidentListResponseSchema,
+  incidentSchema,
+  incidentTypeSchema,
+  registerDepartureRequestSchema,
+  registerDepartureResponseSchema,
+  registerIncidentRequestSchema,
+} from './attendance/departure.js';
+export type {
+  AuthorizedPickup,
+  AuthorizedPickupsResponse,
+  Incident,
+  IncidentListResponse,
+  RegisterDepartureRequest,
+  RegisterDepartureResponse,
+  RegisterIncidentRequest,
+} from './attendance/departure.js';
+export {
   contactListResponseSchema,
   contactSchema,
   followUpListResponseSchema,

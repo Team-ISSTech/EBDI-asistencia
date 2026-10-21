@@ -20,6 +20,8 @@ export { CONSENT_STATUSES, CONSENT_TYPES, canRevoke, currentConsentStatus, isCon
 export type { ConsentFact, ConsentStatus, ConsentType } from './consent.js';
 export * from './attendance.js';
 export { ATTENDANCE_METHODS, planMark } from './marking.js';
+export { INCIDENT_TYPES, MAX_INCIDENT_DESCRIPTION, departureBlocker, incidentBlocker, isAuthorizedPickup, markBlockedByDeparture } from './departure.js';
+export type { DayRecord, DepartureBlocker, IncidentType, PickupLink } from './departure.js';
 export type { AttendanceMethod, MarkPlan } from './marking.js';
 export {
   ABSENCE_CUTOFF_HOUR,
