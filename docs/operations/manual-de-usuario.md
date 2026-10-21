@@ -44,6 +44,17 @@ El sistema lo indica en la fila.
 **Corregir un error.** Mientras la jornada siga abierta puedes cambiar el estado de un infante y guardar de nuevo; queda en la bitácora.
 Con la jornada cerrada ya no se modifica: avisa a la directora.
 
+### Salida e incidencias
+En la fila de un infante presente, pulsa «Salida e incidencias».
+
+- **Salida.** Elige quién lo recoge y pulsa «Confirmar salida». Solo aparecen los tutores que la directora registró como
+  autorizados a recogerlo y que siguen vigentes; si no aparece nadie, no lo entregues y avisa a la directora. Después de
+  la salida ya no se le cambia la asistencia del día.
+- **Incidencias.** Elige el tipo (accidente, enfermedad, conducta u otra), escribe qué pasó y pulsa «Registrar incidencia».
+  La descripción se guarda cifrada: tú ves el tipo y la hora; trabajo social, enfermería, médico y directora pueden leerla.
+
+Las dos cosas necesitan conexión; sin internet anótalas en el formato de papel y regístralas al volver la red.
+
 ### Si se cae el internet
 No dejes de trabajar. Si entraste ese día con conexión, puedes seguir pasando lista: «Guardar asistencia» muestra
 *«Sin conexión: la asistencia se guardó en esta tablet y se enviará sola»*. Arriba verás cuántas capturas esperan enviarse y se

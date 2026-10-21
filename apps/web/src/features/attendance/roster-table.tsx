@@ -1,7 +1,7 @@
 import type { RosterEntry } from '@sirai/contracts';
 import { ATTENDANCE_STATUSES, type AttendanceStatus } from '@sirai/domain';
 import { Badge, Button, Table, Td, Th } from '@sirai/ui';
-import { STATUS_LABELS } from './status';
+import { STATUS_LABELS, timeOf } from './status';
 
 const TONES: Readonly<Record<AttendanceStatus, 'success' | 'danger' | 'accent' | 'neutral'>> = {
   PRESENTE: 'success',
@@ -38,9 +38,30 @@ export interface RosterTableProps {
   readonly statusOf: (entry: RosterEntry) => AttendanceStatus | null;
   /** Sin esta función la tabla es de solo lectura. */
   readonly onSelect?: (enrollmentId: number, status: AttendanceStatus) => void;
+  /** S-27: abre la salida y las incidencias de un infante que ingresó. */
+  readonly onOpenDay?: (entry: RosterEntry) => void;
 }
 
-export function RosterTable({ entries, statusOf, onSelect }: RosterTableProps) {
+/** Solo quien ingresó (Presente guardado en el servidor) tiene salida e incidencias. */
+function DayCell({ entry, onOpenDay }: { readonly entry: RosterEntry; readonly onOpenDay?: RosterTableProps['onOpenDay'] }) {
+  if (entry.status !== 'PRESENTE') return <span className="text-xs text-[var(--color-text-muted)]">—</span>;
+  const incidents = entry.incidentCount === 1 ? '1 incidencia' : `${entry.incidentCount} incidencias`;
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <span className="text-xs text-[var(--color-text-muted)]">
+        {entry.leftAt === null ? 'En la estancia' : `Salió ${timeOf(entry.leftAt)}`}
+        {entry.incidentCount > 0 ? ` · ${incidents}` : ''}
+      </span>
+      {onOpenDay ? (
+        <Button variant="ghost" aria-label={`Salida e incidencias de ${entry.childName}`} onClick={() => onOpenDay(entry)}>
+          Salida e incidencias
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+export function RosterTable({ entries, statusOf, onSelect, onOpenDay }: RosterTableProps) {
   return (
     <Table>
       <thead>
@@ -48,6 +69,7 @@ export function RosterTable({ entries, statusOf, onSelect }: RosterTableProps) {
           <Th>Infante</Th>
           <Th>Sala</Th>
           <Th>Asistencia</Th>
+          <Th>Salida</Th>
         </tr>
       </thead>
       <tbody>
@@ -73,6 +95,9 @@ export function RosterTable({ entries, statusOf, onSelect }: RosterTableProps) {
                 ) : (
                   <span className="text-xs text-[var(--color-text-muted)]">Sin marcar</span>
                 )}
+              </Td>
+              <Td>
+                <DayCell entry={entry} {...(onOpenDay ? { onOpenDay } : {})} />
               </Td>
             </tr>
           );

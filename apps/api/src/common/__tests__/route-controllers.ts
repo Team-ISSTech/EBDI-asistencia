@@ -1,4 +1,5 @@
 import { EstanciasAdminController, RoomsAdminController } from '../../modules/administration/controllers/administration.controller';
+import { DeparturesController } from '../../modules/attendance/controllers/departures.controller';
 import { JourneysController } from '../../modules/attendance/controllers/journeys.controller';
 import { RecordsController } from '../../modules/attendance/controllers/records.controller';
 import { AuditController } from '../../modules/audit/controllers/audit.controller';
@@ -23,6 +24,7 @@ export const ALL_CONTROLLERS = [
   RoomsAdminController,
   JourneysController,
   RecordsController,
+  DeparturesController,
   AuditController,
   ChildrenController,
   ConsentsController,

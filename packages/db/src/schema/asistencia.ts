@@ -2,6 +2,8 @@ import { bigint, char, date, datetime, index, mysqlTable, smallint, uniqueIndex,
 import { ciclosEscolares } from './ciclos.js';
 import { estancias } from './estancias.js';
 import { enrollments } from './inscripciones.js';
+import { guardians } from './tutores.js';
+import { longblob } from './types.js';
 import { usuarios } from './usuarios.js';
 
 export const jornadasAsistencia = mysqlTable(
@@ -35,6 +37,9 @@ export const attendanceRecords = mysqlTable(
     status: varchar('estado', { length: 30 }).notNull(),
     enteredAt: datetime('hora_entrada', { fsp: 6 }),
     leftAt: datetime('hora_salida', { fsp: 6 }),
+    /** S-27: tutor autorizado que recogió al infante; va junto con `leftAt` y `departureRecordedBy`. */
+    pickedUpBy: bigint('recogido_por', { mode: 'number', unsigned: true }).references(() => guardians.id),
+    departureRecordedBy: bigint('salida_registrada_por', { mode: 'number', unsigned: true }).references(() => usuarios.id),
     method: varchar('metodo_registro', { length: 20 }).notNull().default('MANUAL'),
     clientId: char('uuid_cliente', { length: 36 }).notNull(),
     recordedBy: bigint('registrado_por', { mode: 'number', unsigned: true }).notNull().references(() => usuarios.id),
@@ -46,4 +51,20 @@ export const attendanceRecords = mysqlTable(
     uniqueIndex('uq_asistencia_uuid_cliente').on(table.clientId),
     index('idx_asistencias_jornada_estado').on(table.journeyId, table.status),
   ],
+);
+
+/** Incidencias del día de un infante (S-27). La descripción puede tener datos de salud: solo existe cifrada. */
+export const attendanceIncidents = mysqlTable(
+  'incidencias_asistencia',
+  {
+    id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
+    attendanceRecordId: bigint('asistencia_id', { mode: 'number', unsigned: true }).notNull().references(() => attendanceRecords.id),
+    type: varchar('tipo', { length: 50 }).notNull(),
+    descriptionEncrypted: longblob('descripcion_cifrada'),
+    recordedBy: bigint('registrada_por', { mode: 'number', unsigned: true }).notNull().references(() => usuarios.id),
+    createdAt: datetime('created_at', { fsp: 6 }).notNull(),
+    updatedAt: datetime('updated_at', { fsp: 6 }).notNull(),
+    deletedAt: datetime('deleted_at', { fsp: 6 }),
+  },
+  (table) => [index('idx_incidencias_asistencia_fecha').on(table.attendanceRecordId, table.createdAt)],
 );

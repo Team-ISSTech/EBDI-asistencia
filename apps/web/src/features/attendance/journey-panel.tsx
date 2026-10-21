@@ -1,6 +1,8 @@
-import type { AttendanceJourney } from '@sirai/contracts';
+import type { AttendanceJourney, RosterEntry } from '@sirai/contracts';
 import type { Shift } from '@sirai/domain';
 import { Button, EmptyState } from '@sirai/ui';
+import { useState } from 'react';
+import { DayRecordPanel } from './day-record-panel';
 import { useSession } from '../auth/use-session';
 import { ScanPanel, type ScanPanelProps } from './scan-panel';
 import { RosterTable } from './roster-table';
@@ -68,6 +70,22 @@ function SaveStatus({ failed, queued }: SaveStatusProps) {
   );
 }
 
+interface OpenDayProps {
+  readonly journey: AttendanceJourney;
+  readonly entries: readonly RosterEntry[];
+  readonly openId: number | null;
+  readonly permissions: readonly string[];
+  readonly onClose: () => void;
+}
+
+/** Se busca en la lista vigente: tras registrar la salida, el panel muestra la hora sin volver a abrirlo. */
+function OpenDay({ journey, entries, openId, permissions, onClose }: OpenDayProps) {
+  const entry = entries.find((candidate) => candidate.enrollmentId === openId && candidate.status === 'PRESENTE');
+  if (!entry) return null;
+  const canRegister = permissions.includes('ASISTENCIA_REGISTRAR') && journey.status === 'ABIERTA';
+  return <DayRecordPanel journeyId={journey.id} entry={entry} canRegister={canRegister} canReadDetail={permissions.includes('NOTA_SENSIBLE_CONSULTAR')} onClose={onClose} />;
+}
+
 export interface JourneyPanelProps {
   readonly journey: AttendanceJourney;
   readonly date: string;
@@ -85,6 +103,7 @@ export function JourneyPanel({ journey, date, shift }: JourneyPanelProps) {
   const permissions = session?.permissions ?? [];
   const canMark = permissions.includes('ASISTENCIA_REGISTRAR');
   const pending = draft.pending();
+  const [openId, setOpenId] = useState<number | null>(null);
 
   if (roster.isPending) return <p className="text-sm text-[var(--color-text-muted)]">Cargando lista…</p>;
   if (roster.isError) {
@@ -112,7 +131,8 @@ export function JourneyPanel({ journey, date, shift }: JourneyPanelProps) {
       />
       <SaveStatus failed={save.isError} queued={save.data?.queued === true} />
       <ScanTools canMark={canMark} onScan={draft.scan} />
-      <RosterTable entries={entries} statusOf={draft.statusOf} {...(canMark ? { onSelect: draft.setStatus } : {})} />
+      <OpenDay journey={journey} entries={entries} openId={openId} permissions={permissions} onClose={() => setOpenId(null)} />
+      <RosterTable entries={entries} statusOf={draft.statusOf} onOpenDay={(entry) => setOpenId(entry.enrollmentId)} {...(canMark ? { onSelect: draft.setStatus } : {})} />
     </div>
   );
 }

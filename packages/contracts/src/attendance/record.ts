@@ -17,6 +17,9 @@ export const rosterEntrySchema = z.object({
   status: attendanceStatusSchema.nullable(),
   /** RF-29: el infante requiere alta médica y no puede marcarse Presente. Solo el indicador, nunca el motivo. */
   medicalLock: z.boolean(),
+  /** S-27: hora de salida; null si sigue en la estancia o no ingresó. Por omisión null: las listas guardadas sin conexión antes de este campo siguen siendo válidas. */
+  leftAt: z.iso.datetime().nullable().default(null),
+  incidentCount: z.number().int().nonnegative().default(0),
 });
 
 export const rosterResponseSchema = z.object({ entries: z.array(rosterEntrySchema) });
