@@ -42,6 +42,7 @@ const jsonResponse = (status: number, body: unknown): Response =>
 
 describe('llamadas de seguimiento sin conexión (RF-20 a RF-23)', () => {
   let runtime: OfflineRuntime;
+  let dbName: string;
   let routes: Record<string, () => Response | Promise<Response>>;
   const userId = socialWorkSession.user.id;
 
@@ -63,7 +64,8 @@ describe('llamadas de seguimiento sin conexión (RF-20 a RF-23)', () => {
   };
 
   beforeEach(() => {
-    runtime = createOfflineRuntime({ dbName: `followup-offline-${counter++}` });
+    dbName = `followup-offline-${counter++}`;
+    runtime = createOfflineRuntime({ dbName });
     routes = {
       'GET /seguimientos': () => jsonResponse(200, { followUps: [ticket] }),
       'GET /seguimientos/4/contactos': () => jsonResponse(200, { contacts: [] }),
@@ -114,6 +116,31 @@ describe('llamadas de seguimiento sin conexión (RF-20 a RF-23)', () => {
     };
     await user.click(await screen.findByRole('button', { name: 'Enviar ahora' }));
     await waitFor(async () => expect(await runtime.outbox.counts(userId)).toMatchObject({ pending: 0, review: 0 }));
+  });
+
+  it('la llamada guardada sobrevive a cerrar y volver a abrir la aplicación, y se envía después', async () => {
+    const user = userEvent.setup();
+    const first = mount();
+    await registerNoAnswer(user);
+    await screen.findByText(/se guardó en esta tablet/);
+    first.unmount();
+
+    // Reinicio: nada en memoria, solo lo que quedó en IndexedDB (cola y llave).
+    runtime = createOfflineRuntime({ dbName });
+    mount();
+    expect(await screen.findByText(/1 captura pendiente de enviar/)).toBeInTheDocument();
+    const [operation] = await runtime.outbox.due(userId, Date.now(), true);
+    expect(operation).toMatchObject({ type: 'FOLLOW_UP_CONTACT', payload: { followUpId: 4, contact: { notes: 'No hubo respuesta, se deja recado.' } } });
+
+    let sentTypes: string[] = [];
+    routes['POST /sincronizacion'] = () => {
+      const body = JSON.parse(String((vi.mocked(fetch).mock.calls.at(-1)?.[1] as RequestInit).body)) as { operations: { operationId: string; type: string }[] };
+      sentTypes = body.operations.map((o) => o.type);
+      return jsonResponse(200, { results: body.operations.map((o) => ({ operationId: o.operationId, status: 'APLICADA', replayed: false, saved: 1, unchanged: 0, rejections: [], code: null, message: null })) });
+    };
+    await user.click(await screen.findByRole('button', { name: 'Enviar ahora' }));
+    await waitFor(async () => expect(await runtime.outbox.counts(userId)).toMatchObject({ pending: 0, review: 0 }));
+    expect(sentTypes).toEqual(['FOLLOW_UP_CONTACT']);
   });
 
   it('un rechazo definitivo (el seguimiento ya está cerrado) no se guarda en la tablet: se muestra', async () => {
