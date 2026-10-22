@@ -90,6 +90,28 @@ describe('RollCallPage', () => {
     expect(within(await rowOf('Infante 2 Prueba')).queryByRole('button', { pressed: true })).toBeNull();
   });
 
+  it('cada fila es un control segmentado: texto corto a la vista, nombre completo para lectores y el estado elegido con su color', async () => {
+    vi.stubGlobal('fetch', withJourney([entry(1, 'COMISION_MEDICA'), entry(2, null, true)]));
+    renderWithSession(<RollCallPage />, docenteSession, '/app/pase-de-lista');
+    const first = within(await rowOf('Infante 1 Prueba')).getByRole('group', { name: 'Asistencia de Infante 1 Prueba' });
+    const visible = within(first).getAllByRole('button').map((button) => [button.textContent, button.getAttribute('aria-label') ?? button.textContent, button.title]);
+    expect(visible).toEqual([
+      ['Presente', 'Presente', 'Presente'],
+      ['Justificado', 'Ausente justificado', 'Ausente justificado'],
+      ['Falta', 'Falta injustificada', 'Falta injustificada'],
+      ['Comisión', 'Comisión médica', 'Comisión médica'],
+      ['Filtro', 'Filtro sanitario', 'Filtro sanitario'],
+    ]);
+    const comision = within(first).getByRole('button', { name: 'Comisión médica', pressed: true });
+    expect(comision).toHaveClass('bg-[var(--color-comision-medica)]', 'text-white');
+    await userEvent.click(within(first).getByRole('button', { name: 'Falta injustificada' }));
+    expect(within(first).getByRole('button', { name: 'Falta injustificada', pressed: true })).toHaveClass('bg-[var(--color-falta-injustificada)]');
+    expect(within(first).getByRole('button', { name: 'Comisión médica', pressed: false })).not.toHaveClass('bg-[var(--color-comision-medica)]');
+    const locked = within(await rowOf('Infante 2 Prueba')).getByRole('group');
+    expect(within(locked).getByRole('button', { name: 'Presente' })).toBeDisabled();
+    expect(within(locked).getByRole('button', { name: 'Falta injustificada' })).toBeEnabled();
+  });
+
   it('pasar lista a todo el grupo toma dos clics: marcar a todos presentes y guardar', async () => {
     const fetchMock = withJourney([entry(1), entry(2), entry(3)], { 'POST /asistencia/jornadas/3/registros': () => jsonResponse(200, { saved: 3, unchanged: 0 }) });
     vi.stubGlobal('fetch', fetchMock);

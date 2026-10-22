@@ -1,7 +1,8 @@
 import type { RosterEntry } from '@sirai/contracts';
-import { ATTENDANCE_STATUSES, type AttendanceStatus } from '@sirai/domain';
+import type { AttendanceStatus } from '@sirai/domain';
 import { Badge, Button, Table, Td, Th } from '@sirai/ui';
 import { STATUS_LABELS, timeOf } from './status';
+import { StatusSegments } from './status-segments';
 
 const TONES: Readonly<Record<AttendanceStatus, 'success' | 'danger' | 'accent' | 'neutral'>> = {
   PRESENTE: 'success',
@@ -11,27 +12,8 @@ const TONES: Readonly<Record<AttendanceStatus, 'success' | 'danger' | 'accent' |
   FILTRO_SANITARIO: 'accent',
 };
 
-interface StatusButtonsProps {
-  readonly entry: RosterEntry;
-  readonly current: AttendanceStatus | null;
-  readonly onSelect: (status: AttendanceStatus) => void;
-}
-
 /** RF-29: con candado médico no se puede marcar Presente; lo demás sí. S-27: con la salida registrada ya no cambia. */
 const isBlocked = (entry: RosterEntry, status: AttendanceStatus): boolean => entry.leftAt !== null || (entry.medicalLock && status === 'PRESENTE');
-
-/** Un botón por estado; el activo queda marcado con `aria-pressed`. */
-function StatusButtons({ entry, current, onSelect }: StatusButtonsProps) {
-  return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Asistencia de ${entry.childName}`}>
-      {ATTENDANCE_STATUSES.map((status) => (
-        <Button key={status} variant={current === status ? 'primary' : 'ghost'} aria-pressed={current === status} disabled={isBlocked(entry, status)} onClick={() => onSelect(status)}>
-          {STATUS_LABELS[status]}
-        </Button>
-      ))}
-    </div>
-  );
-}
 
 export interface RosterTableProps {
   readonly entries: readonly RosterEntry[];
@@ -53,7 +35,7 @@ function DayCell({ entry, onOpenDay }: { readonly entry: RosterEntry; readonly o
         {entry.incidentCount > 0 ? ` · ${incidents}` : ''}
       </span>
       {onOpenDay ? (
-        <Button variant="ghost" aria-label={`Salida e incidencias de ${entry.childName}`} onClick={() => onOpenDay(entry)}>
+        <Button variant="ghost" className="xl:whitespace-nowrap" aria-label={`Salida e incidencias de ${entry.childName}`} onClick={() => onOpenDay(entry)}>
           Salida e incidencias
         </Button>
       ) : null}
@@ -89,7 +71,7 @@ export function RosterTable({ entries, statusOf, onSelect, onOpenDay }: RosterTa
               <Td>{entry.roomName}</Td>
               <Td>
                 {onSelect ? (
-                  <StatusButtons entry={entry} current={current} onSelect={(status) => onSelect(entry.enrollmentId, status)} />
+                  <StatusSegments childName={entry.childName} current={current} isBlocked={(status) => isBlocked(entry, status)} onSelect={(status) => onSelect(entry.enrollmentId, status)} />
                 ) : current ? (
                   <Badge tone={TONES[current]}>{STATUS_LABELS[current]}</Badge>
                 ) : (
