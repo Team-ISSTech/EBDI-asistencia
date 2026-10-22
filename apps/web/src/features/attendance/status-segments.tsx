@@ -12,8 +12,11 @@ const UNSELECTED =
   'border-[var(--color-ink-muted)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:bg-[var(--color-paper)] ' +
   'disabled:border-[var(--color-line)] disabled:bg-[var(--color-paper)] disabled:text-[var(--color-ink-muted)] disabled:line-through disabled:hover:bg-[var(--color-paper)]';
 
-/** El elegido toma el color de su estado; el borde igual al fondo para que se lea como un solo bloque. */
-const SELECTED = 'z-[1] border-transparent disabled:opacity-60';
+/**
+ * El elegido toma el color de su estado; el borde igual al fondo para que se lea como un solo bloque. Bloqueado
+ * (con la salida registrada) no se atenúa: el estado del día debe seguir legible.
+ */
+const SELECTED = 'z-[1] border-transparent';
 
 export interface StatusSegmentsProps {
   /** Nombre del infante, para el nombre accesible del grupo. */

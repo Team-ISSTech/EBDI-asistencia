@@ -112,6 +112,15 @@ describe('RollCallPage', () => {
     expect(within(locked).getByRole('button', { name: 'Falta injustificada' })).toBeEnabled();
   });
 
+  it('con la salida registrada el estado elegido sigue con su color completo, sin atenuarse', async () => {
+    vi.stubGlobal('fetch', withJourney([{ ...entry(1, 'PRESENTE'), leftAt: '2026-10-15T19:00:00.000Z' }]));
+    renderWithSession(<RollCallPage />, docenteSession, '/app/pase-de-lista');
+    const chosen = within(await rowOf('Infante 1 Prueba')).getByRole('button', { name: 'Presente', pressed: true });
+    expect(chosen).toBeDisabled();
+    expect(chosen).toHaveClass('bg-[var(--color-presente)]', 'text-white');
+    expect(chosen.className).not.toMatch(/opacity/);
+  });
+
   it('pasar lista a todo el grupo toma dos clics: marcar a todos presentes y guardar', async () => {
     const fetchMock = withJourney([entry(1), entry(2), entry(3)], { 'POST /asistencia/jornadas/3/registros': () => jsonResponse(200, { saved: 3, unchanged: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
