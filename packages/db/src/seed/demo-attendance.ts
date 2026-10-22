@@ -50,6 +50,12 @@ const insertJourney = async (tx: DemoTx, context: AttendanceContext, date: strin
   return { id: created.insertId, openedAt, closedAt };
 };
 
+/** RF-39 y `ck_asistencias_salida`: la salida va con el tutor que recoge y quien la registra, o no hay salida. */
+const departureValues = (context: AttendanceContext, journey: { closedAt: Date }, child: EnrolledChild, present: boolean) => {
+  if (!present || child.pickupGuardianId === null) return { leftAt: null, pickedUpBy: null, departureRecordedBy: null };
+  return { leftAt: new Date(journey.closedAt.getTime() - 30 * MS_PER_MINUTE), pickedUpBy: child.pickupGuardianId, departureRecordedBy: context.actors.docenteId };
+};
+
 const recordValues = (context: AttendanceContext, journey: { id: number; openedAt: Date; closedAt: Date }, child: EnrolledChild) => {
   const status = attendanceStatusFor(context.rng);
   const present = status === 'PRESENTE';
@@ -60,7 +66,7 @@ const recordValues = (context: AttendanceContext, journey: { id: number; openedA
     enrollmentId: child.enrollmentId,
     status,
     enteredAt: present ? arrival : null,
-    leftAt: present ? new Date(journey.closedAt.getTime() - 30 * MS_PER_MINUTE) : null,
+    ...departureValues(context, journey, child, present),
     method: present && context.rng.chance(QR_SHARE) ? 'QR' : 'MANUAL',
     clientId: context.nextClientId(),
     recordedBy: context.actors.docenteId,
