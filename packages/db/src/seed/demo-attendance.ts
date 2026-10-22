@@ -52,7 +52,7 @@ const insertJourney = async (tx: DemoTx, context: AttendanceContext, date: strin
 
 /** RF-39 y `ck_asistencias_salida`: la salida va con el tutor que recoge y quien la registra, o no hay salida. */
 const departureValues = (context: AttendanceContext, journey: { closedAt: Date }, child: EnrolledChild, present: boolean) => {
-  if (!present || child.pickupGuardianId === null) return { leftAt: null, pickedUpBy: null, departureRecordedBy: null };
+  if (!present) return { leftAt: null, pickedUpBy: null, departureRecordedBy: null };
   return { leftAt: new Date(journey.closedAt.getTime() - 30 * MS_PER_MINUTE), pickedUpBy: child.pickupGuardianId, departureRecordedBy: context.actors.docenteId };
 };
 

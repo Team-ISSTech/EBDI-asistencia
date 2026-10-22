@@ -31,8 +31,8 @@ export interface EnrolledChild {
   readonly shift: string;
   readonly primaryGuardianId: number;
   readonly primaryPhone: string | null;
-  /** S-27: tutor autorizado a recoger con quien se registra la salida; `null` si la familia no tiene ninguno. */
-  readonly pickupGuardianId: number | null;
+  /** S-27: tutor autorizado a recoger con quien se registra la salida. */
+  readonly pickupGuardianId: number;
 }
 
 const NOTICE_VERSION = 'v1.0';
@@ -139,13 +139,14 @@ const enrollChild = async (tx: DemoTx, plan: ChildPlan, family: FamilyPlan, guar
   const rows = consentRows(plan.consent, { childId: created.insertId, guardianId: ids[primary] as number, acceptedAt: new Date(`${context.startDate}T15:00:00Z`), registeredBy: actors.directoraId, now });
   if (rows.length > 0) await tx.insert(consents).values(rows);
   const pickup = family.guardians.findIndex((guardian) => guardian.canPickUp);
+  if (pickup < 0) throw new Error(`La familia ${family.key} de la semilla no tiene ningún tutor autorizado a recoger.`);
   return {
     enrollmentId: enrollment.insertId,
     plan,
     shift: roomShift(plan.roomIndex),
     primaryGuardianId: ids[primary] as number,
     primaryPhone: family.guardians[primary]?.phone ?? null,
-    pickupGuardianId: pickup < 0 ? null : (ids[pickup] as number),
+    pickupGuardianId: ids[pickup] as number,
   };
 };
 
