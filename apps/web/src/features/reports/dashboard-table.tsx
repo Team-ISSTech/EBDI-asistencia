@@ -6,41 +6,49 @@ export interface DashboardTableProps {
   readonly rows: readonly DashboardRow[];
 }
 
-/** Una fila por estancia: solo conteos y porcentajes, nada identificable de infantes. */
+/**
+ * Una fila por estancia: solo conteos y porcentajes, nada identificable de infantes. Presentes, ausentes,
+ * otros y pendientes suman los inscritos.
+ */
 export function DashboardTable({ rows }: DashboardTableProps) {
   return (
-    <Table>
-      <thead>
-        <tr>
-          <Th>Estancia</Th>
-          <Th>Región</Th>
-          <Th>Semáforo</Th>
-          <Th>Asistencia</Th>
-          <Th>Presentes</Th>
-          <Th>Ausentes</Th>
-          <Th>Pendientes</Th>
-          <Th>Inscritos</Th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.estanciaId}>
-            <Td>
-              <p className="font-medium text-[var(--color-ink)]">{row.name}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">{row.code}</p>
-            </Td>
-            <Td>{row.region ?? '—'}</Td>
-            <Td>
-              <Badge tone={LIGHT_TONES[row.light]}>{LIGHT_LABELS[row.light]}</Badge>
-            </Td>
-            <Td className="font-medium">{formatRate(row.rate)}</Td>
-            <Td>{row.present}</Td>
-            <Td>{row.absent}</Td>
-            <Td>{row.pending}</Td>
-            <Td>{row.enrolled}</Td>
+    <>
+      <Table>
+        <thead>
+          <tr>
+            <Th>Estancia</Th>
+            <Th>Región</Th>
+            <Th>Semáforo</Th>
+            <Th>Asistencia</Th>
+            <Th>Presentes</Th>
+            <Th>Ausentes</Th>
+            <Th>Otros</Th>
+            <Th>Pendientes</Th>
+            <Th>Inscritos</Th>
           </tr>
-        ))}
-      </tbody>
-    </Table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.estanciaId}>
+              <Td>
+                <p className="font-medium text-[var(--color-ink)]">{row.name}</p>
+                <p className="text-xs text-[var(--color-text-muted)]">{row.code}</p>
+              </Td>
+              <Td>{row.region ?? '—'}</Td>
+              <Td>
+                <Badge tone={LIGHT_TONES[row.light]}>{LIGHT_LABELS[row.light]}</Badge>
+              </Td>
+              <Td className="font-medium">{formatRate(row.rate)}</Td>
+              <Td>{row.present}</Td>
+              <Td>{row.absent}</Td>
+              <Td>{row.other}</Td>
+              <Td>{row.pending}</Td>
+              <Td>{row.enrolled}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      <p className="mt-2 text-xs text-[var(--color-text-muted)]">Otros: comisión médica y filtro sanitario. Pendientes: inscritos sin marca todavía.</p>
+    </>
   );
 }

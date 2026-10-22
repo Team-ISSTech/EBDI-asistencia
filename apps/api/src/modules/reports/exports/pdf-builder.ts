@@ -9,13 +9,15 @@ export interface PdfOptions {
 
 const MARGIN = 40;
 const ROW_HEIGHT = 16;
+/** Caben en el ancho útil de una hoja carta (612 − 2 × 40 = 532 puntos). */
 const COLUMNS = [
-  { title: 'Clave', width: 70 },
-  { title: 'Estancia', width: 170 },
+  { title: 'Clave', width: 60 },
+  { title: 'Estancia', width: 125 },
   { title: 'Reg.', width: 50 },
   { title: 'Reg. capt.', width: 55 },
   { title: 'Pres.', width: 40 },
   { title: 'Aus.', width: 40 },
+  { title: 'Otros', width: 40 },
   { title: 'Asist.', width: 50 },
   { title: 'Semáforo', width: 70 },
 ] as const;
@@ -61,7 +63,7 @@ export function buildPdf(report: PeriodReport, options: PdfOptions = {}): Promis
         doc.addPage();
         header();
       }
-      drawRow([row.code, row.name, row.region ?? '—', String(row.marks), String(row.present), String(row.absent), percent(row.rate), LIGHT_LABELS[row.light]], false);
+      drawRow([row.code, row.name, row.region ?? '—', String(row.marks), String(row.present), String(row.absent), String(row.other), percent(row.rate), LIGHT_LABELS[row.light]], false);
     }
 
     const pages = doc.bufferedPageRange();

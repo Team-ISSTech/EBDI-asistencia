@@ -83,6 +83,27 @@ describe('buildPdf', () => {
     expect(text).toContain('92.5');
   });
 
+  it('cada fila trae otros (comisión médica y filtro sanitario), para que presentes, ausentes y otros sumen los registros', async () => {
+    const withOthers = buildPeriodReport(
+      'DAY',
+      { from: '2026-10-01', to: '2026-10-01' },
+      [
+        { estanciaId: 3, code: 'EBDI-03', name: 'Estancia Tres', region: 'Sur' },
+        { estanciaId: 4, code: 'EBDI-04', name: 'Estancia Cuatro', region: 'Norte' },
+      ],
+      [
+        { estanciaId: 3, date: '2026-10-01', present: 15, absent: 2, other: 3 },
+        { estanciaId: 4, date: '2026-10-01', present: 9, absent: 0, other: 1 },
+      ],
+      new Date('2026-10-02T12:00:00Z'),
+    );
+    const lines = pdfText(await buildPdf(withOthers, { compress: false })).split('\n');
+    const cellsOf = (first: string): string[] => lines.slice(lines.indexOf(first), lines.indexOf(first) + 8);
+    expect(cellsOf('Clave')).toEqual(['Clave', 'Estancia', 'Reg.', 'Reg. capt.', 'Pres.', 'Aus.', 'Otros', 'Asist.']);
+    expect(cellsOf('EBDI-03')).toEqual(['EBDI-03', 'Estancia Tres', 'Sur', '20', '15', '2', '3', '75.0 %']);
+    expect(cellsOf('EBDI-04')).toEqual(['EBDI-04', 'Estancia Cuatro', 'Norte', '10', '9', '0', '1', '90.0 %']);
+  });
+
   it('numera las páginas y reparte las estancias cuando no caben en una', async () => {
     const many = buildPeriodReport(
       'MONTH',
