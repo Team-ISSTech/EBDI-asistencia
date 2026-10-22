@@ -1,9 +1,11 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CaptureReviewPage } from '../offline/capture-review-page';
 import { type OfflineApi, OfflineContext } from '../offline/offline-api';
+import { OfflineProvider } from '../offline/offline-context';
 import type { ReviewItem } from '../offline/outbox';
+import { createOfflineRuntime } from '../offline/runtime';
 import { docenteSession, renderWithSession } from './test-utils';
 
 const marksItem = (overrides: Partial<ReviewItem> = {}): ReviewItem => ({
@@ -55,6 +57,10 @@ const show = (value: OfflineApi) =>
   );
 
 describe('pantalla de revisión de capturas (RF-23, S-20)', () => {
+  // Sin servidor: la lista de la jornada no se puede consultar y solo cuenta lo guardado en la tablet.
+  beforeEach(() => vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch')))));
+  afterEach(() => vi.unstubAllGlobals());
+
   it('sin nada que revisar lo dice', async () => {
     show(api([]));
     expect(await screen.findByText('No hay capturas por revisar')).toBeInTheDocument();
@@ -117,5 +123,43 @@ describe('pantalla de revisión de capturas (RF-23, S-20)', () => {
     await user.click(await screen.findByRole('button', { name: 'Descartar la captura revisada' }));
     await user.click(screen.getByRole('button', { name: 'Confirmar descarte' }));
     expect(await screen.findByText('No hay capturas por revisar')).toBeInTheDocument();
+  });
+
+  describe('con la lista del día guardada en la tablet', () => {
+    const rosterEntry = (enrollmentId: number, childName: string) => ({ enrollmentId, childId: enrollmentId + 100, childName, enrollmentNumber: `M-${enrollmentId}`, roomId: 1, roomName: 'Lactantes (prueba)', status: null, medicalLock: false });
+
+    it('sin conexión nombra a cada infante con la copia de la lista, y deja el número a quien no aparece en ella', async () => {
+      const runtime = createOfflineRuntime({ dbName: 'capture-review-names' });
+      const userId = docenteSession.user.id;
+      await runtime.cache.put(userId, 'roster:3', { entries: [rosterEntry(4, 'Ana Prueba López'), rosterEntry(5, 'Beto Prueba Ruiz'), rosterEntry(6, 'Carla Prueba Díaz')] });
+      const operationId = await runtime.outbox.enqueue({
+        userId,
+        estanciaId: 1,
+        type: 'ATTENDANCE_MARKS',
+        payload: {
+          journeyId: 3,
+          marks: [
+            { enrollmentId: 5, status: 'AUSENTE_JUSTIFICADO', clientId: '00000000-0000-4000-8000-0000000000b5', method: 'MANUAL' },
+            { enrollmentId: 4, status: 'PRESENTE', clientId: '00000000-0000-4000-8000-0000000000b4', method: 'QR' },
+            { enrollmentId: 9, status: 'PRESENTE', clientId: '00000000-0000-4000-8000-0000000000b9', method: 'MANUAL' },
+          ],
+        },
+      });
+      await runtime.outbox.markForReview(operationId, 'PARCIAL', { code: null, message: null, rejections: [{ ref: 4, code: 'CANDADO_MEDICO', message: 'Requiere alta médica.' }] });
+      renderWithSession(
+        <OfflineProvider runtime={runtime} pollMs={60_000}>
+          <CaptureReviewPage />
+        </OfflineProvider>,
+        docenteSession,
+        '/app/capturas',
+      );
+      const card = (await screen.findByText('Pase de lista')).closest('article') as HTMLElement;
+      expect(await within(card).findByText('Beto Prueba Ruiz: Ausente justificado')).toBeInTheDocument();
+      const rejected = within(card).getByText('Ana Prueba López: Presente').closest('li') as HTMLElement;
+      expect(within(rejected).getByText('No se aplicó: Requiere alta médica.')).toBeInTheDocument();
+      expect(within(card).getByText('Infante n.º 9: Presente')).toBeInTheDocument();
+      expect(within(card).queryByText(/Infante n.º [45]/)).toBeNull();
+      await runtime.destroy();
+    });
   });
 });
