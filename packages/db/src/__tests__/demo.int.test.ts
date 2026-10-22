@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { and, count, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, count, eq, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connect, type DbConnection } from '../client.js';
 import { applyMigrations, dropAllObjects } from '../migrate/runner.js';
@@ -8,7 +8,7 @@ import { createSeedCipher } from '../seed/demo-cipher.js';
 import { DEMO_ROOM_PLANS } from '../seed/demo-data.js';
 import { seedDemoData } from '../seed/demo.js';
 import { devUserEmail, seedDevelopmentData } from '../seed/dev.js';
-import { attendanceRecords, auditoria, children, consents, enrollments, estancias, followUpContacts, followUps, guardians, jornadasAsistencia, medicalReleases, rooms, roles, usuarioRol, usuarios } from '../schema/index.js';
+import { attendanceRecords, auditoria, childGuardians, children, consents, enrollments, estancias, followUpContacts, followUps, guardians, jornadasAsistencia, medicalReleases, rooms, roles, usuarioRol, usuarios } from '../schema/index.js';
 
 const TEST_DATABASE_URL = process.env['TEST_DATABASE_URL'];
 const SQL_DIR = resolve(import.meta.dirname, '../../sql');
@@ -103,6 +103,22 @@ describe.skipIf(!TEST_DATABASE_URL)('semilla de demostración (integración)', (
     expect(locked.length).toBeGreaterThan(0);
     const [contacts] = await connection.db.select({ n: count() }).from(followUpContacts);
     expect(contacts?.n).toBeGreaterThan(0);
+  });
+
+  it('cada salida lleva un tutor autorizado a recoger a ese infante y a la docente que la registró', async () => {
+    const departures = await connection.db
+      .select({ childId: enrollments.childId, pickedUpBy: attendanceRecords.pickedUpBy, recordedBy: attendanceRecords.departureRecordedBy })
+      .from(attendanceRecords)
+      .innerJoin(enrollments, eq(enrollments.id, attendanceRecords.enrollmentId))
+      .where(isNotNull(attendanceRecords.leftAt));
+    expect(departures.length).toBeGreaterThan(0);
+    const authorized = await connection.db.select({ childId: childGuardians.childId, guardianId: childGuardians.guardianId }).from(childGuardians).where(eq(childGuardians.canPickUp, true));
+    const allowed = new Set(authorized.map((row) => `${row.childId}:${row.guardianId}`));
+    const [docente] = await connection.db.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.email, devUserEmail('DOCENTE')));
+    for (const departure of departures) {
+      expect(allowed.has(`${departure.childId}:${departure.pickedUpBy}`), `infante ${departure.childId}`).toBe(true);
+      expect(departure.recordedBy).toBe(docente?.id);
+    }
   });
 
   it('cubre los estados de consentimiento: aceptado, rechazado y revocado', async () => {
