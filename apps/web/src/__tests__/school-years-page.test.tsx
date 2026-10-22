@@ -60,6 +60,20 @@ describe('pantalla de ciclos escolares (RNF-05)', () => {
     expect(within(await rowOf('Ciclo-1')).getByText('Depurado')).toBeInTheDocument();
   });
 
+  it('muestra las fechas del ciclo tal como se capturaron, también en una zona horaria al oeste de UTC', async () => {
+    const machineZone = process.env['TZ'];
+    process.env['TZ'] = 'America/Mexico_City';
+    try {
+      vi.stubGlobal('fetch', routeFetch(list([active(), year(3, { startDate: '2025-08-01', endDate: '2026-07-31' })])));
+      renderWithSession(<SchoolYearsPage />, adminSession, '/app/administracion/ciclos');
+      expect(within(await rowOf('2026-2027')).getByText('25/8/2025 a 15/7/2026')).toBeInTheDocument();
+      expect(within(await rowOf('Ciclo-3')).getByText('1/8/2025 a 31/7/2026')).toBeInTheDocument();
+    } finally {
+      if (machineZone === undefined) delete process.env['TZ'];
+      else process.env['TZ'] = machineZone;
+    }
+  });
+
   it('con todo cerrado, el ciclo activo lo dice', async () => {
     vi.stubGlobal('fetch', routeFetch(list([active()])));
     renderWithSession(<SchoolYearsPage />, adminSession, '/app/administracion/ciclos');
