@@ -32,6 +32,9 @@ La docente registra la asistencia del turno. **La jornada la abre la directora**
    - **Falta injustificada**.
    - **Comisión médica**.
    - **Filtro sanitario** (no ingresa por revisión de salud).
+
+   En la fila los estados aparecen abreviados en un solo renglón: «Presente», «Justificado», «Falta», «Comisión» y «Filtro»;
+   el elegido se pinta con su color. Al dejar el puntero encima, y para el lector de pantalla, cada uno lleva su nombre completo.
 3. Para ahorrar tiempo usa «Marcar a todos presentes» y corrige solo las excepciones.
 4. Pulsa «Guardar asistencia». Lo marcado se guarda de una vez.
 
@@ -118,7 +121,8 @@ al infante para ingresar.
 
 ### Tablero («Reportes»)
 Muestra, para la fecha elegida, las estancias con su **semáforo** de asistencia (verde desde 90 %, amarillo desde 75 %, rojo por debajo),
-inscritos, presentes, ausentes y llamadas. Puedes filtrar por región y consultar el día, el mes o el trimestre (por trimestre calendario).
+inscritos, presentes, ausentes, otros (comisión médica y filtro sanitario), pendientes (sin marca todavía) y llamadas. Presentes,
+ausentes, otros y pendientes suman los inscritos. Puedes filtrar por región y consultar el día, el mes o el trimestre (por trimestre calendario).
 Es información agregada: **no muestra nombres de infantes ni de tutores**.
 - «Descargar PDF» y «Descargar Excel» exportan la tabla que ves.
 - El supervisor regional solo ve las estancias de su región.
