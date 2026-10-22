@@ -1,5 +1,6 @@
 import type { SchoolYearView } from '@sirai/contracts';
 import { Badge, Button, Table, Td, Th } from '@sirai/ui';
+import { formatIsoDate } from '../../lib/dates';
 
 const formatDate = (iso: string): string => new Date(iso).toLocaleDateString('es-MX');
 const plural = (count: number, one: string, many: string): string => `${count} ${count === 1 ? one : many}`;
@@ -47,7 +48,7 @@ export function SchoolYearsTable({ years, onPurge }: SchoolYearsTableProps) {
             <Td>
               <p className="font-medium text-[var(--color-ink)]">{year.code}</p>
               <p className="text-xs text-[var(--color-text-muted)]">
-                {formatDate(year.startDate)} a {formatDate(year.endDate)}
+                {formatIsoDate(year.startDate)} a {formatIsoDate(year.endDate)}
               </p>
             </Td>
             <Td>

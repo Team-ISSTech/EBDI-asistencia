@@ -1,9 +1,10 @@
 import { CONTACT_CAUSES } from '@sirai/domain';
 import { Badge, Card, EmptyState, PageHeader } from '@sirai/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ConfirmCard } from '../components/confirm-card';
 import { STATUS_LABELS } from '../features/attendance/status';
+import { useRoster } from '../features/attendance/use-attendance';
 import { CAUSE_LABELS } from '../features/follow-ups/labels';
 import { useOffline } from './offline-api';
 import type { ReviewItem } from './outbox';
@@ -14,15 +15,22 @@ const RESULT_LABELS = { CONTACTADO: 'Contactado', SIN_RESPUESTA: 'Sin respuesta'
 type AttendancePayload = Extract<NonNullable<ReviewItem['payload']>, { marks: unknown }>;
 type ContactPayload = Extract<NonNullable<ReviewItem['payload']>, { contact: unknown }>;
 
+/** Nombre de cada infante según la lista de esa jornada (del servidor o, sin conexión, la copia de la tablet). */
+function useChildNames(journeyId: number): ReadonlyMap<number, string> {
+  const roster = useRoster(journeyId);
+  return useMemo(() => new Map((roster.data?.entries ?? []).map((entry) => [entry.enrollmentId, entry.childName])), [roster.data]);
+}
+
 function MarksDetail({ payload, item }: { readonly payload: AttendancePayload; readonly item: ReviewItem }) {
   const rejections = item.failure?.rejections ?? [];
+  const names = useChildNames(payload.journeyId);
   return (
     <ul className="flex flex-col gap-1 text-sm">
       {payload.marks.map((mark) => {
         const rejected = rejections.find((rejection) => rejection.ref === mark.enrollmentId);
         return (
           <li key={mark.clientId}>
-            <span>{`Infante n.º ${mark.enrollmentId}: ${STATUS_LABELS[mark.status]}`}</span>
+            <span>{`${names.get(mark.enrollmentId) ?? `Infante n.º ${mark.enrollmentId}`}: ${STATUS_LABELS[mark.status]}`}</span>
             {rejected ? <p className="text-[var(--color-danger)]">{`No se aplicó: ${rejected.message}`}</p> : null}
           </li>
         );

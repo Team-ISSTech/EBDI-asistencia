@@ -27,12 +27,12 @@
   --color-danger: #ba4038;
   --color-danger-soft: #fbe9e7;
 
-  /* Estados de asistencia (SRS RF-14). */
-  --color-presente: #2f8f5b;
-  --color-ausente-justificado: #3c7fb1;
+  /* Estados de asistencia (SRS RF-14). Llevan texto blanco encima: todos ≥ 4.5:1. */
+  --color-presente: #2b8354;
+  --color-ausente-justificado: #397aa9;
   --color-falta-injustificada: #c2433a;
   --color-comision-medica: #7b5fb0;
-  --color-filtro-sanitario: #d7862a;
+  --color-filtro-sanitario: #a5661f;
 
   --font-display: 'Sora', 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;

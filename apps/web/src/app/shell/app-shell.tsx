@@ -15,7 +15,7 @@ export function AppShell() {
   if (!session) return null;
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[16rem_1fr]">
+    <div className="grid min-h-screen grid-cols-[minmax(0,1fr)] lg:grid-cols-[16rem_minmax(0,1fr)]">
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus:rounded-[var(--radius-md)] focus:bg-[var(--color-surface)] focus:px-3 focus:py-2 focus:text-[var(--color-ink)]"

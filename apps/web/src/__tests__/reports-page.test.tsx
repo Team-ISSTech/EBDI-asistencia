@@ -41,6 +41,25 @@ describe('ReportsPage (tablero semaforizado)', () => {
     expect(within(none).getByText('—')).toBeInTheDocument();
   });
 
+  it('por estancia, presentes, ausentes, otros (comisión médica y filtro sanitario) y pendientes suman los inscritos', async () => {
+    vi.stubGlobal('fetch', withData(dashboard([
+      row(1, 'Estancia Amarilla', 'AMARILLO', 0.6, { enrolled: 20, present: 12, absent: 3, other: 4, pending: 1 }),
+      row(2, 'Estancia Verde', 'VERDE', 0.9, { enrolled: 30, present: 27, absent: 1, other: 2, pending: 0 }),
+    ])));
+    renderWithSession(<ReportsPage />, supervisorSession, '/app/reportes');
+    const table = (await screen.findByText('Estancia Amarilla')).closest('table') as HTMLElement;
+    const headers = within(table).getAllByRole('columnheader').map((cell) => cell.textContent ?? '');
+    const valueOf = (name: string, column: string): number => {
+      const cells = within(within(table).getByText(name).closest('tr') as HTMLElement).getAllByRole('cell');
+      return Number(cells[headers.findIndex((header) => header.startsWith(column))]?.textContent);
+    };
+    for (const [name, other] of [['Estancia Amarilla', 4], ['Estancia Verde', 2]] as const) {
+      expect(valueOf(name, 'Otros')).toBe(other);
+      expect(valueOf(name, 'Presentes') + valueOf(name, 'Ausentes') + valueOf(name, 'Otros') + valueOf(name, 'Pendientes')).toBe(valueOf(name, 'Inscritos'));
+    }
+    expect(screen.getByText(/Otros: comisión médica y filtro sanitario/)).toBeInTheDocument();
+  });
+
   it('resume cuántas estancias hay en cada color y la asistencia global', async () => {
     vi.stubGlobal('fetch', withData(dashboard([row(1, 'Estancia Roja', 'ROJO', 0.5)])));
     renderWithSession(<ReportsPage />, supervisorSession, '/app/reportes');
